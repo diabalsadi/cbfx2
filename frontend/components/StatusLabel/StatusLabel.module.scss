@@ -1,0 +1,29 @@
+.container {
+    padding: 5px 10px;
+    border-radius: 5px;
+    color: white;
+    font-weight: bold;
+    font-size: 12px;
+    text-align: center;
+    display: inline-block;
+}
+
+.active {
+    background-color: green;
+}
+
+.inactive {
+    background-color: #8B969F;
+}
+
+.pending {
+    background-color: #021247;
+}
+
+.banned {
+    background-color: red;
+}
+
+.suspended {
+    background-color: #FD7E14;
+}

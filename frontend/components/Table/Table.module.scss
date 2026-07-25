@@ -1,0 +1,240 @@
+@import "@/styles/colors.scss";
+
+/* ---------------------------------- */
+/* Layout */
+/* ---------------------------------- */
+
+.container {
+    margin: 24px;
+}
+
+/* ---------------------------------- */
+/* Header / Filters */
+/* ---------------------------------- */
+
+.header {
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    background: $white;
+    border: 1px solid $gray-200;
+    border-radius: 14px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.filterWrappers {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.filterWrapper {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+/* ---------------------------------- */
+/* Table */
+/* ---------------------------------- */
+
+.table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: $white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
+/* ---------------------------------- */
+/* Table Head */
+/* ---------------------------------- */
+
+.tableHead {
+    background: linear-gradient(180deg,
+            $orange-200 0%,
+            darken($orange-200, 6%) 100%);
+    color: $white;
+}
+
+.tableHeader {
+    padding: 14px 16px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    white-space: nowrap;
+    vertical-align: middle;
+    /* IMPORTANT for checkbox alignment */
+}
+
+.tableHeaderContent {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+/* ---------------------------------- */
+/* Header checkbox alignment */
+/* ---------------------------------- */
+
+.tableHeader input[type="checkbox"] {
+    display: block;
+    margin: 0 auto;
+    cursor: pointer;
+}
+
+/* ---------------------------------- */
+/* Sort Icon */
+/* ---------------------------------- */
+
+.sortIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    fill: white;
+
+    opacity: 0.85;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+
+    &:hover {
+        opacity: 1;
+        transform: scale(1.1);
+    }
+}
+
+.desc {
+    transform: rotate(180deg);
+}
+
+/* ---------------------------------- */
+/* Table Body */
+/* ---------------------------------- */
+
+.tableBody .tableRow {
+    background: $white;
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tableRow {
+    border-bottom: 1px solid $gray-200;
+
+    &:last-child {
+        border-bottom: none;
+    }
+
+    &:hover {
+        background: rgba($orange-200, 0.06);
+        box-shadow: inset 4px 0 0 $orange-200;
+    }
+}
+
+.tableCell {
+    padding: 14px 16px;
+    font-size: 0.875rem;
+    color: $gray-800;
+    vertical-align: middle;
+}
+
+/* ---------------------------------- */
+/* Body checkbox alignment */
+/* ---------------------------------- */
+
+.tableCell input[type="checkbox"] {
+    display: block;
+    margin: 0 auto;
+    cursor: pointer;
+}
+
+/* ---------------------------------- */
+/* Checkbox color */
+/* ---------------------------------- */
+
+.table input[type="checkbox"] {
+    accent-color: $orange-200;
+}
+
+/* ---------------------------------- */
+/* Export Button */
+/* ---------------------------------- */
+
+.exportButton {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    background: $orange-200;
+    color: $white;
+    border: none;
+    border-radius: 999px;
+
+    font-size: 0.875rem;
+    font-weight: 600;
+
+    padding: 10px 20px;
+    cursor: pointer;
+
+    transition: transform 0.15s ease, box-shadow 0.15s ease,
+        background 0.15s ease;
+
+    box-shadow: 0 6px 14px rgba($orange-200, 0.35);
+
+    &:hover {
+        background: darken($orange-200, 6%);
+        transform: translateY(-1px);
+        box-shadow: 0 10px 20px rgba($orange-200, 0.45);
+    }
+
+    &:active {
+        transform: translateY(0);
+        box-shadow: 0 4px 10px rgba($orange-200, 0.3);
+    }
+}
+
+/* ---------------------------------- */
+/* Pagination */
+/* ---------------------------------- */
+
+.paginationWrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 16px;
+    padding: 12px 4px;
+}
+
+.paginationInfo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+    color: $gray-700;
+}
+
+/* ---------------------------------- */
+/* Rows-per-page select */
+/* ---------------------------------- */
+
+.selectOption {
+    padding: 0 6px;
+
+    select {
+        padding: 6px 10px;
+        border-radius: 8px;
+        border: 1px solid $gray-300;
+        font-size: 0.875rem;
+        cursor: pointer;
+
+        &:focus {
+            outline: none;
+            border-color: $orange-200;
+            box-shadow: 0 0 0 2px rgba($orange-200, 0.25);
+        }
+    }
+}

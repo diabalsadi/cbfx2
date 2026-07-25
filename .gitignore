@@ -1,0 +1,10 @@
+# Backend
+__pycache__
+.env
+
+# Frontend
+node_modules
+
+# Docker
+postgres_data/
+.local

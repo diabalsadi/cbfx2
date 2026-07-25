@@ -1,0 +1,28 @@
+.container {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  box-shadow: var(--shadow);
+  transition: all var(--transition);
+  cursor: default;
+
+  &.isHoverable {
+    cursor: pointer;
+
+    &:hover {
+      border-color: var(--accent);
+      box-shadow: var(--shadow-orange);
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      transform: scale(0.98);
+    }
+  }
+
+  &.active {
+    border-color: var(--accent);
+    background: var(--accent-light);
+  }
+}

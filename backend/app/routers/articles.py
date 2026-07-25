@@ -1,0 +1,89 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from typing import List
+
+from app.database import get_db
+from app.models.article import Article
+from app.schemas.article import ArticleCreate, ArticleUpdate, Article as ArticleSchema
+from app.utils.auth import get_current_user
+from app.models.user import User
+
+router = APIRouter(prefix="/articles", tags=["articles"])
+
+ALLOWED_ROLES = {"super_admin", "editor"}
+
+
+def require_roles(roles: set):
+    def checker(current_user: User = Depends(get_current_user)):
+        if current_user.role not in roles:
+            raise HTTPException(status_code=403, detail="Insufficient permissions")
+        return current_user
+    return checker
+
+
+@router.get("/", response_model=List[ArticleSchema])
+def list_articles(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(ALLOWED_ROLES)),
+):
+    return db.query(Article).order_by(Article.created_at.desc()).all()
+
+
+@router.get("/{article_id}", response_model=ArticleSchema)
+def get_article(
+    article_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(ALLOWED_ROLES)),
+):
+    article = db.query(Article).filter(Article.id == article_id).first()
+    if not article:
+        raise HTTPException(status_code=404, detail="Article not found")
+    return article
+
+
+@router.post("/", response_model=ArticleSchema, status_code=status.HTTP_201_CREATED)
+def create_article(
+    payload: ArticleCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(ALLOWED_ROLES)),
+):
+    article = Article(**payload.model_dump(), author_email=current_user.email)
+    db.add(article)
+    db.commit()
+    db.refresh(article)
+    return article
+
+
+@router.put("/{article_id}", response_model=ArticleSchema)
+def update_article(
+    article_id: str,
+    payload: ArticleUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(ALLOWED_ROLES)),
+):
+    article = db.query(Article).filter(Article.id == article_id).first()
+    if not article:
+        raise HTTPException(status_code=404, detail="Article not found")
+
+    # Editors can only edit their own articles unless super_admin
+    if current_user.role == "editor" and article.author_email != current_user.email:
+        raise HTTPException(status_code=403, detail="Can only edit your own articles")
+
+    for field, value in payload.model_dump(exclude_unset=True).items():
+        setattr(article, field, value)
+    db.commit()
+    db.refresh(article)
+    return article
+
+
+@router.delete("/{article_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_article(
+    article_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles({"super_admin"})),
+):
+    article = db.query(Article).filter(Article.id == article_id).first()
+    if not article:
+        raise HTTPException(status_code=404, detail="Article not found")
+    db.delete(article)
+    db.commit()
