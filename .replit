@@ -1,7 +1,7 @@
 modules = ["nodejs-20", "python-3.12"]
 [agent]
 expertMode = true
-
+ 
 [nix]
 channel = "stable-25_05"
 
