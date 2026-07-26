@@ -9,6 +9,7 @@ class ForumThreadBase(BaseModel):
     title: str
     body: Optional[str] = None
     category: str = "General"  # "General"|"EUR"|"CRYPTO"|"USD"|"Metals"|"Strategy"
+    image_url: Optional[str] = None
 
 
 class ForumThreadCreate(ForumThreadBase):
@@ -38,6 +39,7 @@ class ForumThread(ForumThreadBase):
 
 class ForumReplyBase(BaseModel):
     body: str
+    image_url: Optional[str] = None
 
 
 class ForumReplyCreate(ForumReplyBase):

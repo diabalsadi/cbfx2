@@ -1,5 +1,6 @@
 import os
 from fastapi import FastAPI
+from sqlalchemy import text
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import engine, Base
@@ -20,6 +21,14 @@ import app.models.forum_thread
 import app.models.forum_reply
 
 Base.metadata.create_all(bind=engine)
+
+# This project currently has no migration runner. Keep existing development
+# databases compatible when new editorial metadata is introduced.
+with engine.begin() as connection:
+    connection.execute(text("ALTER TABLE articles ADD COLUMN IF NOT EXISTS market_category VARCHAR"))
+    connection.execute(text("ALTER TABLE articles ADD COLUMN IF NOT EXISTS symbol VARCHAR"))
+    connection.execute(text("ALTER TABLE forum_threads ADD COLUMN IF NOT EXISTS image_url VARCHAR"))
+    connection.execute(text("ALTER TABLE forum_replies ADD COLUMN IF NOT EXISTS image_url VARCHAR"))
 
 app = FastAPI(title="CBFX API", version="1.0.0")
 

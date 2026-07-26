@@ -168,6 +168,23 @@
   &::placeholder { color: var(--text-muted); }
 }
 
+.radioGroup {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  text-transform: capitalize;
+
+  input { accent-color: var(--accent); }
+}
+
 .coverPreview {
   width: 100%;
   border-radius: var(--radius-sm);

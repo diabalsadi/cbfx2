@@ -47,6 +47,8 @@ def create_article(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_roles(ALLOWED_ROLES)),
 ):
+    if payload.article_type == "analysis" and (not payload.market_category or not payload.symbol):
+        raise HTTPException(status_code=422, detail="Analysis articles require a market category and symbol")
     article = Article(**payload.model_dump(), author_email=current_user.email)
     db.add(article)
     db.commit()
@@ -69,7 +71,14 @@ def update_article(
     if current_user.role == "editor" and article.author_email != current_user.email:
         raise HTTPException(status_code=403, detail="Can only edit your own articles")
 
-    for field, value in payload.model_dump(exclude_unset=True).items():
+    updates = payload.model_dump(exclude_unset=True)
+    next_type = updates.get("article_type", article.article_type)
+    next_category = updates.get("market_category", article.market_category)
+    next_symbol = updates.get("symbol", article.symbol)
+    if next_type == "analysis" and (not next_category or not next_symbol):
+        raise HTTPException(status_code=422, detail="Analysis articles require a market category and symbol")
+
+    for field, value in updates.items():
         setattr(article, field, value)
     db.commit()
     db.refresh(article)

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -9,6 +9,7 @@ from app.models.market_price import MarketPrice
 from app.models.copy_trader import CopyTrader
 from app.models.play import Play
 from app.models.analysis import Analysis
+from app.models.forum_reply import ForumReply
 from app.models.forum_thread import ForumThread
 from app.schemas.article import Article as ArticleSchema
 
@@ -17,13 +18,58 @@ router = APIRouter(prefix="/public", tags=["public"])
 
 @router.get("/articles", response_model=List[ArticleSchema])
 def list_published_articles(db: Session = Depends(get_db)):
-    """Public — returns only published articles (news)."""
+    """Public — returns only published news articles."""
     return (
         db.query(Article)
-        .filter(Article.is_published == True)
+        .filter(Article.is_published == True, Article.article_type == "news")
         .order_by(Article.created_at.desc())
         .all()
     )
+
+
+@router.get("/articles/{article_id}", response_model=ArticleSchema)
+def get_published_article(article_id: str, db: Session = Depends(get_db)):
+    """Public — returns one published news article."""
+    article = (
+        db.query(Article)
+        .filter(
+            Article.id == article_id,
+            Article.is_published == True,
+            Article.article_type == "news",
+        )
+        .first()
+    )
+    if not article:
+        raise HTTPException(status_code=404, detail="Article not found")
+    return article
+
+
+@router.get("/analysis", response_model=List[ArticleSchema])
+def list_published_analysis(db: Session = Depends(get_db)):
+    """Public — returns only published articles with article_type='analysis'."""
+    return (
+        db.query(Article)
+        .filter(Article.is_published == True, Article.article_type == "analysis")
+        .order_by(Article.created_at.desc())
+        .all()
+    )
+
+
+@router.get("/analysis/{article_id}", response_model=ArticleSchema)
+def get_published_analysis(article_id: str, db: Session = Depends(get_db)):
+    """Public — returns one published analysis article."""
+    article = (
+        db.query(Article)
+        .filter(
+            Article.id == article_id,
+            Article.is_published == True,
+            Article.article_type == "analysis",
+        )
+        .first()
+    )
+    if not article:
+        raise HTTPException(status_code=404, detail="Article not found")
+    return article
 
 
 @router.get("/brokers")
@@ -65,7 +111,7 @@ def homepage_aggregate(db: Session = Depends(get_db)):
 
     latest_news = (
         db.query(Article)
-        .filter(Article.is_published == True)
+        .filter(Article.is_published == True, Article.article_type == "news")
         .order_by(Article.created_at.desc())
         .limit(3)
         .all()
@@ -92,6 +138,8 @@ def homepage_aggregate(db: Session = Depends(get_db)):
         .limit(5)
         .all()
     )
+    for thread in recent_threads:
+        thread.reply_count = db.query(ForumReply).filter(ForumReply.thread_id == thread.id).count()
 
     def mp(m):
         return {"symbol": m.symbol, "price": m.price, "change_pct": m.change_pct, "direction": m.direction}

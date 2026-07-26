@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useLoginModal } from '@/contexts/LoginModalContext';
+import { useAuth } from '@/contexts/AuthContext';
 import styles from './LoginModal.module.scss';
 
 function LogoIcon() {
@@ -18,6 +19,7 @@ function LogoIcon() {
 
 export default function LoginModal() {
   const { isOpen, closeLoginModal } = useLoginModal();
+  const { login } = useAuth();
   const router = useRouter();
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
@@ -44,14 +46,7 @@ export default function LoginModal() {
     setError('');
     setLoading(true);
     try {
-      const res  = await fetch('/api/proxy/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || 'Login failed');
-      localStorage.setItem('user_token', data.access_token);
+      await login(email, password);
       closeLoginModal();
       router.push('/');
     } catch (err: unknown) {

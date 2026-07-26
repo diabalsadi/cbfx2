@@ -11,6 +11,7 @@ interface Article {
   title: string;
   excerpt: string | null;
   is_published: boolean;
+  article_type: 'news' | 'analysis';
   author_email: string;
   created_at: string;
 }

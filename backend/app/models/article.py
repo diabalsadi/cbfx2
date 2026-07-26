@@ -13,6 +13,8 @@ class Article(Base):
     excerpt = Column(String, nullable=True)
     cover_image_url = Column(String, nullable=True)
     article_type = Column(String, nullable=False, default="news")  # "news" | "analysis"
+    market_category = Column(String, nullable=True)  # crypto | forex | metals | indices
+    symbol = Column(String, nullable=True)  # Required for analysis articles
     is_published = Column(Boolean, default=False)
     author_email = Column(String, ForeignKey("users.email"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

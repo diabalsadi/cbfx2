@@ -14,6 +14,7 @@ class ForumThread(Base):
     category = Column(String, nullable=False, default="General")
     author_email = Column(String, ForeignKey("users.email"), nullable=False)
     reply_count = Column(Integer, nullable=False, default=0)
+    image_url = Column(String, nullable=True)
     is_pinned = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(

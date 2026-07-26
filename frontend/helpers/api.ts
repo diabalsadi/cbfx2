@@ -26,6 +26,25 @@ export async function apiFetch<T>(
   return res.json();
 }
 
+export async function apiUpload<T>(path: string, formData: FormData, method: 'POST' | 'PUT' | 'PATCH' = 'POST'): Promise<T> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('cbfx_token') : null;
+  const headers: Record<string, string> = {};
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(`${BASE}${path}`, { method, headers, body: formData });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Request failed' }));
+    throw new Error(err.detail || `HTTP ${res.status}`);
+  }
+
+  if (res.status === 204) return undefined as T;
+  return res.json();
+}
+
 export const api = {
   get: <T>(path: string) => apiFetch<T>(path),
   post: <T>(path: string, body: unknown) =>
@@ -108,6 +127,12 @@ export interface NewsArticle {
   updated_at: string;
 }
 
+export interface Article extends NewsArticle {
+  article_type: 'news' | 'analysis';
+  market_category: 'crypto' | 'forex' | 'metals' | 'indices' | null;
+  symbol: string | null;
+}
+
 export interface ForumThread {
   id: string;
   title: string;
@@ -115,6 +140,7 @@ export interface ForumThread {
   category: string;
   author_email: string;
   reply_count: number;
+  image_url?: string;
   is_pinned: boolean;
   created_at: string;
   updated_at: string;
@@ -124,6 +150,7 @@ export interface ForumReply {
   id: string;
   thread_id: string;
   body: string;
+  image_url?: string;
   author_email: string;
   created_at: string;
 }
@@ -171,7 +198,13 @@ export const analysisApi = {
 };
 
 export const newsApi = {
-  list: () => api.get<NewsArticle[]>('/public/articles'),
+  list: () => api.get<Article[]>('/public/articles'),
+  get: (id: string) => api.get<Article>(`/public/articles/${id}`),
+};
+
+export const articlesApi = {
+  listAnalysis: () => api.get<Article[]>('/public/analysis'),
+  getAnalysis: (id: string) => api.get<Article>(`/public/analysis/${id}`),
 };
 
 export const forumApi = {
@@ -184,10 +217,8 @@ export const forumApi = {
     return api.get<ForumThread[]>(`/forum/threads${query}`);
   },
   getThread: (id: string) => api.get<ForumThreadDetail>(`/forum/threads/${id}`),
-  createThread: (data: { title: string; body?: string; category: string }) =>
-    api.post<ForumThread>('/forum/threads', data),
-  createReply: (threadId: string, body: string) =>
-    api.post<ForumReply>(`/forum/threads/${threadId}/replies`, { body }),
+  createThread: (data: FormData) => apiUpload<ForumThread>('/forum/threads', data),
+  createReply: (threadId: string, data: FormData) => apiUpload<ForumReply>(`/forum/threads/${threadId}/replies`, data),
   deleteThread: (id: string) => api.delete<void>(`/forum/threads/${id}`),
   deleteReply: (replyId: string) => api.delete<void>(`/forum/replies/${replyId}`),
 };

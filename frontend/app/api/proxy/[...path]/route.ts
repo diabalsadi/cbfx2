@@ -8,16 +8,18 @@ async function handler(req: NextRequest, { params }: { params: Promise<{ path: s
   const search = req.nextUrl.search;
   const url = `${BACKEND_URL}${targetPath}${search}`;
 
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
+  const headers: Record<string, string> = {};
+  const contentType = req.headers.get('content-type');
+  if (contentType) {
+    headers['Content-Type'] = contentType;
+  }
 
   const auth = req.headers.get('authorization');
   if (auth) headers['Authorization'] = auth;
 
-  let body: string | undefined;
+  let body: ArrayBuffer | undefined;
   if (req.method !== 'GET' && req.method !== 'HEAD') {
-    body = await req.text();
+    body = await req.arrayBuffer();
   }
 
   const res = await fetch(url, {
@@ -26,11 +28,18 @@ async function handler(req: NextRequest, { params }: { params: Promise<{ path: s
     body,
   });
 
-  const data = res.status === 204 ? null : await res.text();
+  if (res.status === 204) {
+    return new NextResponse(null, { status: res.status });
+  }
 
-  return new NextResponse(data, {
+  const responseHeaders = new Headers();
+  res.headers.forEach((value, key) => {
+    responseHeaders.set(key, value);
+  });
+
+  return new NextResponse(res.body, {
     status: res.status,
-    headers: { 'Content-Type': 'application/json' },
+    headers: responseHeaders,
   });
 }
 

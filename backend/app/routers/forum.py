@@ -1,4 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from pathlib import Path
+import uuid
+
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from fastapi.responses import FileResponse
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
@@ -17,6 +22,41 @@ from app.utils.auth import get_current_user
 from app.models.user import User
 
 router = APIRouter(prefix="/forum", tags=["forum"])
+UPLOAD_ROOT = Path(__file__).resolve().parent.parent / "uploads" / "forum"
+UPLOAD_ROOT.mkdir(parents=True, exist_ok=True)
+
+
+def _get_reply_count_lookup(db: Session, thread_ids: List[str]) -> dict[str, int]:
+    if not thread_ids:
+        return {}
+    counts = (
+        db.query(ForumReplyModel.thread_id, func.count(ForumReplyModel.id).label("reply_count"))
+        .filter(ForumReplyModel.thread_id.in_(thread_ids))
+        .group_by(ForumReplyModel.thread_id)
+        .all()
+    )
+    return {thread_id: count for thread_id, count in counts}
+
+
+def _save_uploaded_image(upload: Optional[UploadFile]) -> Optional[str]:
+    if upload is None or upload.filename is None:
+        return None
+
+    suffix = Path(upload.filename).suffix.lower() or ".bin"
+    filename = f"{uuid.uuid4().hex}{suffix}"
+    destination = UPLOAD_ROOT / filename
+    contents = upload.file.read()
+    destination.write_bytes(contents)
+    return f"/api/proxy/forum/uploads/{filename}"
+
+
+@router.get("/uploads/{filename}")
+def get_uploaded_image(filename: str):
+    safe_name = Path(filename).name
+    path = UPLOAD_ROOT / safe_name
+    if not path.exists() or not path.is_file():
+        raise HTTPException(status_code=404, detail="Image not found")
+    return FileResponse(path)
 
 
 # ── Threads ────────────────────────────────────────────────────────────────────
@@ -41,6 +81,9 @@ def list_threads(
         .limit(limit)
         .all()
     )
+    counts = _get_reply_count_lookup(db, [thread.id for thread in threads])
+    for thread in threads:
+        thread.reply_count = counts.get(thread.id, 0)
     return threads
 
 
@@ -56,6 +99,7 @@ def get_thread(thread_id: str, db: Session = Depends(get_db)):
         .order_by(ForumReplyModel.created_at.asc())
         .all()
     )
+    thread.reply_count = len(replies)
     result = ForumThreadDetail.model_validate(thread)
     result.replies = [ForumReply.model_validate(r) for r in replies]
     return result
@@ -63,13 +107,19 @@ def get_thread(thread_id: str, db: Session = Depends(get_db)):
 
 @router.post("/threads", response_model=ForumThread, status_code=status.HTTP_201_CREATED)
 def create_thread(
-    data: ForumThreadCreate,
+    title: str = Form(...),
+    body: Optional[str] = Form(None),
+    category: str = Form("General"),
+    image: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Authenticated — any logged-in user can create a thread."""
+    """Authenticated — any logged-in user can create a thread with an optional image."""
     thread = ForumThreadModel(
-        **data.model_dump(),
+        title=title,
+        body=body,
+        category=category,
+        image_url=_save_uploaded_image(image),
         author_email=current_user.email,
     )
     db.add(thread)
@@ -120,24 +170,30 @@ def delete_thread(
 @router.post("/threads/{thread_id}/replies", response_model=ForumReply, status_code=status.HTTP_201_CREATED)
 def create_reply(
     thread_id: str,
-    data: ForumReplyCreate,
+    body: Optional[str] = Form(None),
+    image: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Authenticated — post a reply to a thread."""
+    """Authenticated — post a reply to a thread with an optional image."""
     thread = db.query(ForumThreadModel).filter(ForumThreadModel.id == thread_id).first()
     if not thread:
         raise HTTPException(status_code=404, detail="Thread not found")
+    body_text = (body or "").strip()
+    if not body_text and image is None:
+        raise HTTPException(status_code=400, detail="Reply body or image is required")
     reply = ForumReplyModel(
         thread_id=thread_id,
-        body=data.body,
+        body=body_text,
+        image_url=_save_uploaded_image(image),
         author_email=current_user.email,
     )
     db.add(reply)
-    # Increment cached reply count
-    thread.reply_count = ForumThreadModel.reply_count + 1
     db.commit()
     db.refresh(reply)
+    thread.reply_count = db.query(ForumReplyModel).filter(ForumReplyModel.thread_id == thread_id).count()
+    db.commit()
+    db.refresh(thread)
     return reply
 
 
@@ -153,9 +209,10 @@ def delete_reply(
         raise HTTPException(status_code=404, detail="Reply not found")
     if reply.author_email != current_user.email and current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Not authorised")
-    # Decrement cached reply count
     thread = db.query(ForumThreadModel).filter(ForumThreadModel.id == reply.thread_id).first()
-    if thread and thread.reply_count > 0:
-        thread.reply_count = ForumThreadModel.reply_count - 1
     db.delete(reply)
     db.commit()
+    if thread:
+        thread.reply_count = db.query(ForumReplyModel).filter(ForumReplyModel.thread_id == thread.id).count()
+        db.commit()
+        db.refresh(thread)

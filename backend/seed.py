@@ -12,6 +12,7 @@ from app.models.copy_trader import CopyTrader
 from app.models.play import Play
 from app.models.analysis import Analysis
 from app.models.forum_thread import ForumThread
+from app.models.forum_reply import ForumReply
 import bcrypt
 
 
@@ -62,6 +63,7 @@ def seed_news(db):
             "content": "The ECB governing council voted unanimously to hold the deposit facility rate at 4.0% today...",
             "is_published": True,
             "author_email": ADMIN,
+            "article_type": "news",
         },
         {
             "title": "BTC reclaims $68k as ETFs see record inflows",
@@ -69,6 +71,7 @@ def seed_news(db):
             "content": "Bitcoin surged past $68,000 on Thursday after US spot ETF products reported their biggest single-day inflow...",
             "is_published": True,
             "author_email": ADMIN,
+            "article_type": "news",
         },
         {
             "title": "NFP beats forecast — USD pops across the board",
@@ -76,6 +79,7 @@ def seed_news(db):
             "content": "Friday's US jobs report crushed expectations with 303k payrolls added in March...",
             "is_published": True,
             "author_email": ADMIN,
+            "article_type": "news",
         },
         {
             "title": "Gold retreats from all-time highs on profit-taking",
@@ -83,6 +87,61 @@ def seed_news(db):
             "content": "Gold edged lower on Friday as investors took profits following the metal's record-breaking rally...",
             "is_published": True,
             "author_email": ADMIN,
+            "article_type": "news",
+        },
+        {
+            "title": "GBP/USD Technical Analysis: Bullish breakout above 1.2650",
+            "excerpt": "Price reclaimed the 1.2650 structure. Expecting continuation to 1.2800 if London opens above 1.2660.",
+            "content": "GBP/USD broke above the key 1.2650 resistance level on the 4H timeframe, signaling a potential trend reversal...",
+            "is_published": True,
+            "author_email": ADMIN,
+            "article_type": "analysis",
+        },
+        {
+            "title": "USD/JPY Daily Outlook: Bearish bias below 157.50",
+            "excerpt": "Daily shooting star at 157.50. BOJ intervention risk rising. Watch for break of 156.00.",
+            "content": "USD/JPY formed a daily shooting star candle at the 157.50 resistance level, suggesting potential exhaustion...",
+            "is_published": True,
+            "author_email": ADMIN,
+            "article_type": "analysis",
+        },
+        {
+            "title": "Gold Weekly Analysis: Bullish trend intact, buy dips to $2,300",
+            "excerpt": "Weekly bullish trend intact. Any pullback to 2,300 is a buy opportunity with SL at 2,270.",
+            "content": "XAU/USD continues to show strong weekly momentum. The precious metal has established a clear uptrend...",
+            "is_published": True,
+            "author_email": ADMIN,
+            "article_type": "analysis",
+        },
+        {
+            "title": "EUR/USD Range Play: Consolidation ahead of CPI",
+            "excerpt": "Consolidating in 1.0780–1.0900 range ahead of CPI. Breakout direction determines bias.",
+            "content": "EUR/USD has been trapped in a tight 120-pip range for the past two weeks as markets await key inflation data...",
+            "is_published": True,
+            "author_email": ADMIN,
+            "article_type": "analysis",
+        },
+        {
+            "title": "BTC/USD Analysis: ETF demand keeps the bullish structure intact",
+            "excerpt": "Bitcoin is holding above its key support zone while institutional demand continues to support the broader trend.",
+            "cover_image_url": "https://images.unsplash.com/photo-1518546305927-5a555bb7020d?auto=format&fit=crop&w=1600&q=80",
+            "content": '''<p>BTC/USD remains constructive above the daily support zone. The next major decision area is the previous range high, where momentum needs to confirm a continuation.</p><img src="https://images.unsplash.com/photo-1518546305927-5a555bb7020d?auto=format&fit=crop&w=1400&q=80" alt="Bitcoin market analysis" /><h2>What to watch</h2><p>Keep an eye on the reaction around support and whether volume expands on a break above resistance.</p><div data-youtube-video><iframe src="https://www.youtube.com/embed/6fQEA5vZPSY" width="640" height="360" frameborder="0" allowfullscreen="true"></iframe></div><p>This video is included as an example of the YouTube embed available in the article editor.</p>''',
+            "is_published": True,
+            "author_email": ADMIN,
+            "article_type": "analysis",
+            "market_category": "crypto",
+            "symbol": "BTC/USD",
+        },
+        {
+            "title": "XAU/USD Analysis: Gold buyers defend the weekly demand zone",
+            "excerpt": "Gold is consolidating near a key demand area; a reclaim of the recent high would put the bullish continuation back in play.",
+            "cover_image_url": "https://images.unsplash.com/photo-1610375461246-83df859d849d?auto=format&fit=crop&w=1600&q=80",
+            "content": '''<p>XAU/USD is respecting the weekly demand zone after a measured pullback. A higher low on the four-hour chart would strengthen the bullish case.</p><img src="https://images.unsplash.com/photo-1610375461246-83df859d849d?auto=format&fit=crop&w=1400&q=80" alt="Gold market analysis" /><h2>Trade idea</h2><p>Wait for confirmation before entering, with invalidation below the demand zone and the recent high as the first upside objective.</p>''',
+            "is_published": True,
+            "author_email": ADMIN,
+            "article_type": "analysis",
+            "market_category": "metals",
+            "symbol": "XAU/USD",
         },
     ]
     for a in articles:
@@ -246,6 +305,7 @@ def seed_forum(db):
             "category": "EUR",
             "author_email": ADMIN,
             "reply_count": 42,
+            "image_url": "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1200&q=80",
             "is_pinned": False,
         },
         {
@@ -289,6 +349,27 @@ def seed_forum(db):
             print(f"  . Thread exists: {th['title'][:55]}")
 
 
+def seed_forum_replies(db):
+    replies = [
+        ("EUR/USD: weekly bias for next week?", "editor@cbfx.com", "I am watching the 1.0780 support closely. A daily close above 1.0850 would strengthen the long idea."),
+        ("EUR/USD: weekly bias for next week?", "user@cbfx.com", "Same view here. I will wait for London to confirm the direction before entering."),
+        ("EUR/USD: weekly bias for next week?", "editor@cbfx.com", "The chart below shows how the 1.0800 zone held during the last session."),
+        ("Best SMC setups on gold right now", "editor@cbfx.com", "The 2350 area is important, but I would rather see a clear liquidity sweep before looking for a short."),
+        ("BTC halving aftermath — your predictions?", "user@cbfx.com", "The higher-timeframe trend is still bullish for me. Risk management matters more than predicting the exact top."),
+    ]
+    for title, author_email, body in replies:
+        thread = db.query(ForumThread).filter(ForumThread.title == title).first()
+        if not thread:
+            continue
+        exists = db.query(ForumReply).filter(ForumReply.thread_id == thread.id, ForumReply.body == body).first()
+        if not exists:
+            image_url = None
+            if body.startswith("The chart below"):
+                image_url = "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1200&q=80"
+            db.add(ForumReply(thread_id=thread.id, author_email=author_email, body=body, image_url=image_url))
+            print(f"  + Reply: {title[:45]}")
+
+
 # -- Main ---------------------------------------------------------------------
 
 if __name__ == "__main__":
@@ -318,6 +399,8 @@ if __name__ == "__main__":
         seed_analysis(db)
         print("\n-- Forum Threads ---------------------")
         seed_forum(db)
+        print("\n-- Forum Replies ---------------------")
+        seed_forum_replies(db)
 
         db.commit()
         print("\n[OK] Seed complete.\n")
