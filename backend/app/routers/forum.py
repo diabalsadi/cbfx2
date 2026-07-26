@@ -1,7 +1,16 @@
 from pathlib import Path
 import uuid
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Query,
+    UploadFile,
+    status,
+)
 from fastapi.responses import FileResponse
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -30,7 +39,10 @@ def _get_reply_count_lookup(db: Session, thread_ids: List[str]) -> dict[str, int
     if not thread_ids:
         return {}
     counts = (
-        db.query(ForumReplyModel.thread_id, func.count(ForumReplyModel.id).label("reply_count"))
+        db.query(
+            ForumReplyModel.thread_id,
+            func.count(ForumReplyModel.id).label("reply_count"),
+        )
         .filter(ForumReplyModel.thread_id.in_(thread_ids))
         .group_by(ForumReplyModel.thread_id)
         .all()
@@ -60,6 +72,7 @@ def get_uploaded_image(filename: str):
 
 
 # ── Threads ────────────────────────────────────────────────────────────────────
+
 
 @router.get("/threads", response_model=List[ForumThread])
 def list_threads(
@@ -105,7 +118,9 @@ def get_thread(thread_id: str, db: Session = Depends(get_db)):
     return result
 
 
-@router.post("/threads", response_model=ForumThread, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/threads", response_model=ForumThread, status_code=status.HTTP_201_CREATED
+)
 def create_thread(
     title: str = Form(...),
     body: Optional[str] = Form(None),
@@ -115,10 +130,11 @@ def create_thread(
     current_user: User = Depends(get_current_user),
 ):
     """Authenticated — any logged-in user can create a thread with an optional image."""
+    data = ForumThreadCreate(title=title, body=body, category=category)
     thread = ForumThreadModel(
-        title=title,
-        body=body,
-        category=category,
+        title=data.title,
+        body=data.body,
+        category=data.category,
         image_url=_save_uploaded_image(image),
         author_email=current_user.email,
     )
@@ -167,7 +183,12 @@ def delete_thread(
 
 # ── Replies ────────────────────────────────────────────────────────────────────
 
-@router.post("/threads/{thread_id}/replies", response_model=ForumReply, status_code=status.HTTP_201_CREATED)
+
+@router.post(
+    "/threads/{thread_id}/replies",
+    response_model=ForumReply,
+    status_code=status.HTTP_201_CREATED,
+)
 def create_reply(
     thread_id: str,
     body: Optional[str] = Form(None),
@@ -179,19 +200,21 @@ def create_reply(
     thread = db.query(ForumThreadModel).filter(ForumThreadModel.id == thread_id).first()
     if not thread:
         raise HTTPException(status_code=404, detail="Thread not found")
-    body_text = (body or "").strip()
-    if not body_text and image is None:
+    data = ForumReplyCreate(body=(body or "").strip())
+    if not data.body and image is None:
         raise HTTPException(status_code=400, detail="Reply body or image is required")
     reply = ForumReplyModel(
         thread_id=thread_id,
-        body=body_text,
+        body=data.body,
         image_url=_save_uploaded_image(image),
         author_email=current_user.email,
     )
     db.add(reply)
     db.commit()
     db.refresh(reply)
-    thread.reply_count = db.query(ForumReplyModel).filter(ForumReplyModel.thread_id == thread_id).count()
+    thread.reply_count = (
+        db.query(ForumReplyModel).filter(ForumReplyModel.thread_id == thread_id).count()
+    )
     db.commit()
     db.refresh(thread)
     return reply
@@ -209,10 +232,18 @@ def delete_reply(
         raise HTTPException(status_code=404, detail="Reply not found")
     if reply.author_email != current_user.email and current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Not authorised")
-    thread = db.query(ForumThreadModel).filter(ForumThreadModel.id == reply.thread_id).first()
+    thread = (
+        db.query(ForumThreadModel)
+        .filter(ForumThreadModel.id == reply.thread_id)
+        .first()
+    )
     db.delete(reply)
     db.commit()
     if thread:
-        thread.reply_count = db.query(ForumReplyModel).filter(ForumReplyModel.thread_id == thread.id).count()
+        thread.reply_count = (
+            db.query(ForumReplyModel)
+            .filter(ForumReplyModel.thread_id == thread.id)
+            .count()
+        )
         db.commit()
         db.refresh(thread)

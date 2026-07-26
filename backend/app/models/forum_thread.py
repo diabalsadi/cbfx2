@@ -10,7 +10,7 @@ class ForumThread(Base):
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     title = Column(String, nullable=False)
     body = Column(Text, nullable=True)
-    # "General" | "EUR" | "CRYPTO" | "USD" | "Metals" | "Strategy"
+    # "General" | "Forex" | "Crypto" | "Metals" | "Indices" | "Strategy"
     category = Column(String, nullable=False, default="General")
     author_email = Column(String, ForeignKey("users.email"), nullable=False)
     reply_count = Column(Integer, nullable=False, default=0)

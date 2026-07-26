@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ChangeEvent, FormEvent, use, useEffect, useState } from 'react';
+import { ChangeEvent, FormEvent, use, useEffect, useRef, useState } from 'react';
 import { forumApi, type ForumThreadDetail } from '@/helpers/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLoginModal } from '@/contexts/LoginModalContext';
@@ -17,6 +17,7 @@ export default function ThreadPage({ params }: { params: Promise<{ id: string }>
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     forumApi.getThread(id).then(setThread).catch(err => setError(err.message));
@@ -26,6 +27,12 @@ export default function ThreadPage({ params }: { params: Promise<{ id: string }>
     const file = event.target.files?.[0] ?? null;
     setImageFile(file);
     setImagePreview(file ? URL.createObjectURL(file) : null);
+  }
+
+  function clearImage() {
+    setImageFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
   async function submitReply(event: FormEvent) {
@@ -43,6 +50,7 @@ export default function ThreadPage({ params }: { params: Promise<{ id: string }>
       setReply('');
       setImageFile(null);
       setImagePreview(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Unable to post reply.');
     } finally { setSaving(false); }
@@ -71,7 +79,37 @@ export default function ThreadPage({ params }: { params: Promise<{ id: string }>
       <form className={styles.replyForm} onSubmit={submitReply}>
         <label>Join the discussion</label>
         <textarea value={reply} onChange={e => setReply(e.target.value)} placeholder={user ? 'Write a reply…' : 'Sign in to reply…'} disabled={!user} rows={4} />
-        <input type="file" accept="image/*" onChange={handleImageSelection} disabled={!user} />
+        <div className={styles.fileUpload}>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageSelection}
+            disabled={!user}
+            className={styles.hiddenFileInput}
+          />
+          <button
+            type="button"
+            className={styles.attachButton}
+            onClick={() => fileInputRef.current?.click()}
+            disabled={!user}
+          >
+            <svg className={styles.attachIcon} width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M14 9.5V13.5C14 14.0523 13.5523 14.5 13 14.5H3C2.44772 14.5 2 14.0523 2 13.5V9.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M11.5 5.5L8 2L4.5 5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M8 2V10.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Attach image
+          </button>
+          {imageFile && (
+            <div className={styles.fileChip}>
+              <span className={styles.fileName}>{imageFile.name}</span>
+              <button type="button" className={styles.removeFile} onClick={clearImage} aria-label="Remove image">
+                ×
+              </button>
+            </div>
+          )}
+        </div>
         {imagePreview && <img src={imagePreview} alt="Preview" className={styles.previewImage} />}
         {user ? <button className={styles.postButton} disabled={saving}>{saving ? 'Posting…' : 'Post reply'}</button> : <button type="button" className={styles.postButton} onClick={openLoginModal}>Sign in to reply</button>}
       </form>

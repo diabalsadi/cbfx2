@@ -8,8 +8,7 @@ from datetime import datetime
 class ForumThreadBase(BaseModel):
     title: str
     body: Optional[str] = None
-    category: str = "General"  # "General"|"EUR"|"CRYPTO"|"USD"|"Metals"|"Strategy"
-    image_url: Optional[str] = None
+    category: str = "General"  # "General"|"Forex"|"Crypto"|"Metals"|"Indices"|"Strategy"
 
 
 class ForumThreadCreate(ForumThreadBase):
@@ -27,6 +26,7 @@ class ForumThread(ForumThreadBase):
     id: str
     author_email: str
     reply_count: int
+    image_url: Optional[str] = None
     is_pinned: bool
     created_at: datetime
     updated_at: datetime
@@ -38,8 +38,7 @@ class ForumThread(ForumThreadBase):
 # ── Reply schemas ──────────────────────────────────────────────────────────────
 
 class ForumReplyBase(BaseModel):
-    body: str
-    image_url: Optional[str] = None
+    body: Optional[str] = ""
 
 
 class ForumReplyCreate(ForumReplyBase):
@@ -50,6 +49,7 @@ class ForumReply(ForumReplyBase):
     id: str
     thread_id: str
     author_email: str
+    image_url: Optional[str] = None
     created_at: datetime
 
     class Config:

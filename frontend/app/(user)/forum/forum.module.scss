@@ -24,4 +24,14 @@
 .detail h1 { color: var(--text-primary); font-size: 28px; letter-spacing: -.6px; margin: 10px 0; }.detail p, .reply p { color: var(--text-secondary); line-height: 1.65; white-space: pre-wrap; }
 .replies h2 { margin: 0 0 10px; color: var(--text-primary); font-size: 17px; }.reply { padding: 16px 0; border-bottom: 1px solid var(--border-subtle); }.reply:last-child { border: 0; }.replyAuthor { color: var(--accent); font-size: 13px; font-weight: 700; }.reply p { margin: 6px 0 0; font-size: 14px; }
 .replyForm { display: grid; gap: 10px; }.replyForm label { color: var(--text-primary); font-weight: 700; font-size: 14px; }.replyForm textarea { background: var(--bg-input); color: var(--text-primary); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; resize: vertical; }.replyForm .postButton { justify-self: end; }
+.hiddenFileInput { display: none; }
+.fileUpload { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.attachButton { display: inline-flex; align-items: center; gap: 8px; border: 1px dashed var(--border); border-radius: 8px; padding: 8px 14px; background: var(--bg-input); color: var(--text-secondary); font-size: 13px; font-weight: 600; cursor: pointer; transition: border-color 0.15s, color 0.15s, background 0.15s; }
+.attachButton:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+.attachButton:disabled { opacity: 0.5; cursor: not-allowed; }
+.attachIcon { flex-shrink: 0; color: currentColor; }
+.fileChip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); border-radius: 999px; padding: 4px 6px 4px 12px; background: var(--bg-secondary); font-size: 12px; color: var(--text-primary); max-width: min(100%, 280px); }
+.fileName { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.removeFile { border: 0; border-radius: 999px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; background: transparent; color: var(--text-muted); font-size: 16px; line-height: 1; cursor: pointer; flex-shrink: 0; }
+.removeFile:hover { background: var(--border); color: var(--text-primary); }
 @media (max-width: 640px) { .page { padding: 28px 0 48px; }.header { flex-direction: column; }.createButton { width: 100%; }.composerActions button { flex: 1; } }

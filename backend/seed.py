@@ -23,6 +23,7 @@ def seed_users(db):
         {"email": "admin@cbfx.com",  "name": "Super Admin",  "role": "admin",  "password": "password123"},
         {"email": "editor@cbfx.com", "name": "Main Editor",  "role": "editor", "password": "password123"},
         {"email": "user@cbfx.com",   "name": "Demo User",    "role": "user",   "password": "password123"},
+        {"email": "diab.alsadi@cbfx.com", "name": "Diab Al Sadi", "role": "user", "password": "password123"},
     ]
     for tu in test_users:
         if not db.query(User).filter(User.email == tu["email"]).first():
@@ -302,7 +303,7 @@ def seed_forum(db):
         {
             "title": "EUR/USD: weekly bias for next week?",
             "body": "Looking at the daily chart, price is sitting right at a key support. What's your bias heading into next week? I'm leaning long with a tight stop.",
-            "category": "EUR",
+            "category": "Forex",
             "author_email": ADMIN,
             "reply_count": 42,
             "image_url": "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1200&q=80",
@@ -335,7 +336,7 @@ def seed_forum(db):
         {
             "title": "NFP this Friday — how are you positioning?",
             "body": "Big data week. NFP consensus is 214k. A beat will likely pump USD across the board. How are you trading it?",
-            "category": "USD",
+            "category": "Forex",
             "author_email": ADMIN,
             "reply_count": 19,
             "is_pinned": False,
@@ -349,25 +350,99 @@ def seed_forum(db):
             print(f"  . Thread exists: {th['title'][:55]}")
 
 
+def migrate_forum_categories(db):
+    updated = (
+        db.query(ForumThread)
+        .filter(ForumThread.category.in_(["EUR", "USD"]))
+        .update({ForumThread.category: "Forex"}, synchronize_session=False)
+    )
+    if updated:
+        print(f"  ~ Migrated {updated} thread(s) from EUR/USD to Forex")
+    else:
+        print("  . No EUR/USD forum categories to migrate")
+
+
 def seed_forum_replies(db):
+    CHART_IMAGE = "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1200&q=80"
+    GOLD_IMAGE = "https://images.unsplash.com/photo-1610375461246-83df859d849d?auto=format&fit=crop&w=1200&q=80"
+    BTC_IMAGE = "https://images.unsplash.com/photo-1518546305927-5a555bb7020d?auto=format&fit=crop&w=1200&q=80"
+
     replies = [
-        ("EUR/USD: weekly bias for next week?", "editor@cbfx.com", "I am watching the 1.0780 support closely. A daily close above 1.0850 would strengthen the long idea."),
-        ("EUR/USD: weekly bias for next week?", "user@cbfx.com", "Same view here. I will wait for London to confirm the direction before entering."),
-        ("EUR/USD: weekly bias for next week?", "editor@cbfx.com", "The chart below shows how the 1.0800 zone held during the last session."),
-        ("Best SMC setups on gold right now", "editor@cbfx.com", "The 2350 area is important, but I would rather see a clear liquidity sweep before looking for a short."),
-        ("BTC halving aftermath — your predictions?", "user@cbfx.com", "The higher-timeframe trend is still bullish for me. Risk management matters more than predicting the exact top."),
+        {
+            "thread_title": "EUR/USD: weekly bias for next week?",
+            "author_email": "editor@cbfx.com",
+            "body": "I am watching the 1.0780 support closely. A daily close above 1.0850 would strengthen the long idea.",
+        },
+        {
+            "thread_title": "EUR/USD: weekly bias for next week?",
+            "author_email": "user@cbfx.com",
+            "body": "Same view here. I will wait for London to confirm the direction before entering.",
+        },
+        {
+            "thread_title": "EUR/USD: weekly bias for next week?",
+            "author_email": "editor@cbfx.com",
+            "body": "The chart below shows how the 1.0800 zone held during the last session.",
+            "image_url": CHART_IMAGE,
+        },
+        {
+            "thread_title": "EUR/USD: weekly bias for next week?",
+            "author_email": "user@cbfx.com",
+            "body": "",
+            "image_url": CHART_IMAGE,
+        },
+        {
+            "thread_title": "Best SMC setups on gold right now",
+            "author_email": "editor@cbfx.com",
+            "body": "The 2350 area is important, but I would rather see a clear liquidity sweep before looking for a short.",
+        },
+        {
+            "thread_title": "Best SMC setups on gold right now",
+            "author_email": "admin@cbfx.com",
+            "body": "Daily structure from my session — watching for a sweep into the order block.",
+            "image_url": GOLD_IMAGE,
+        },
+        {
+            "thread_title": "BTC halving aftermath — your predictions?",
+            "author_email": "user@cbfx.com",
+            "body": "The higher-timeframe trend is still bullish for me. Risk management matters more than predicting the exact top.",
+        },
+        {
+            "thread_title": "BTC halving aftermath — your predictions?",
+            "author_email": "editor@cbfx.com",
+            "body": "",
+            "image_url": BTC_IMAGE,
+        },
     ]
-    for title, author_email, body in replies:
-        thread = db.query(ForumThread).filter(ForumThread.title == title).first()
+
+    for reply in replies:
+        thread = db.query(ForumThread).filter(ForumThread.title == reply["thread_title"]).first()
         if not thread:
             continue
-        exists = db.query(ForumReply).filter(ForumReply.thread_id == thread.id, ForumReply.body == body).first()
-        if not exists:
-            image_url = None
-            if body.startswith("The chart below"):
-                image_url = "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1200&q=80"
-            db.add(ForumReply(thread_id=thread.id, author_email=author_email, body=body, image_url=image_url))
-            print(f"  + Reply: {title[:45]}")
+
+        image_url = reply.get("image_url")
+        exists = (
+            db.query(ForumReply)
+            .filter(
+                ForumReply.thread_id == thread.id,
+                ForumReply.author_email == reply["author_email"],
+                ForumReply.body == reply["body"],
+                ForumReply.image_url == image_url,
+            )
+            .first()
+        )
+        if exists:
+            print(f"  . Reply exists: {reply['thread_title'][:45]}")
+            continue
+
+        db.add(
+            ForumReply(
+                thread_id=thread.id,
+                author_email=reply["author_email"],
+                body=reply["body"],
+                image_url=image_url,
+            )
+        )
+        print(f"  + Reply: {reply['thread_title'][:45]}")
 
 
 # -- Main ---------------------------------------------------------------------
@@ -398,6 +473,7 @@ if __name__ == "__main__":
         print("\n-- Analysis --------------------------")
         seed_analysis(db)
         print("\n-- Forum Threads ---------------------")
+        migrate_forum_categories(db)
         seed_forum(db)
         print("\n-- Forum Replies ---------------------")
         seed_forum_replies(db)
