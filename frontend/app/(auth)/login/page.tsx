@@ -1,8 +1,8 @@
-'use client';
-import { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import styles from './login.module.scss';
+"use client";
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import styles from "./login.module.scss";
 
 function LogoIcon() {
   return (
@@ -23,8 +23,12 @@ function LogoIcon() {
 function ShieldIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-      <path d="M10 2L3 5v5c0 4.5 3 8.5 7 9.5 4-1 7-5 7-9.5V5L10 2z"
-        stroke="#f97316" strokeWidth="1.5" strokeLinejoin="round"/>
+      <path
+        d="M10 2L3 5v5c0 4.5 3 8.5 7 9.5 4-1 7-5 7-9.5V5L10 2z"
+        stroke="#f97316"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
@@ -32,36 +36,40 @@ function ShieldIcon() {
 function StarIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-      <path d="M10 2l2.4 5.2 5.6.8-4 3.9.9 5.6L10 15l-4.9 2.5.9-5.6-4-3.9 5.6-.8L10 2z"
-        stroke="#f97316" strokeWidth="1.5" strokeLinejoin="round"/>
+      <path
+        d="M10 2l2.4 5.2 5.6.8-4 3.9.9 5.6L10 15l-4.9 2.5.9-5.6-4-3.9 5.6-.8L10 2z"
+        stroke="#f97316"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
 
 export default function UserLoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError('');
+    setError("");
     setLoading(true);
     try {
-      const res = await fetch('/api/proxy/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/proxy/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || 'Login failed');
+      if (!res.ok) throw new Error(data.detail || "Login failed");
       // Store token and redirect to home
-      localStorage.setItem('user_token', data.access_token);
-      router.push('/');
+      localStorage.setItem("user_token", data.access_token);
+      router.push("/");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      setError(err instanceof Error ? err.message : "Login failed");
     } finally {
       setLoading(false);
     }
@@ -79,28 +87,32 @@ export default function UserLoginPage() {
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.field}>
-            <label className={styles.label} htmlFor="email">Email</label>
+            <label className={styles.label} htmlFor="email">
+              Email
+            </label>
             <input
               id="email"
               type="email"
               className={styles.input}
               placeholder="you@email.com"
               value={email}
-              onChange={e => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
             />
           </div>
 
           <div className={styles.field}>
-            <label className={styles.label} htmlFor="password">Password</label>
+            <label className={styles.label} htmlFor="password">
+              Password
+            </label>
             <input
               id="password"
               type="password"
               className={styles.input}
               placeholder="••••••••"
               value={password}
-              onChange={e => setPassword(e.target.value)}
+              onChange={(e) => setPassword(e.target.value)}
               required
               autoComplete="current-password"
             />
@@ -109,13 +121,15 @@ export default function UserLoginPage() {
           {error && <p className={styles.errorMsg}>{error}</p>}
 
           <button type="submit" className={styles.signInBtn} disabled={loading}>
-            {loading ? 'Signing in…' : 'Sign In'}
+            {loading ? "Signing in…" : "Sign In"}
           </button>
         </form>
 
         <p className={styles.footer}>
-          Don&apos;t have an account?{' '}
-          <Link href="/register" className={styles.link}>Sign up</Link>
+          Don&apos;t have an account?{" "}
+          <Link href="/register" className={styles.link}>
+            Sign up
+          </Link>
         </p>
       </div>
 
@@ -129,12 +143,20 @@ export default function UserLoginPage() {
         <div className={styles.brokerHeader}>
           <div className={styles.brokerLogo}>
             <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
-              <polyline points="4,22 10,14 16,18 24,8" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <polyline
+                points="4,22 10,14 16,18 24,8"
+                stroke="white"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </div>
           <div>
             <div className={styles.brokerName}>Apex Markets</div>
-            <div className={styles.brokerTagline}>Pro-grade execution. Up to 85% rebates.</div>
+            <div className={styles.brokerTagline}>
+              Pro-grade execution. Up to 85% rebates.
+            </div>
           </div>
         </div>
 
@@ -157,7 +179,9 @@ export default function UserLoginPage() {
           <a href="#" className={styles.openAccountBtn}>
             Open account ↗
           </a>
-          <p className={styles.disclaimer}>Promoted placement. Trading involves risk.</p>
+          <p className={styles.disclaimer}>
+            Promoted placement. Trading involves risk.
+          </p>
         </div>
       </div>
     </div>

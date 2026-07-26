@@ -40,7 +40,9 @@
   transition: background var(--transition);
   white-space: nowrap;
 
-  &:hover { background: var(--accent-hover); }
+  &:hover {
+    background: var(--accent-hover);
+  }
 }
 
 .loadingText {
@@ -51,8 +53,8 @@
 .error {
   color: #ef4444;
   font-size: 13px;
-  background: rgba(239,68,68,0.08);
-  border: 1px solid rgba(239,68,68,0.2);
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
   border-radius: var(--radius-sm);
   padding: 10px 14px;
   margin: 0;
@@ -67,8 +69,14 @@
   text-align: center;
 }
 
-.emptyIcon { font-size: 40px; }
-.emptyText { color: var(--text-secondary); font-size: 15px; margin: 0; }
+.emptyIcon {
+  font-size: 40px;
+}
+.emptyText {
+  color: var(--text-secondary);
+  font-size: 15px;
+  margin: 0;
+}
 
 .articleList {
   display: flex;
@@ -145,7 +153,7 @@
 .editBtn {
   background: var(--accent-light);
   color: var(--accent);
-  border: 1px solid rgba(255,107,0,0.2);
+  border: 1px solid rgba(255, 107, 0, 0.2);
   border-radius: 6px;
   padding: 6px 14px;
   font-size: 13px;
@@ -161,7 +169,7 @@
 
 .deleteBtn {
   background: none;
-  border: 1px solid rgba(239,68,68,0.3);
+  border: 1px solid rgba(239, 68, 68, 0.3);
   border-radius: 6px;
   color: #ef4444;
   font-size: 13px;
@@ -171,7 +179,7 @@
   transition: all var(--transition);
 
   &:hover {
-    background: rgba(239,68,68,0.1);
+    background: rgba(239, 68, 68, 0.1);
     border-color: #ef4444;
   }
 }

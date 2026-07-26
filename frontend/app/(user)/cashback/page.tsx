@@ -1,18 +1,48 @@
-'use client';
-import { useState } from 'react';
-import Link from 'next/link';
-import styles from './cashback.module.scss';
+"use client";
+import { useState } from "react";
+import Link from "next/link";
+import styles from "./cashback.module.scss";
 
 const PAYOUTS = [
-  { broker: 'IC Markets', date: 'Today · 09:21', amount: '$128.40', status: 'Paid', statusKey: 'paid' },
-  { broker: 'XM Global', date: 'Yesterday', amount: '$54.10', status: 'Paid', statusKey: 'paid' },
-  { broker: 'Exness', date: 'May 14', amount: '$76.90', status: 'Pending', statusKey: 'pending' },
-  { broker: 'FBS', date: 'May 10', amount: '$42.00', status: 'Paid', statusKey: 'paid' },
-  { broker: 'Pepperstone', date: 'May 3', amount: '$91.20', status: 'Paid', statusKey: 'paid' },
+  {
+    broker: "IC Markets",
+    date: "Today · 09:21",
+    amount: "$128.40",
+    status: "Paid",
+    statusKey: "paid",
+  },
+  {
+    broker: "XM Global",
+    date: "Yesterday",
+    amount: "$54.10",
+    status: "Paid",
+    statusKey: "paid",
+  },
+  {
+    broker: "Exness",
+    date: "May 14",
+    amount: "$76.90",
+    status: "Pending",
+    statusKey: "pending",
+  },
+  {
+    broker: "FBS",
+    date: "May 10",
+    amount: "$42.00",
+    status: "Paid",
+    statusKey: "paid",
+  },
+  {
+    broker: "Pepperstone",
+    date: "May 3",
+    amount: "$91.20",
+    status: "Paid",
+    statusKey: "paid",
+  },
 ];
 
-const AVAILABLE = 301.40;
-const LIFETIME = 1204.60;
+const AVAILABLE = 301.4;
+const LIFETIME = 1204.6;
 
 export default function CashbackPage() {
   const [showWithdraw, setShowWithdraw] = useState(false);
@@ -35,7 +65,10 @@ export default function CashbackPage() {
         </div>
 
         <div className={styles.balanceActions}>
-          <button className={styles.withdrawBtn} onClick={() => setShowWithdraw(true)}>
+          <button
+            className={styles.withdrawBtn}
+            onClick={() => setShowWithdraw(true)}
+          >
             ↓ Withdraw
           </button>
           <Link href="/login" className={styles.historyBtn}>
@@ -46,14 +79,23 @@ export default function CashbackPage() {
 
       {/* Withdraw modal */}
       {showWithdraw && (
-        <div className={styles.modalOverlay} onClick={() => setShowWithdraw(false)}>
-          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+        <div
+          className={styles.modalOverlay}
+          onClick={() => setShowWithdraw(false)}
+        >
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <h3>Withdraw Cashback</h3>
-              <button onClick={() => setShowWithdraw(false)} className={styles.modalClose}>✕</button>
+              <button
+                onClick={() => setShowWithdraw(false)}
+                className={styles.modalClose}
+              >
+                ✕
+              </button>
             </div>
             <p className={styles.modalText}>
-              Sign in to withdraw your <strong>${AVAILABLE.toFixed(2)}</strong> balance to your broker account or wallet.
+              Sign in to withdraw your <strong>${AVAILABLE.toFixed(2)}</strong>{" "}
+              balance to your broker account or wallet.
             </p>
             <Link href="/login" className={styles.modalCta}>
               Sign in to withdraw →
@@ -97,7 +139,9 @@ export default function CashbackPage() {
               </div>
               <div className={styles.rowRight}>
                 <div className={styles.amount}>{p.amount}</div>
-                <div className={`${styles.status} ${styles[p.statusKey]}`}>{p.status}</div>
+                <div className={`${styles.status} ${styles[p.statusKey]}`}>
+                  {p.status}
+                </div>
               </div>
             </div>
           ))}

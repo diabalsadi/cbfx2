@@ -1,2 +1,4 @@
-'use client';
-export default function Header() { return null; }
+"use client";
+export default function Header() {
+  return null;
+}

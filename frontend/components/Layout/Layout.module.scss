@@ -17,7 +17,7 @@
   width: 0;
   overflow: hidden;
   background-color: var(--bg-sidebar);
-  border-right: 1px solid rgba(255,255,255,0.04);
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   height: 100vh;
   position: sticky;
@@ -80,15 +80,17 @@
 .closeTrigger {
   background: none;
   border: none;
-  color: rgba(255,255,255,0.4);
+  color: rgba(255, 255, 255, 0.4);
   cursor: pointer;
   font-size: 14px;
   padding: 4px 8px;
   border-radius: 6px;
-  transition: background var(--transition), color var(--transition);
+  transition:
+    background var(--transition),
+    color var(--transition);
 
   &:hover {
-    background: rgba(255,255,255,0.08);
+    background: rgba(255, 255, 255, 0.08);
     color: #fff;
   }
 }
@@ -129,16 +131,18 @@
   gap: 10px;
   padding: 10px 12px;
   border-radius: 9px;
-  color: rgba(255,255,255,0.55);
+  color: rgba(255, 255, 255, 0.55);
   font-size: 14px;
   font-weight: 500;
-  transition: background var(--transition), color var(--transition);
+  transition:
+    background var(--transition),
+    color var(--transition);
   cursor: pointer;
   text-decoration: none;
 
   &:hover {
     background: var(--sidebar-hover);
-    color: rgba(255,255,255,0.85);
+    color: rgba(255, 255, 255, 0.85);
   }
 
   &.active {
@@ -170,9 +174,9 @@
   align-items: center;
   gap: 10px;
   padding: 12px;
-  background: rgba(255,255,255,0.04);
+  background: rgba(255, 255, 255, 0.04);
   border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.06);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .avatar {
@@ -198,7 +202,7 @@
   display: block;
   font-size: 13px;
   font-weight: 600;
-  color: rgba(255,255,255,0.9);
+  color: rgba(255, 255, 255, 0.9);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -207,13 +211,13 @@
 .userRole {
   display: block;
   font-size: 11px;
-  color: rgba(255,255,255,0.4);
+  color: rgba(255, 255, 255, 0.4);
 }
 
 .logoutBtn {
   background: none;
   border: none;
-  color: rgba(255,255,255,0.35);
+  color: rgba(255, 255, 255, 0.35);
   cursor: pointer;
   font-size: 18px;
   padding: 4px;

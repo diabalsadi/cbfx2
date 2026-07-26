@@ -43,7 +43,9 @@
   outline: none;
   transition: border-color 0.15s;
 
-  &::placeholder { color: var(--text-muted); }
+  &::placeholder {
+    color: var(--text-muted);
+  }
 
   &:focus {
     border-color: var(--accent);
@@ -95,12 +97,18 @@
   justify-content: space-between;
   padding: 18px 20px;
   border-bottom: 1px solid var(--border-subtle);
-  transition: background 0.12s, border-color 0.12s;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
   cursor: pointer;
 
-  &:last-child { border-bottom: none; }
+  &:last-child {
+    border-bottom: none;
+  }
 
-  &:hover { background: var(--bg-secondary); }
+  &:hover {
+    background: var(--bg-secondary);
+  }
 }
 
 .rowLeft {
@@ -151,8 +159,12 @@
   font-size: 13px;
   font-weight: 600;
 
-  &.up { color: #16a34a; }
-  &.down { color: #dc2626; }
+  &.up {
+    color: #16a34a;
+  }
+  &.down {
+    color: #dc2626;
+  }
 }
 
 .empty {

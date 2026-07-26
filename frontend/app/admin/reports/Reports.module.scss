@@ -86,7 +86,9 @@
   max-width: 420px;
 }
 
-.fileIcon { font-size: 16px; }
+.fileIcon {
+  font-size: 16px;
+}
 
 .fileName {
   flex: 1;
@@ -122,7 +124,9 @@
   cursor: pointer;
   transition: background var(--transition);
 
-  &:hover { background: var(--accent-hover); }
+  &:hover {
+    background: var(--accent-hover);
+  }
 }
 
 .sectionTitle {
@@ -132,8 +136,13 @@
   margin: 0 0 12px;
 }
 
-.tableCard { padding: 0 !important; overflow: hidden; }
-.tableWrapper { overflow-x: auto; }
+.tableCard {
+  padding: 0 !important;
+  overflow: hidden;
+}
+.tableWrapper {
+  overflow-x: auto;
+}
 
 .table {
   width: 100%;
@@ -159,8 +168,12 @@
     vertical-align: middle;
   }
 
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: var(--bg-secondary); }
+  tr:last-child td {
+    border-bottom: none;
+  }
+  tr:hover td {
+    background: var(--bg-secondary);
+  }
 }
 
 .fileName2 {
@@ -170,12 +183,17 @@
   font-weight: 500;
 }
 
-.fileSize2 { color: var(--text-secondary); }
-.fileDate { color: var(--text-muted); font-size: 13px; }
+.fileSize2 {
+  color: var(--text-secondary);
+}
+.fileDate {
+  color: var(--text-muted);
+  font-size: 13px;
+}
 
 .downloadBtn {
   background: var(--accent-light);
-  border: 1px solid rgba(255,107,0,0.2);
+  border: 1px solid rgba(255, 107, 0, 0.2);
   border-radius: 6px;
   color: var(--accent);
   font-size: 12px;

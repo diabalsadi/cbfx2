@@ -58,7 +58,9 @@
   color: var(--accent);
   text-decoration: none;
 
-  &:hover { text-decoration: underline; }
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 .grid2 {
@@ -82,7 +84,9 @@
   padding: 12px 0;
   border-bottom: 1px solid var(--border-subtle);
 
-  &:last-child { border-bottom: none; }
+  &:last-child {
+    border-bottom: none;
+  }
 }
 
 .campaignName {

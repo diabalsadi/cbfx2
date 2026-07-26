@@ -43,8 +43,13 @@
   outline: none;
   transition: border-color 0.15s;
 
-  &::placeholder { color: var(--text-muted); }
-  &:focus { border-color: var(--accent); background: var(--bg-card); }
+  &::placeholder {
+    color: var(--text-muted);
+  }
+  &:focus {
+    border-color: var(--accent);
+    background: var(--bg-card);
+  }
 }
 
 .grid {
@@ -53,8 +58,12 @@
   gap: 14px;
   margin-bottom: 48px;
 
-  @media (max-width: 900px) { grid-template-columns: repeat(2, 1fr); }
-  @media (max-width: 560px) { grid-template-columns: 1fr; }
+  @media (max-width: 900px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  @media (max-width: 560px) {
+    grid-template-columns: 1fr;
+  }
 }
 
 .card {
@@ -66,11 +75,13 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 
   &:hover {
     border-color: var(--accent);
-    box-shadow: 0 4px 20px rgba(255,107,0,0.12);
+    box-shadow: 0 4px 20px rgba(255, 107, 0, 0.12);
   }
 }
 
@@ -93,7 +104,9 @@
   flex-shrink: 0;
 }
 
-.brokerInfo { flex: 1; }
+.brokerInfo {
+  flex: 1;
+}
 
 .brokerName {
   font-size: 15px;
@@ -147,7 +160,9 @@
   font-weight: 700;
   color: var(--text-primary);
 
-  &.active { color: #16a34a; }
+  &.active {
+    color: #16a34a;
+  }
 }
 
 .metricLabel {
@@ -175,7 +190,9 @@
   transition: background 0.15s;
   margin-top: auto;
 
-  &:hover { background: var(--accent-hover); }
+  &:hover {
+    background: var(--accent-hover);
+  }
 }
 
 .empty {

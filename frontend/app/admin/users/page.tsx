@@ -1,8 +1,8 @@
-'use client';
-import { useState, useEffect } from 'react';
-import { api } from '@/helpers/api';
-import Card from '@/components/Card';
-import styles from './Users.module.scss';
+"use client";
+import { useState, useEffect } from "react";
+import { api } from "@/helpers/api";
+import Card from "@/components/Card";
+import styles from "./Users.module.scss";
 
 interface User {
   email: string;
@@ -11,36 +11,51 @@ interface User {
   created_at: string;
 }
 
-const ROLES = ['super_admin', 'editor', 'broker'];
-const ROLE_LABELS: Record<string, string> = { super_admin: 'Super Admin', editor: 'Editor', broker: 'Broker' };
+const ROLES = ["super_admin", "editor", "broker"];
+const ROLE_LABELS: Record<string, string> = {
+  super_admin: "Super Admin",
+  editor: "Editor",
+  broker: "Broker",
+};
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [updating, setUpdating] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'broker' });
-  const [createError, setCreateError] = useState('');
+  const [newUser, setNewUser] = useState({
+    name: "",
+    email: "",
+    password: "",
+    role: "broker",
+  });
+  const [createError, setCreateError] = useState("");
   const [creating, setCreating] = useState(false);
 
   const fetchUsers = () => {
     setLoading(true);
-    api.get<User[]>('/users/')
+    api
+      .get<User[]>("/users/")
       .then(setUsers)
-      .catch(e => setError(e.message))
+      .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { fetchUsers(); }, []);
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   const handleRoleChange = async (email: string, role: string) => {
     setUpdating(email);
     try {
-      const updated = await api.patch<User>(`/users/${encodeURIComponent(email)}/role`, { role });
-      setUsers(prev => prev.map(u => u.email === email ? updated : u));
+      const updated = await api.patch<User>(
+        `/users/${encodeURIComponent(email)}/role`,
+        { role },
+      );
+      setUsers((prev) => prev.map((u) => (u.email === email ? updated : u)));
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : 'Failed to update role');
+      alert(e instanceof Error ? e.message : "Failed to update role");
     } finally {
       setUpdating(null);
     }
@@ -50,23 +65,25 @@ export default function UsersPage() {
     if (!confirm(`Delete user ${email}? This cannot be undone.`)) return;
     try {
       await api.delete(`/users/${encodeURIComponent(email)}`);
-      setUsers(prev => prev.filter(u => u.email !== email));
+      setUsers((prev) => prev.filter((u) => u.email !== email));
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : 'Failed to delete user');
+      alert(e instanceof Error ? e.message : "Failed to delete user");
     }
   };
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    setCreateError('');
+    setCreateError("");
     setCreating(true);
     try {
-      await api.post('/auth/register', newUser);
+      await api.post("/auth/register", newUser);
       setShowForm(false);
-      setNewUser({ name: '', email: '', password: '', role: 'broker' });
+      setNewUser({ name: "", email: "", password: "", role: "broker" });
       fetchUsers();
     } catch (ex: unknown) {
-      setCreateError(ex instanceof Error ? ex.message : 'Failed to create user');
+      setCreateError(
+        ex instanceof Error ? ex.message : "Failed to create user",
+      );
     } finally {
       setCreating(false);
     }
@@ -77,10 +94,15 @@ export default function UsersPage() {
       <div className={styles.headerRow}>
         <div>
           <h2 className={styles.title}>User Management</h2>
-          <p className={styles.subtitle}>Manage admin panel users and their roles.</p>
+          <p className={styles.subtitle}>
+            Manage admin panel users and their roles.
+          </p>
         </div>
-        <button className={styles.addBtn} onClick={() => setShowForm(v => !v)}>
-          {showForm ? 'Cancel' : '+ Add User'}
+        <button
+          className={styles.addBtn}
+          onClick={() => setShowForm((v) => !v)}
+        >
+          {showForm ? "Cancel" : "+ Add User"}
         </button>
       </div>
 
@@ -91,32 +113,68 @@ export default function UsersPage() {
             <div className={styles.formRow}>
               <div className={styles.field}>
                 <label className={styles.label}>Full Name</label>
-                <input className={styles.input} placeholder="Jane Doe" value={newUser.name}
-                  onChange={e => setNewUser(v => ({ ...v, name: e.target.value }))} required />
+                <input
+                  className={styles.input}
+                  placeholder="Jane Doe"
+                  value={newUser.name}
+                  onChange={(e) =>
+                    setNewUser((v) => ({ ...v, name: e.target.value }))
+                  }
+                  required
+                />
               </div>
               <div className={styles.field}>
                 <label className={styles.label}>Email</label>
-                <input className={styles.input} type="email" placeholder="jane@cbfx.com" value={newUser.email}
-                  onChange={e => setNewUser(v => ({ ...v, email: e.target.value }))} required />
+                <input
+                  className={styles.input}
+                  type="email"
+                  placeholder="jane@cbfx.com"
+                  value={newUser.email}
+                  onChange={(e) =>
+                    setNewUser((v) => ({ ...v, email: e.target.value }))
+                  }
+                  required
+                />
               </div>
             </div>
             <div className={styles.formRow}>
               <div className={styles.field}>
                 <label className={styles.label}>Password</label>
-                <input className={styles.input} type="password" placeholder="Min 8 characters" value={newUser.password}
-                  onChange={e => setNewUser(v => ({ ...v, password: e.target.value }))} required />
+                <input
+                  className={styles.input}
+                  type="password"
+                  placeholder="Min 8 characters"
+                  value={newUser.password}
+                  onChange={(e) =>
+                    setNewUser((v) => ({ ...v, password: e.target.value }))
+                  }
+                  required
+                />
               </div>
               <div className={styles.field}>
                 <label className={styles.label}>Role</label>
-                <select className={styles.input} value={newUser.role}
-                  onChange={e => setNewUser(v => ({ ...v, role: e.target.value }))}>
-                  {ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+                <select
+                  className={styles.input}
+                  value={newUser.role}
+                  onChange={(e) =>
+                    setNewUser((v) => ({ ...v, role: e.target.value }))
+                  }
+                >
+                  {ROLES.map((r) => (
+                    <option key={r} value={r}>
+                      {ROLE_LABELS[r]}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
             {createError && <p className={styles.error}>{createError}</p>}
-            <button className={styles.submitBtn} type="submit" disabled={creating}>
-              {creating ? 'Creating…' : 'Create User'}
+            <button
+              className={styles.submitBtn}
+              type="submit"
+              disabled={creating}
+            >
+              {creating ? "Creating…" : "Create User"}
             </button>
           </form>
         </Card>
@@ -138,31 +196,56 @@ export default function UsersPage() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={5} className={styles.empty}>Loading…</td></tr>
-              ) : users.length === 0 ? (
-                <tr><td colSpan={5} className={styles.empty}>No users found.</td></tr>
-              ) : users.map(u => (
-                <tr key={u.email}>
-                  <td>{u.name || '—'}</td>
-                  <td className={styles.email}>{u.email}</td>
-                  <td>
-                    <select
-                      className={styles.roleSelect}
-                      value={u.role}
-                      onChange={e => handleRoleChange(u.email, e.target.value)}
-                      disabled={updating === u.email}
-                    >
-                      {ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
-                    </select>
-                  </td>
-                  <td className={styles.date}>
-                    {new Date(u.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </td>
-                  <td>
-                    <button className={styles.deleteBtn} onClick={() => handleDelete(u.email)}>Delete</button>
+                <tr>
+                  <td colSpan={5} className={styles.empty}>
+                    Loading…
                   </td>
                 </tr>
-              ))}
+              ) : users.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className={styles.empty}>
+                    No users found.
+                  </td>
+                </tr>
+              ) : (
+                users.map((u) => (
+                  <tr key={u.email}>
+                    <td>{u.name || "—"}</td>
+                    <td className={styles.email}>{u.email}</td>
+                    <td>
+                      <select
+                        className={styles.roleSelect}
+                        value={u.role}
+                        onChange={(e) =>
+                          handleRoleChange(u.email, e.target.value)
+                        }
+                        disabled={updating === u.email}
+                      >
+                        {ROLES.map((r) => (
+                          <option key={r} value={r}>
+                            {ROLE_LABELS[r]}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className={styles.date}>
+                      {new Date(u.created_at).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </td>
+                    <td>
+                      <button
+                        className={styles.deleteBtn}
+                        onClick={() => handleDelete(u.email)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

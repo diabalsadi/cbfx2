@@ -12,8 +12,12 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .modal {
@@ -28,8 +32,14 @@
 }
 
 @keyframes slideUp {
-  from { transform: translateY(12px); opacity: 0; }
-  to   { transform: translateY(0);    opacity: 1; }
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 /* Header */
@@ -41,7 +51,9 @@
   position: relative;
 }
 
-.headerLeft { flex: 1; }
+.headerLeft {
+  flex: 1;
+}
 
 .symbolName {
   font-size: 22px;
@@ -76,8 +88,12 @@
   font-size: 13px;
   font-weight: 600;
 
-  &.up   { color: #4ade80; }
-  &.down { color: #f87171; }
+  &.up {
+    color: #4ade80;
+  }
+  &.down {
+    color: #f87171;
+  }
 }
 
 .closeBtn {
@@ -95,7 +111,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 
   &:hover {
     background: #2a2a2a;
@@ -138,7 +156,9 @@
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 
   &:hover {
     background: #252525;
@@ -147,7 +167,7 @@
 }
 
 .tfActive {
-  background: #FF6B00 !important;
+  background: #ff6b00 !important;
   color: #fff !important;
 }
 
@@ -169,7 +189,9 @@
   transition: filter 0.15s;
   letter-spacing: 0.2px;
 
-  &:hover { filter: brightness(1.12); }
+  &:hover {
+    filter: brightness(1.12);
+  }
 }
 
 .sellBtn {
@@ -184,10 +206,25 @@
 }
 
 @media (max-width: 600px) {
-  .modal { border-radius: 14px; }
-  .chartWrap { height: 160px; }
-  .symbolName { font-size: 18px; }
-  .currentPrice { font-size: 18px; }
-  .tfBtn { padding: 7px 14px; font-size: 12px; }
-  .sellBtn, .buyBtn { padding: 15px; font-size: 14px; }
+  .modal {
+    border-radius: 14px;
+  }
+  .chartWrap {
+    height: 160px;
+  }
+  .symbolName {
+    font-size: 18px;
+  }
+  .currentPrice {
+    font-size: 18px;
+  }
+  .tfBtn {
+    padding: 7px 14px;
+    font-size: 12px;
+  }
+  .sellBtn,
+  .buyBtn {
+    padding: 15px;
+    font-size: 14px;
+  }
 }

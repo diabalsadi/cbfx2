@@ -1,7 +1,13 @@
-'use client';
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+"use client";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 
-type Theme = 'dark' | 'light';
+type Theme = "dark" | "light";
 
 interface ThemeContextType {
   theme: Theme;
@@ -11,20 +17,20 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | null>(null);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>('dark');
+  const [theme, setTheme] = useState<Theme>("dark");
 
   useEffect(() => {
-    const stored = localStorage.getItem('cbfx_theme') as Theme | null;
-    const preferred = stored || 'dark';
+    const stored = localStorage.getItem("cbfx_theme") as Theme | null;
+    const preferred = stored || "dark";
     setTheme(preferred);
-    document.documentElement.setAttribute('data-theme', preferred);
+    document.documentElement.setAttribute("data-theme", preferred);
   }, []);
 
   const toggleTheme = () => {
-    setTheme(prev => {
-      const next = prev === 'dark' ? 'light' : 'dark';
-      localStorage.setItem('cbfx_theme', next);
-      document.documentElement.setAttribute('data-theme', next);
+    setTheme((prev) => {
+      const next = prev === "dark" ? "light" : "dark";
+      localStorage.setItem("cbfx_theme", next);
+      document.documentElement.setAttribute("data-theme", next);
       return next;
     });
   };
@@ -38,6 +44,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
 export function useTheme() {
   const ctx = useContext(ThemeContext);
-  if (!ctx) throw new Error('useTheme must be used within ThemeProvider');
+  if (!ctx) throw new Error("useTheme must be used within ThemeProvider");
   return ctx;
 }

@@ -1,190 +1,190 @@
 @use "@/styles/colors.scss" as color;
 
 .cardWrapper {
-    margin-bottom: 1.5rem;
-    padding: 0;
+  margin-bottom: 1.5rem;
+  padding: 0;
 
-    :global(.Card_container__Pia_w) {
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-        padding: 1.5rem 2.5rem;
-        gap: 2rem;
-    }
+  :global(.Card_container__Pia_w) {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2.5rem;
+    gap: 2rem;
+  }
 }
 
 .mainInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1;
+
+  .tag {
+    background-color: color.$orange-100;
+    color: color.$orange-200;
+    padding: 0.25rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    width: fit-content;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .name {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: color.$gray-800;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  .publishDate {
     display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    flex: 1;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: color.$gray-300;
+    font-weight: 500;
 
-    .tag {
-        background-color: color.$orange-100;
-        color: color.$orange-200;
-        padding: 0.25rem 0.75rem;
-        border-radius: 8px;
-        font-size: 0.7rem;
-        font-weight: 800;
-        width: fit-content;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
+    svg {
+      width: 14px;
+      height: 14px;
+      stroke: color.$gray-300;
     }
-
-    .name {
-        font-size: 1.25rem;
-        font-weight: 800;
-        color: color.$gray-800;
-        margin: 0;
-        letter-spacing: -0.01em;
-    }
-
-    .publishDate {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 0.85rem;
-        color: color.$gray-300;
-        font-weight: 500;
-
-        svg {
-            width: 14px;
-            height: 14px;
-            stroke: color.$gray-300;
-        }
-    }
+  }
 }
 
 .metricsContainer {
-    display: flex;
-    gap: 4rem;
-    flex: 2;
-    align-items: center;
-    justify-content: center;
+  display: flex;
+  gap: 4rem;
+  flex: 2;
+  align-items: center;
+  justify-content: center;
 }
 
 .metricItem {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+
+  .chartBox {
     display: flex;
-    align-items: center;
-    gap: 1.25rem;
+    align-items: flex-end;
+  }
 
-    .chartBox {
-        display: flex;
-        align-items: flex-end;
+  .details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+
+    .value {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: color.$gray-800;
     }
 
-    .details {
-        display: flex;
-        flex-direction: column;
-        gap: 0.2rem;
-
-        .value {
-            font-size: 1.2rem;
-            font-weight: 800;
-            color: color.$gray-800;
-        }
-
-        .label {
-            font-size: 0.7rem;
-            color: color.$gray-300;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-        }
+    .label {
+      font-size: 0.7rem;
+      color: color.$gray-300;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
     }
+  }
 }
 
 .metaSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  align-items: flex-end;
+  flex: 1;
+
+  .statusGrid {
     display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-    align-items: flex-end;
-    flex: 1;
+    gap: 0.75rem;
+  }
 
-    .statusGrid {
-        display: flex;
-        gap: 0.75rem;
+  .badge {
+    padding: 0.5rem 1.25rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    min-width: 100px;
+    text-align: center;
+
+    &.onGoing {
+      background-color: #ecfdf5;
+      color: #059669;
     }
 
-    .badge {
-        padding: 0.5rem 1.25rem;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        font-weight: 800;
-        min-width: 100px;
-        text-align: center;
-
-        &.onGoing {
-            background-color: #ECFDF5;
-            color: #059669;
-        }
-
-        &.expired {
-            background-color: #FEF2F2;
-            color: #DC2626;
-        }
-
-        &.endDate {
-            border: 1px solid color.$gray-100;
-            background-color: #F9FAFB;
-            color: color.$gray-700;
-        }
+    &.expired {
+      background-color: #fef2f2;
+      color: #dc2626;
     }
+
+    &.endDate {
+      border: 1px solid color.$gray-100;
+      background-color: #f9fafb;
+      color: color.$gray-700;
+    }
+  }
 }
 
 .copyArea {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background-color: color.$white-200;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  border: 1px solid color.$gray-100;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  max-width: 220px;
+
+  &:hover {
+    border-color: color.$orange-200;
+    background-color: color.$white;
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  .iconWrapper {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
-    background-color: color.$white-200;
-    padding: 0.5rem 1rem;
-    border-radius: 10px;
-    border: 1px solid color.$gray-100;
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    max-width: 220px;
+    justify-content: center;
+    color: color.$orange-200;
 
-    &:hover {
-        border-color: color.$orange-200;
-        background-color: color.$white;
+    svg {
+      width: 16px;
+      height: 16px;
     }
+  }
 
-    &:active {
-        transform: scale(0.97);
-    }
+  .urlText {
+    font-size: 0.75rem;
+    color: color.$gray-700;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &.copied {
+    background-color: #ecfdf5;
+    border-color: #10b981;
 
     .iconWrapper {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: color.$orange-200;
-
-        svg {
-            width: 16px;
-            height: 16px;
-        }
+      color: #10b981;
     }
 
     .urlText {
-        font-size: 0.75rem;
-        color: color.$gray-700;
-        font-weight: 600;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+      color: #059669;
     }
-
-    &.copied {
-        background-color: #ECFDF5;
-        border-color: #10B981;
-
-        .iconWrapper {
-            color: #10B981;
-        }
-
-        .urlText {
-            color: #059669;
-        }
-    }
+  }
 }

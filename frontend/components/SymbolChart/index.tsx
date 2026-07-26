@@ -1,8 +1,8 @@
-'use client';
-import { useEffect, useRef, useState, useCallback } from 'react';
-import styles from './SymbolChart.module.scss';
+"use client";
+import { useEffect, useRef, useState, useCallback } from "react";
+import styles from "./SymbolChart.module.scss";
 
-type Timeframe = '1m' | '5m' | '15m' | '1h' | '4h' | '1D';
+type Timeframe = "1m" | "5m" | "15m" | "1h" | "4h" | "1D";
 
 interface SymbolChartProps {
   symbol: string;
@@ -13,7 +13,7 @@ interface SymbolChartProps {
   onClose: () => void;
 }
 
-const TIMEFRAMES: Timeframe[] = ['1m', '5m', '15m', '1h', '4h', '1D'];
+const TIMEFRAMES: Timeframe[] = ["1m", "5m", "15m", "1h", "4h", "1D"];
 
 /** Seeded pseudo-random so each symbol always gets the same curve shape */
 function seededRand(seed: number) {
@@ -24,7 +24,12 @@ function seededRand(seed: number) {
   };
 }
 
-function generatePrices(basePrice: number, points: number, volatility: number, seed: number) {
+function generatePrices(
+  basePrice: number,
+  points: number,
+  volatility: number,
+  seed: number,
+) {
   const rand = seededRand(seed);
   const prices: number[] = [basePrice];
   for (let i = 1; i < points; i++) {
@@ -34,7 +39,12 @@ function generatePrices(basePrice: number, points: number, volatility: number, s
   return prices;
 }
 
-function buildSvgPath(prices: number[], w: number, h: number, pad = 16): string {
+function buildSvgPath(
+  prices: number[],
+  w: number,
+  h: number,
+  pad = 16,
+): string {
   const min = Math.min(...prices);
   const max = Math.max(...prices);
   const range = max - min || 1;
@@ -60,7 +70,12 @@ function buildSvgPath(prices: number[], w: number, h: number, pad = 16): string 
   return d;
 }
 
-function buildAreaPath(prices: number[], w: number, h: number, pad = 16): string {
+function buildAreaPath(
+  prices: number[],
+  w: number,
+  h: number,
+  pad = 16,
+): string {
   const line = buildSvgPath(prices, w, h, pad);
   const lastX = pad + (w - pad * 2);
   const firstX = pad;
@@ -68,11 +83,23 @@ function buildAreaPath(prices: number[], w: number, h: number, pad = 16): string
 }
 
 const POINTS: Record<Timeframe, number> = {
-  '1m': 60, '5m': 72, '15m': 64, '1h': 48, '4h': 42, '1D': 30,
+  "1m": 60,
+  "5m": 72,
+  "15m": 64,
+  "1h": 48,
+  "4h": 42,
+  "1D": 30,
 };
 
-export default function SymbolChart({ symbol, name, price, change, up, onClose }: SymbolChartProps) {
-  const [tf, setTf] = useState<Timeframe>('1h');
+export default function SymbolChart({
+  symbol,
+  name,
+  price,
+  change,
+  up,
+  onClose,
+}: SymbolChartProps) {
+  const [tf, setTf] = useState<Timeframe>("1h");
   const svgRef = useRef<SVGSVGElement>(null);
   const [dims, setDims] = useState({ w: 800, h: 240 });
 
@@ -80,7 +107,7 @@ export default function SymbolChart({ symbol, name, price, change, up, onClose }
   useEffect(() => {
     const el = svgRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(entries => {
+    const ro = new ResizeObserver((entries) => {
       for (const e of entries) {
         setDims({ w: e.contentRect.width, h: e.contentRect.height });
       }
@@ -91,40 +118,45 @@ export default function SymbolChart({ symbol, name, price, change, up, onClose }
 
   // Lock scroll on mount
   useEffect(() => {
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = ''; };
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, []);
 
-  const handleKey = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'Escape') onClose();
-  }, [onClose]);
+  const handleKey = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    },
+    [onClose],
+  );
 
   useEffect(() => {
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
   }, [handleKey]);
 
-  const basePriceNum = parseFloat(price.replace(/,/g, ''));
+  const basePriceNum = parseFloat(price.replace(/,/g, ""));
   const volatility = basePriceNum * 0.0012;
-  const seed = symbol.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+  const seed = symbol.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
   const tfSeed = seed + TIMEFRAMES.indexOf(tf) * 100;
   const prices = generatePrices(basePriceNum, POINTS[tf], volatility, tfSeed);
 
   const { w, h } = dims;
   const linePath = buildSvgPath(prices, w, h);
   const areaPath = buildAreaPath(prices, w, h);
-  const gradId = `grad-${symbol.replace(/\//g, '')}`;
+  const gradId = `grad-${symbol.replace(/\//g, "")}`;
 
   const sellPrice = (basePriceNum - basePriceNum * 0.00005).toFixed(
-    basePriceNum > 100 ? 2 : 4
+    basePriceNum > 100 ? 2 : 4,
   );
   const buyPrice = (basePriceNum + basePriceNum * 0.00005).toFixed(
-    basePriceNum > 100 ? 2 : 4
+    basePriceNum > 100 ? 2 : 4,
   );
 
   return (
     <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={e => e.stopPropagation()}>
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className={styles.header}>
           <div className={styles.headerLeft}>
@@ -133,11 +165,20 @@ export default function SymbolChart({ symbol, name, price, change, up, onClose }
           </div>
           <div className={styles.headerRight}>
             <span className={styles.currentPrice}>{price}</span>
-            <span className={`${styles.priceChange} ${up ? styles.up : styles.down}`}>
-              {up ? '+' : ''}{change}
+            <span
+              className={`${styles.priceChange} ${up ? styles.up : styles.down}`}
+            >
+              {up ? "+" : ""}
+              {change}
             </span>
           </div>
-          <button className={styles.closeBtn} onClick={onClose} aria-label="Close">✕</button>
+          <button
+            className={styles.closeBtn}
+            onClick={onClose}
+            aria-label="Close"
+          >
+            ✕
+          </button>
         </div>
 
         {/* Chart */}
@@ -155,16 +196,23 @@ export default function SymbolChart({ symbol, name, price, change, up, onClose }
               </linearGradient>
             </defs>
             <path d={areaPath} fill={`url(#${gradId})`} />
-            <path d={linePath} fill="none" stroke="#FF6B00" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            <path
+              d={linePath}
+              fill="none"
+              stroke="#FF6B00"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         </div>
 
         {/* Timeframe selector */}
         <div className={styles.tfRow}>
-          {TIMEFRAMES.map(t => (
+          {TIMEFRAMES.map((t) => (
             <button
               key={t}
-              className={`${styles.tfBtn} ${tf === t ? styles.tfActive : ''}`}
+              className={`${styles.tfBtn} ${tf === t ? styles.tfActive : ""}`}
               onClick={() => setTf(t)}
             >
               {t}
@@ -174,12 +222,8 @@ export default function SymbolChart({ symbol, name, price, change, up, onClose }
 
         {/* Sell / Buy */}
         <div className={styles.tradeRow}>
-          <button className={styles.sellBtn}>
-            Sell · {sellPrice}
-          </button>
-          <button className={styles.buyBtn}>
-            Buy · {buyPrice}
-          </button>
+          <button className={styles.sellBtn}>Sell · {sellPrice}</button>
+          <button className={styles.buyBtn}>Buy · {buyPrice}</button>
         </div>
       </div>
     </div>

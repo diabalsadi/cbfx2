@@ -1,27 +1,27 @@
 @import "@/styles/colors.scss";
 
 .container {
-    display: flex;
-    gap: 8px;
+  display: flex;
+  gap: 8px;
 }
 
 .pageButton {
-    padding: 8px 12px;
-    border-radius: 20px;
-    border: 1px solid $white;
-    cursor: pointer;
-    color: $orange-200;
-    background-color: $white;
-    box-shadow:
-        0 4px 6px rgba(0, 0, 0, 0.12),
-        0 1px 3px rgba(0, 0, 0, 0.08);
+  padding: 8px 12px;
+  border-radius: 20px;
+  border: 1px solid $white;
+  cursor: pointer;
+  color: $orange-200;
+  background-color: $white;
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.12),
+    0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .active {
-    background-color: $orange-200;
-    color: $white;
+  background-color: $orange-200;
+  color: $white;
 }
 
 .arrowRight {
-    transform: rotate(180deg);
+  transform: rotate(180deg);
 }

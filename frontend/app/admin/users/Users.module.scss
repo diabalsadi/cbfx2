@@ -37,7 +37,9 @@
   transition: background var(--transition);
   white-space: nowrap;
 
-  &:hover { background: var(--accent-hover); }
+  &:hover {
+    background: var(--accent-hover);
+  }
 }
 
 .formCard {
@@ -62,7 +64,9 @@
   grid-template-columns: 1fr 1fr;
   gap: 14px;
 
-  @media (max-width: 640px) { grid-template-columns: 1fr; }
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
 }
 
 .field {
@@ -89,16 +93,20 @@
   outline: none;
   transition: border-color var(--transition);
 
-  &:focus { border-color: var(--accent); }
+  &:focus {
+    border-color: var(--accent);
+  }
 
-  option { background: var(--bg-card); }
+  option {
+    background: var(--bg-card);
+  }
 }
 
 .error {
   color: #ef4444;
   font-size: 13px;
-  background: rgba(239,68,68,0.08);
-  border: 1px solid rgba(239,68,68,0.2);
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
   border-radius: var(--radius-sm);
   padding: 8px 12px;
   margin: 0;
@@ -116,8 +124,13 @@
   align-self: flex-start;
   transition: background var(--transition);
 
-  &:hover:not(:disabled) { background: var(--accent-hover); }
-  &:disabled { opacity: 0.6; cursor: not-allowed; }
+  &:hover:not(:disabled) {
+    background: var(--accent-hover);
+  }
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 }
 
 .tableCard {
@@ -154,12 +167,22 @@
     vertical-align: middle;
   }
 
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: var(--bg-secondary); }
+  tr:last-child td {
+    border-bottom: none;
+  }
+  tr:hover td {
+    background: var(--bg-secondary);
+  }
 }
 
-.email { color: var(--text-secondary); font-size: 13px; }
-.date { color: var(--text-muted); font-size: 13px; }
+.email {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.date {
+  color: var(--text-muted);
+  font-size: 13px;
+}
 
 .roleSelect {
   background: var(--bg-input);
@@ -173,14 +196,20 @@
   outline: none;
   transition: border-color var(--transition);
 
-  &:focus { border-color: var(--accent); }
-  &:disabled { opacity: 0.5; }
-  option { background: var(--bg-card); }
+  &:focus {
+    border-color: var(--accent);
+  }
+  &:disabled {
+    opacity: 0.5;
+  }
+  option {
+    background: var(--bg-card);
+  }
 }
 
 .deleteBtn {
   background: none;
-  border: 1px solid rgba(239,68,68,0.3);
+  border: 1px solid rgba(239, 68, 68, 0.3);
   border-radius: 6px;
   color: #ef4444;
   font-size: 12px;
@@ -190,7 +219,7 @@
   transition: all var(--transition);
 
   &:hover {
-    background: rgba(239,68,68,0.1);
+    background: rgba(239, 68, 68, 0.1);
     border-color: #ef4444;
   }
 }

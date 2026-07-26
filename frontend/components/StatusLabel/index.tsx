@@ -1,17 +1,17 @@
 // Styles
-import styles from "./StatusLabel.module.scss"
-import cx from "classnames"
+import styles from "./StatusLabel.module.scss";
+import cx from "classnames";
 
 interface IStatusLabelProps {
-    data: { status: string };
+  data: { status: string };
 }
 
 const StatusLabel = ({ data }: IStatusLabelProps) => {
-    return (
-        <div className={cx(styles.container, styles[data?.status?.toLowerCase()])}>
-            {data?.status}
-        </div>
-    )
-}
+  return (
+    <div className={cx(styles.container, styles[data?.status?.toLowerCase()])}>
+      {data?.status}
+    </div>
+  );
+};
 
-export default StatusLabel
+export default StatusLabel;

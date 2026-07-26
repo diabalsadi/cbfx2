@@ -6,7 +6,8 @@
     "dev": "next dev -p 5000 -H 0.0.0.0 --webpack",
     "build": "next build --webpack",
     "start": "next start -p 5000 -H 0.0.0.0",
-    "lint": "eslint"
+    "lint": "eslint",
+    "run-prettier": "npx prettier --write \"**/*.{tsx,scss}"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -48,6 +49,7 @@
     "css-modules-typescript-loader": "^1",
     "eslint": "^9",
     "eslint-config-next": "16.0.4",
+    "prettier": "^3.9.6",
     "sass-loader": "^13",
     "style-loader": "^3",
     "tailwindcss": "^4",

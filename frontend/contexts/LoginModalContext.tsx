@@ -1,5 +1,5 @@
-'use client';
-import { createContext, useContext, useState, ReactNode } from 'react';
+"use client";
+import { createContext, useContext, useState, ReactNode } from "react";
 
 interface LoginModalCtx {
   isOpen: boolean;
@@ -16,11 +16,13 @@ const LoginModalContext = createContext<LoginModalCtx>({
 export function LoginModalProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <LoginModalContext.Provider value={{
-      isOpen,
-      openLoginModal:  () => setIsOpen(true),
-      closeLoginModal: () => setIsOpen(false),
-    }}>
+    <LoginModalContext.Provider
+      value={{
+        isOpen,
+        openLoginModal: () => setIsOpen(true),
+        closeLoginModal: () => setIsOpen(false),
+      }}
+    >
       {children}
     </LoginModalContext.Provider>
   );

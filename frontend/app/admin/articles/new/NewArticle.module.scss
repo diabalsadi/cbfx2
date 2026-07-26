@@ -20,7 +20,9 @@
   margin-bottom: 4px;
   transition: color var(--transition);
 
-  &:hover { color: var(--accent); }
+  &:hover {
+    color: var(--accent);
+  }
 }
 
 .title {
@@ -47,8 +49,14 @@
   cursor: pointer;
   transition: all var(--transition);
 
-  &:hover { border-color: var(--accent); color: var(--accent); }
-  &:disabled { opacity: 0.6; cursor: not-allowed; }
+  &:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 }
 
 .publishBtn {
@@ -62,15 +70,20 @@
   cursor: pointer;
   transition: background var(--transition);
 
-  &:hover:not(:disabled) { background: var(--accent-hover); }
-  &:disabled { opacity: 0.6; cursor: not-allowed; }
+  &:hover:not(:disabled) {
+    background: var(--accent-hover);
+  }
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 }
 
 .error {
   color: #ef4444;
   font-size: 13px;
-  background: rgba(239,68,68,0.08);
-  border: 1px solid rgba(239,68,68,0.2);
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
   border-radius: var(--radius-sm);
   padding: 10px 14px;
   margin: 0;
@@ -107,7 +120,9 @@
   background: transparent;
   font-family: inherit;
 
-  &::placeholder { color: var(--text-muted); }
+  &::placeholder {
+    color: var(--text-muted);
+  }
 }
 
 .excerptInput {
@@ -121,10 +136,13 @@
   background: transparent;
   font-family: inherit;
 
-  &::placeholder { color: var(--text-muted); }
+  &::placeholder {
+    color: var(--text-muted);
+  }
 }
 
-.sidebar {}
+.sidebar {
+}
 
 .sideCard {
   display: flex;
@@ -164,8 +182,12 @@
   outline: none;
   transition: border-color var(--transition);
 
-  &:focus { border-color: var(--accent); }
-  &::placeholder { color: var(--text-muted); }
+  &:focus {
+    border-color: var(--accent);
+  }
+  &::placeholder {
+    color: var(--text-muted);
+  }
 }
 
 .radioGroup {
@@ -182,7 +204,9 @@
   font-size: 12px;
   text-transform: capitalize;
 
-  input { accent-color: var(--accent); }
+  input {
+    accent-color: var(--accent);
+  }
 }
 
 .coverPreview {

@@ -4,8 +4,17 @@
   align-items: center;
   justify-content: center;
   background-color: var(--bg-primary);
-  background-image: radial-gradient(ellipse at 20% 50%, rgba(255, 107, 0, 0.06) 0%, transparent 60%),
-                    radial-gradient(ellipse at 80% 20%, rgba(255, 107, 0, 0.04) 0%, transparent 50%);
+  background-image:
+    radial-gradient(
+      ellipse at 20% 50%,
+      rgba(255, 107, 0, 0.06) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse at 80% 20%,
+      rgba(255, 107, 0, 0.04) 0%,
+      transparent 50%
+    );
   padding: 24px;
 }
 
@@ -120,7 +129,10 @@
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  transition: background var(--transition), box-shadow var(--transition), transform 0.1s ease;
+  transition:
+    background var(--transition),
+    box-shadow var(--transition),
+    transform 0.1s ease;
   margin-top: 4px;
 
   &:hover:not(:disabled) {

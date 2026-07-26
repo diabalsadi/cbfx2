@@ -1,20 +1,20 @@
-'use client';
-import { useState, FormEvent, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
-import styles from './Login.module.scss';
+"use client";
+import { useState, FormEvent, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+import styles from "./Login.module.scss";
 
 export default function LoginPage() {
   const { login, user } = useAuth();
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
-      router.replace('/admin');
+      router.replace("/admin");
     }
   }, [user, router]);
 
@@ -22,13 +22,13 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setLoading(true);
     try {
       await login(email, password);
-      router.replace('/admin');
+      router.replace("/admin");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      setError(err instanceof Error ? err.message : "Login failed");
     } finally {
       setLoading(false);
     }
@@ -53,7 +53,7 @@ export default function LoginPage() {
               type="email"
               placeholder="admin@cbfx.com"
               value={email}
-              onChange={e => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
             />
@@ -66,7 +66,7 @@ export default function LoginPage() {
               type="password"
               placeholder="••••••••"
               value={password}
-              onChange={e => setPassword(e.target.value)}
+              onChange={(e) => setPassword(e.target.value)}
               required
               autoComplete="current-password"
             />
@@ -75,7 +75,7 @@ export default function LoginPage() {
           {error && <p className={styles.error}>{error}</p>}
 
           <button className={styles.btn} type="submit" disabled={loading}>
-            {loading ? 'Signing in…' : 'Sign In'}
+            {loading ? "Signing in…" : "Sign In"}
           </button>
         </form>
       </div>
