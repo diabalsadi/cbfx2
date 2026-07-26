@@ -1,75 +1,96 @@
 'use client';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styles from './page.module.scss';
+import { publicApi, type HomepageData } from '@/helpers/api';
 
 const SymbolChart = dynamic(() => import('@/components/SymbolChart'), { ssr: false });
 
-/* ── data ── */
-const MARKET_PRICES = [
-  { pair: 'EUR/USD', price: '1.0842', change: '+0.32%', up: true },
-  { pair: 'BTC/USD', price: '68,420', change: '+1.84%', up: true },
-  { pair: 'XAU/USD', price: '2,348.7', change: '-0.41%', up: false },
-  { pair: 'GBP/JPY', price: '192.55', change: '+0.18%', up: true },
-  { pair: 'USD/JPY', price: '157.21', change: '+0.09%', up: true },
-  { pair: 'ETH/USD', price: '3,612', change: '-0.74%', up: false },
-];
-
+/* ── static (non-API) data ── */
 const FEATURED_BROKERS = [
   { name: 'Apex Markets', desc: 'Pro-grade execution. Up to 85% rebates.', color: '#f97316' },
   { name: 'Apex Markets', desc: 'Pro-grade execution. Up to 85% rebates.', color: '#f97316' },
 ];
 
 const SPONSORED = [
-  { label: 'XM', color: '#e53e3e', bg: '#2a1010' },
+  { label: 'XM',  color: '#e53e3e', bg: '#2a1010' },
   { label: 'FBS', color: '#2563eb', bg: '#101a2a' },
-  { label: 'EX', color: '#059669', bg: '#0f2318' },
-  { label: 'PP', color: '#7c3aed', bg: '#1a1028' },
-  { label: 'OA', color: '#dc2626', bg: '#2a1010' },
-  { label: 'IG', color: '#0284c7', bg: '#0e1d2a' },
-];
-
-const COPY_TRADERS = [
-  { name: 'Alex Morgan', initials: 'AM', followers: '12.4k', roi: '+184%' },
-  { name: 'Priya Shah', initials: 'PS', followers: '9.1k', roi: '+147%' },
-  { name: 'Marco R.', initials: 'MR', followers: '7.8k', roi: '+121%' },
-];
-
-const PLAYS = [
-  { pair: 'EUR/USD', dir: 'LONG', entry: '1.0842', tp: '1.0940' },
-  { pair: 'XAU/USD', dir: 'SHORT', entry: '2,348', tp: '2,310' },
-  { pair: 'BTC/USD', dir: 'LONG', entry: '67,900', tp: '71,500' },
-];
-
-const NEWS = [
-  { cat: 'EUR', time: '2h', headline: 'ECB holds rates, signals June cut' },
-  { cat: 'CRYPTO', time: '4h', headline: 'BTC reclaims 68k as ETFs see inflows' },
-  { cat: 'USD', time: '1d', headline: 'NFP beats forecast, USD pops' },
-];
-
-const ANALYSIS = [
-  { pair: 'GBP/USD', tf: '4H', bias: 'Bullish', up: true },
-  { pair: 'USD/JPY', tf: '1D', bias: 'Bearish', up: false },
-];
-
-const FORUM_THREADS = [
-  { title: 'EUR/USD: weekly bias for next week?', replies: 42 },
-  { title: 'Best SMC setups on gold right now', replies: 31 },
-  { title: 'Anyone backtested the London open strategy?', replies: 27 },
+  { label: 'EX',  color: '#059669', bg: '#0f2318' },
+  { label: 'PP',  color: '#7c3aed', bg: '#1a1028' },
+  { label: 'OA',  color: '#dc2626', bg: '#2a1010' },
+  { label: 'IG',  color: '#0284c7', bg: '#0e1d2a' },
 ];
 
 const CALENDAR_EVENTS = [
-  { time: '12:30', event: 'US CPI YoY', live: true },
-  { time: '14:00', event: 'BoC Rate Decision', live: true },
+  { time: '12:30', event: 'US CPI YoY',        live: true  },
+  { time: '14:00', event: 'BoC Rate Decision',  live: true  },
   { time: '18:00', event: 'Fed Speak — Powell', live: false },
 ];
 
-type MarketEntry = (typeof MARKET_PRICES)[number];
+/* ── market entry type for the chart modal ── */
+type MarketEntry = { pair: string; price: string; change: string; up: boolean };
+
+/* ── time-ago helper ── */
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const h = Math.floor(diff / 3_600_000);
+  if (h < 1) return `${Math.floor(diff / 60_000)}m`;
+  if (h < 24) return `${h}h`;
+  return `${Math.floor(h / 24)}d`;
+}
 
 export default function HomePage() {
   const [selected, setSelected] = useState<MarketEntry | null>(null);
   const [demoDismissed, setDemoDismissed] = useState(false);
+  const [data, setData] = useState<HomepageData | null>(null);
+
+  useEffect(() => {
+    publicApi.homepage().then(setData).catch(console.error);
+  }, []);
+
+  /* ── derived data (falls back to empty arrays while loading) ── */
+  const MARKET_PRICES: MarketEntry[] = (data?.market_prices ?? []).map(m => ({
+    pair: m.symbol,
+    price: m.price,
+    change: m.change_pct,
+    up: m.direction === 'up',
+  }));
+
+  const COPY_TRADERS = (data?.top_traders ?? []).map(t => ({
+    name: t.name,
+    initials: t.avatar_initials,
+    followers: t.followers >= 1000 ? `${(t.followers / 1000).toFixed(1)}k` : String(t.followers),
+    roi: `+${t.roi_12m.toFixed(0)}%`,
+  }));
+
+  const PLAYS = (data?.open_plays ?? []).map(p => ({
+    pair: p.pair,
+    dir: p.direction as 'LONG' | 'SHORT',
+    entry: p.entry_price,
+    tp: p.take_profit ?? '—',
+  }));
+
+  const NEWS = (data?.latest_news ?? []).map(n => ({
+    cat: n.title.includes('BTC') || n.title.includes('ETH') ? 'CRYPTO'
+       : n.title.includes('USD') || n.title.includes('NFP') ? 'USD'
+       : n.title.includes('EUR') || n.title.includes('ECB') ? 'EUR'
+       : 'FX',
+    time: timeAgo(n.created_at),
+    headline: n.title,
+  }));
+
+  const ANALYSIS = (data?.latest_analysis ?? []).map(a => ({
+    pair: a.pair,
+    tf: a.timeframe,
+    bias: a.bias,
+    up: a.bias === 'Bullish',
+  }));
+
+  const FORUM_THREADS = (data?.recent_threads ?? []).map(t => ({
+    title: t.title,
+    replies: t.reply_count,
+  }));
 
   return (
     <>

@@ -8,6 +8,7 @@ class ArticleBase(BaseModel):
     content: Optional[str] = None
     excerpt: Optional[str] = None
     cover_image_url: Optional[str] = None
+    article_type: str = "news"  # "news" | "analysis"
     is_published: Optional[bool] = False
 
 
@@ -20,6 +21,7 @@ class ArticleUpdate(BaseModel):
     content: Optional[str] = None
     excerpt: Optional[str] = None
     cover_image_url: Optional[str] = None
+    article_type: Optional[str] = None
     is_published: Optional[bool] = None
 
 
