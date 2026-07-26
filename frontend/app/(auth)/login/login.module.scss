@@ -1,0 +1,291 @@
+/* ── Two-panel wrapper ── */
+.wrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  width: 100%;
+  max-width: 860px;
+
+  @media (max-width: 720px) {
+    grid-template-columns: 1fr;
+    max-width: 420px;
+  }
+}
+
+/* ── Left: Login card ── */
+.loginCard {
+  background: #161616;
+  border: 1px solid #2a2a2a;
+  border-radius: 18px;
+  padding: 40px 36px 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+
+  @media (max-width: 480px) {
+    padding: 32px 24px 28px;
+  }
+}
+
+.logoRow {
+  margin-bottom: 8px;
+}
+
+.logoIcon {
+  width: 52px;
+  height: 52px;
+  background: #f97316;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(249,115,22,0.35);
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.4px;
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #888;
+  margin: 0 0 20px;
+}
+
+/* Form */
+.form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: 100%;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #ccc;
+}
+
+.input {
+  width: 100%;
+  padding: 12px 14px;
+  background: #0f0f0f;
+  border: 1px solid #2e2e2e;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #fff;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  box-sizing: border-box;
+
+  &::placeholder {
+    color: #555;
+  }
+
+  &:focus {
+    border-color: #f97316;
+    box-shadow: 0 0 0 3px rgba(249,115,22,0.12);
+  }
+}
+
+.errorMsg {
+  font-size: 13px;
+  color: #f87171;
+  background: rgba(248,113,113,0.08);
+  border: 1px solid rgba(248,113,113,0.2);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 0;
+  text-align: center;
+}
+
+.signInBtn {
+  width: 100%;
+  padding: 13px;
+  background: #f97316;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: background 0.15s, box-shadow 0.15s, opacity 0.15s;
+  letter-spacing: 0.1px;
+
+  &:hover:not(:disabled) {
+    background: #ea6c0a;
+    box-shadow: 0 4px 20px rgba(249,115,22,0.4);
+  }
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+}
+
+.footer {
+  font-size: 13px;
+  color: #666;
+  margin: 12px 0 0;
+  text-align: center;
+}
+
+.link {
+  color: #f97316;
+  text-decoration: none;
+  font-weight: 500;
+
+  &:hover { text-decoration: underline; }
+}
+
+/* ── Right: Broker card ── */
+.brokerCard {
+  background: linear-gradient(145deg, #1a1208 0%, #120d04 60%, #0d0a08 100%);
+  border: 1px solid #2d2218;
+  border-radius: 18px;
+  padding: 28px 28px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+  overflow: hidden;
+
+  /* warm glow */
+  &::before {
+    content: '';
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(249,115,22,0.18) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  @media (max-width: 720px) {
+    display: none;
+  }
+}
+
+.brokerCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+
+.featuredLabel {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  color: #f97316;
+  text-transform: uppercase;
+}
+
+.sponsoredLabel {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  color: #555;
+  text-transform: uppercase;
+}
+
+.brokerHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.brokerLogo {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(14,165,233,0.3);
+}
+
+.brokerName {
+  font-size: 20px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.4px;
+  margin-bottom: 4px;
+}
+
+.brokerTagline {
+  font-size: 13px;
+  color: #999;
+}
+
+/* Feature bullets */
+.featureList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #e5e5e5;
+  }
+}
+
+/* CTA area */
+.brokerCta {
+  margin-top: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.openAccountBtn {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  background: #f97316;
+  color: #fff;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.15s, box-shadow 0.15s;
+  box-sizing: border-box;
+
+  &:hover {
+    background: #ea6c0a;
+    box-shadow: 0 6px 24px rgba(249,115,22,0.4);
+  }
+}
+
+.disclaimer {
+  text-align: center;
+  font-size: 11px;
+  color: #555;
+  margin: 0;
+}

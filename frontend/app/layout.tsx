@@ -22,6 +22,23 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Blocking script: runs before paint to prevent theme flash */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var t = localStorage.getItem('cbfx_theme');
+                  document.documentElement.setAttribute('data-theme', t === 'light' ? 'light' : 'dark');
+                } catch(e) {
+                  document.documentElement.setAttribute('data-theme', 'dark');
+                }
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className={inter.variable} suppressHydrationWarning>
         <ThemeProvider>
           <AuthProvider>

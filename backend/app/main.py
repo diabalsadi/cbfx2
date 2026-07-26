@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import engine, Base
 from app.routers import auth
-from app.routers import articles, clients, campaigns, users
+from app.routers import articles, clients, campaigns, users, public
 
 # Import all models so SQLAlchemy creates their tables
 import app.models.user
@@ -29,6 +29,7 @@ app.include_router(articles.router)
 app.include_router(clients.router)
 app.include_router(campaigns.router)
 app.include_router(users.router)
+app.include_router(public.router)
 
 
 @app.get("/")
