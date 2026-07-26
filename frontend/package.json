@@ -7,7 +7,7 @@
     "build": "next build --webpack",
     "start": "next start -p 5000 -H 0.0.0.0",
     "lint": "eslint",
-    "run-prettier": "npx prettier --write \"**/*.{tsx,scss}"
+    "format": "prettier --write \"**/*.{tsx,scss}\""
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
