@@ -4,10 +4,9 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 # Get database URL from environment variable
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://neondb_owner:npg_Dc83TdbJjRrs@ep-curly-dust-ayqxmwwn.c-5.us-east-2.aws.neon.tech/neondb?sslmode=require",
-)
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL environment variable is required")
 
 # Create SQLAlchemy engine
 engine = create_engine(DATABASE_URL)

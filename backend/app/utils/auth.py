@@ -11,7 +11,9 @@ from app.database import get_db
 from app.models import user as models
 from app.schemas import auth as schemas
 
-SECRET_KEY = os.getenv("JWT_SECRET", "dev-secret-change-me")
+SECRET_KEY = os.getenv("JWT_SECRET")
+if not SECRET_KEY:
+    raise RuntimeError("JWT_SECRET environment variable is required")
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30

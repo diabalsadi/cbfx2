@@ -24,8 +24,8 @@ services:
     #   dockerfile: Dockerfile
     container_name: cbfx_backend
     environment:
-      DATABASE_URL: postgresql://neondb_owner:npg_Dc83TdbJjRrs@ep-curly-dust-ayqxmwwn.c-5.us-east-2.aws.neon.tech/neondb?sslmode=require
-      JWT_SECRET: dev-secret-change-me
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
     ports:
       - "8000:8000"
     volumes:
