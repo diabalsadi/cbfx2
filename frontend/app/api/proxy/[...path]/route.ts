@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8000';
+const BACKEND_URL = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'https://cbfx.onrender.com';
 
 async function handler(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   const { path } = await params;
@@ -22,25 +22,51 @@ async function handler(req: NextRequest, { params }: { params: Promise<{ path: s
     body = await req.arrayBuffer();
   }
 
-  const res = await fetch(url, {
-    method: req.method,
-    headers,
-    body,
-  });
+  try {
+    const res = await fetch(url, {
+      method: req.method,
+      headers,
+      body,
+    });
 
-  if (res.status === 204) {
-    return new NextResponse(null, { status: res.status });
+    console.log(`Proxying ${req.method} request to: ${url} - Status: ${res.status}`);
+
+    if (res.status === 204) {
+      return new NextResponse(null, { status: res.status });
+    }
+
+    const responseHeaders = new Headers();
+    const hopByHopAndEncodingHeaders = new Set([
+      'content-encoding',
+      'content-length',
+      'transfer-encoding',
+      'connection',
+      'keep-alive',
+      'proxy-authenticate',
+      'proxy-authorization',
+      'te',
+      'trailer',
+      'upgrade',
+    ]);
+
+    res.headers.forEach((value, key) => {
+      if (!hopByHopAndEncodingHeaders.has(key.toLowerCase())) {
+        responseHeaders.set(key, value);
+      }
+    });
+
+    const data = await res.arrayBuffer();
+    return new NextResponse(data, {
+      status: res.status,
+      headers: responseHeaders,
+    });
+  } catch (error) {
+    console.error(`Proxy error for ${url}:`, error);
+    return NextResponse.json(
+      { detail: 'Failed to communicate with backend server' },
+      { status: 502 }
+    );
   }
-
-  const responseHeaders = new Headers();
-  res.headers.forEach((value, key) => {
-    responseHeaders.set(key, value);
-  });
-
-  return new NextResponse(res.body, {
-    status: res.status,
-    headers: responseHeaders,
-  });
 }
 
 export const GET = handler;
