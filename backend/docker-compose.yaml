@@ -19,12 +19,12 @@ services:
       retries: 5
 
   backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
     container_name: cbfx_backend
     environment:
-      DATABASE_URL: postgresql://cbfx_user:cbfx_password@db:5432/cbfx_db
+      DATABASE_URL: postgresql://neondb_owner:npg_Dc83TdbJjRrs@ep-curly-dust-ayqxmwwn.c-5.us-east-2.aws.neon.tech/neondb?sslmode=require
       JWT_SECRET: dev-secret-change-me
     ports:
       - "8000:8000"

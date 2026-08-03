@@ -462,21 +462,36 @@ if __name__ == "__main__":
     try:
         print("\n-- Users -----------------------------")
         seed_users(db)
+        db.flush()
+
         print("\n-- Market Prices ---------------------")
         seed_market_prices(db)
+        db.flush()
+
         print("\n-- News / Articles -------------------")
         seed_news(db)
+        db.flush()
+
         print("\n-- Copy Traders ----------------------")
         seed_copy_traders(db)
+        db.flush()
+
         print("\n-- Plays -----------------------------")
         seed_plays(db)
+        db.flush()
+
         print("\n-- Analysis --------------------------")
         seed_analysis(db)
+        db.flush()
+
         print("\n-- Forum Threads ---------------------")
         migrate_forum_categories(db)
         seed_forum(db)
+        db.flush()
+
         print("\n-- Forum Replies ---------------------")
         seed_forum_replies(db)
+        db.flush()
 
         db.commit()
         print("\n[OK] Seed complete.\n")
