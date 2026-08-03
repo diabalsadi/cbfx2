@@ -2,7 +2,11 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useState, useEffect } from "react";
+import UserNav from "@/components/UserNav";
+import LoginModal from "@/components/LoginModal";
+import { LoginModalProvider } from "@/contexts/LoginModalContext";
 import styles from "./page.module.scss";
+import userStyles from "./(user)/user.module.scss";
 import { publicApi, type HomepageData } from "@/helpers/api";
 
 const SymbolChart = dynamic(() => import("@/components/SymbolChart"), {
@@ -110,7 +114,9 @@ export default function HomePage() {
   }));
 
   return (
-    <>
+    <LoginModalProvider>
+      <UserNav />
+      <div className={userStyles.main}>
       {/* ══════════════════════════════
           Hero card
          ══════════════════════════════ */}
@@ -781,6 +787,9 @@ export default function HomePage() {
           onClose={() => setSelected(null)}
         />
       )}
-    </>
+      </div>
+      <footer className={userStyles.footer}>© 2026 CBFX — Trade smarter.</footer>
+      <LoginModal />
+    </LoginModalProvider>
   );
 }
