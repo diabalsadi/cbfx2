@@ -112,4 +112,10 @@ docker logs -f cbfx_backend
 
 ```
 
+### Data seeding
+
+```bash
+docker compose exec -T backend python seed.py
+```
+
 The frontend will be available at **http://localhost:3000**
