@@ -1,7 +1,10 @@
 import os
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+
+load_dotenv()
 
 # Get database URL from environment variable
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -15,7 +18,9 @@ engine_kwargs = {
 
 # Render PostgreSQL requires SSL and can drop idle connections, so make the
 # connection settings explicit for that environment.
-is_postgres = DATABASE_URL.startswith(("postgres://", "postgresql://", "postgresql+psycopg2://"))
+is_postgres = DATABASE_URL.startswith(
+    ("postgres://", "postgresql://", "postgresql+psycopg2://")
+)
 if is_postgres:
     if DATABASE_URL.startswith("postgres://"):
         DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)

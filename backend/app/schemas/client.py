@@ -4,10 +4,11 @@ from datetime import datetime
 
 
 class ClientBase(BaseModel):
-    name: str
-    email: EmailStr
-    company: Optional[str] = None
+    company_name: str
+    contact_name: Optional[str] = None
+    contact_email: Optional[EmailStr] = None
     phone: Optional[str] = None
+    monthly_budget: Optional[float] = None
     status: Optional[str] = "active"
 
 
@@ -16,10 +17,11 @@ class ClientCreate(ClientBase):
 
 
 class ClientUpdate(BaseModel):
-    name: Optional[str] = None
-    email: Optional[EmailStr] = None
-    company: Optional[str] = None
+    company_name: Optional[str] = None
+    contact_name: Optional[str] = None
+    contact_email: Optional[EmailStr] = None
     phone: Optional[str] = None
+    monthly_budget: Optional[float] = None
     status: Optional[str] = None
 
 

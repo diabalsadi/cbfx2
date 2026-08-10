@@ -17,9 +17,9 @@ async function handler(req: NextRequest, { params }: { params: Promise<{ path: s
   const auth = req.headers.get('authorization');
   if (auth) headers['Authorization'] = auth;
 
-  let body: ArrayBuffer | undefined;
+  let body: Blob | undefined;
   if (req.method !== 'GET' && req.method !== 'HEAD') {
-    body = await req.arrayBuffer();
+    body = await req.blob();
   }
 
   try {

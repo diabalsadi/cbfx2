@@ -47,9 +47,10 @@ def create_client(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_roles(ALLOWED_ROLES)),
 ):
-    existing = db.query(Client).filter(Client.email == payload.email).first()
-    if existing:
-        raise HTTPException(status_code=400, detail="Client with this email already exists")
+    if payload.contact_email:
+        existing = db.query(Client).filter(Client.contact_email == payload.contact_email).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Client with this contact_email already exists")
     client = Client(**payload.model_dump())
     db.add(client)
     db.commit()

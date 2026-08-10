@@ -13,6 +13,8 @@ from app.models.play import Play
 from app.models.analysis import Analysis
 from app.models.forum_thread import ForumThread
 from app.models.forum_reply import ForumReply
+from app.models.client import Client
+from app.models.campaign import Campaign
 import bcrypt
 
 
@@ -20,7 +22,7 @@ import bcrypt
 
 def seed_users(db):
     test_users = [
-        {"email": "admin@cbfx.com",  "name": "Super Admin",  "role": "admin",  "password": "password123"},
+        {"email": "admin@cbfx.com",  "name": "Super Admin",  "role": "super_admin",  "password": "password123"},
         {"email": "editor@cbfx.com", "name": "Main Editor",  "role": "editor", "password": "password123"},
         {"email": "user@cbfx.com",   "name": "Demo User",    "role": "user",   "password": "password123"},
         {"email": "diab.alsadi@cbfx.com", "name": "Diab Al Sadi", "role": "user", "password": "password123"},
@@ -445,6 +447,73 @@ def seed_forum_replies(db):
         print(f"  + Reply: {reply['thread_title'][:45]}")
 
 
+# ── Clients ────────────────────────────────────────────────────────────────────
+
+def seed_clients(db):
+    clients = [
+        {
+            "company_name": "Acme Corp",
+            "contact_name": "John Doe",
+            "contact_email": "john@acme.com",
+            "phone": "+1 555 123 4567",
+            "monthly_budget": 10000.0,
+            "status": "active"
+        },
+        {
+            "company_name": "Globex Inc",
+            "contact_name": "Jane Smith",
+            "contact_email": "jane@globex.com",
+            "phone": "+1 555 987 6543",
+            "monthly_budget": 5000.0,
+            "status": "prospect"
+        },
+    ]
+    for c in clients:
+        if not db.query(Client).filter(Client.company_name == c["company_name"]).first():
+            db.add(Client(**c))
+            print(f"  + Client: {c['company_name']}")
+        else:
+            print(f"  . Client exists: {c['company_name']}")
+
+
+# ── Campaigns ──────────────────────────────────────────────────────────────────
+
+def seed_campaigns(db):
+    ADMIN = "admin@cbfx.com"
+    # Find a client to associate
+    client = db.query(Client).filter(Client.company_name == "Acme Corp").first()
+    client_id = client.id if client else None
+
+    campaigns = [
+        {
+            "name": "Summer Push 2025",
+            "client_id": client_id,
+            "budget": 5000.0,
+            "impressions": 125000,
+            "clicks": 3400,
+            "spend": 1250.0,
+            "status": "active",
+            "created_by": ADMIN
+        },
+        {
+            "name": "Q3 Forex Awareness",
+            "client_id": client_id,
+            "budget": 10000.0,
+            "impressions": 500000,
+            "clicks": 15000,
+            "spend": 8500.0,
+            "status": "completed",
+            "created_by": ADMIN
+        },
+    ]
+    for c in campaigns:
+        if not db.query(Campaign).filter(Campaign.name == c["name"]).first():
+            db.add(Campaign(**c))
+            print(f"  + Campaign: {c['name']}")
+        else:
+            print(f"  . Campaign exists: {c['name']}")
+
+
 # -- Main ---------------------------------------------------------------------
 
 if __name__ == "__main__":
@@ -455,6 +524,8 @@ if __name__ == "__main__":
     import app.models.analysis       # noqa
     import app.models.forum_thread   # noqa
     import app.models.forum_reply    # noqa
+    import app.models.client         # noqa
+    import app.models.campaign       # noqa
 
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
@@ -491,6 +562,14 @@ if __name__ == "__main__":
 
         print("\n-- Forum Replies ---------------------")
         seed_forum_replies(db)
+        db.flush()
+
+        print("\n-- Clients ---------------------------")
+        seed_clients(db)
+        db.flush()
+
+        print("\n-- Campaigns -------------------------")
+        seed_campaigns(db)
         db.flush()
 
         db.commit()
