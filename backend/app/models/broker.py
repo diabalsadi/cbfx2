@@ -10,7 +10,11 @@ class Broker(Base):
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     name = Column(String, nullable=False)
     img_src = Column(String, nullable=True)
-    # JSON list of region codes, e.g. ["north_america", "europe"]
+    # "region" (geo_coverage holds region codes) or "country" (geo_coverage holds ISO
+    # country codes) — a broker picks one mode, not a mix of both.
+    coverage_type = Column(String, nullable=False, default="region")
+    # JSON list of region codes (e.g. ["north_america", "europe"]) or ISO country
+    # codes (e.g. ["US", "CA"]), depending on coverage_type.
     geo_coverage = Column(JSON, nullable=False, default=list)
     cashback_rate = Column(Float, nullable=False, default=0.0)  # percentage points, e.g. 82.5 (%)
     # Our affiliate/referral identifier with this broker, used to attribute users who sign up through us

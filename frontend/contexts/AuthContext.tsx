@@ -7,6 +7,7 @@ import {
   useCallback,
   ReactNode,
 } from "react";
+import { withDebugIp } from "@/helpers/debugIp";
 
 interface User {
   email: string;
@@ -58,9 +59,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Best-effort IP-based region classification for this visit. Works for
   // anonymous visitors too; when a token is present the backend persists the
   // detected region on the user's account so it stays fresh across visits.
+  //
+  // Locally, the browser never sends a real forwardable client IP (see
+  // backend/app/utils/geo.py), so region/country always come back null. Set
+  // NEXT_PUBLIC_DEBUG_IP in frontend/.env.local to spoof one for testing; the
+  // proxy only forwards it in dev (route.ts) and the backend only honors it
+  // when ALLOW_DEV_IP_OVERRIDE=true, so this is a no-op in production.
   useEffect(() => {
     const stored = localStorage.getItem("cbfx_token");
-    fetch("/api/proxy/geo/detect", {
+    fetch(withDebugIp("/api/proxy/geo/detect"), {
       headers: stored ? { Authorization: `Bearer ${stored}` } : {},
     })
       .then((res) => (res.ok ? res.json() : null))

@@ -1,79 +1,30 @@
 "use client";
 import { useEffect, useState } from "react";
 import { REGION_LABELS } from "@/helpers/regions";
+import { COUNTRY_LABELS } from "@/helpers/countries";
+import { withDebugIp } from "@/helpers/debugIp";
 import styles from "./brokers.module.scss";
 
 type Broker = {
   id: string;
   name: string;
   img_src: string | null;
+  coverage_type: "region" | "country";
   geo_coverage: string[];
   cashback_rate: number;
   status: string;
 };
 
-const FALLBACK_BROKERS = [
-  {
-    id: "1",
-    name: "Apex Markets",
-    imgSrc: null as string | null,
-    company: "Pro-grade execution · Up to 85% rebates",
-    status: "active",
-    rebate: "85%",
-    rating: "4.9",
-    type: "ECN",
-  },
-  {
-    id: "2",
-    name: "IC Markets",
-    imgSrc: null as string | null,
-    company: "Raw spreads from 0.0 pips · True ECN",
-    status: "active",
-    rebate: "80%",
-    rating: "4.8",
-    type: "ECN",
-  },
-  {
-    id: "3",
-    name: "XM Global",
-    imgSrc: null as string | null,
-    company: "Multi-asset broker · 1000+ instruments",
-    status: "active",
-    rebate: "75%",
-    rating: "4.7",
-    type: "Market Maker",
-  },
-  {
-    id: "4",
-    name: "Exness",
-    imgSrc: null as string | null,
-    company: "Instant withdrawals · Tight spreads",
-    status: "active",
-    rebate: "70%",
-    rating: "4.7",
-    type: "ECN",
-  },
-  {
-    id: "5",
-    name: "Pepperstone",
-    imgSrc: null as string | null,
-    company: "Award-winning · ASIC & FCA regulated",
-    status: "active",
-    rebate: "72%",
-    rating: "4.8",
-    type: "ECN",
-  },
-  {
-    id: "6",
-    name: "FBS",
-    imgSrc: null as string | null,
-    company: "Copy trading · Flexible leverage",
-    status: "active",
-    rebate: "65%",
-    rating: "4.5",
-    type: "Market Maker",
-  },
-];
+type DisplayBroker = {
+  id: string;
+  name: string;
+  imgSrc: string | null;
+  company: string;
+  status: string;
+  rebate: string;
+  rating: string;
+  type: string;
+};
 
 function getInitials(name: string) {
   return name
@@ -94,30 +45,46 @@ const BG_COLORS = [
 ];
 
 export default function BrokersPage() {
-  const [brokers, setBrokers] = useState(FALLBACK_BROKERS);
+  const [brokers, setBrokers] = useState<DisplayBroker[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetch("/api/proxy/public/brokers")
-      .then((r) => (r.ok ? r.json() : []))
+    let cancelled = false;
+    fetch(withDebugIp("/api/proxy/public/brokers"))
+      .then((r) => {
+        if (!r.ok) throw new Error("request failed");
+        return r.json();
+      })
       .then((data: Broker[]) => {
-        if (data.length > 0) {
-          const mapped = data.map((b, i) => ({
+        if (cancelled) return;
+        const mapped = data.map((b, i) => {
+          const labels = b.coverage_type === "country" ? COUNTRY_LABELS : REGION_LABELS;
+          return {
             id: b.id,
             name: b.name,
             imgSrc: b.img_src,
             company: b.geo_coverage.length
-              ? b.geo_coverage.map((r) => REGION_LABELS[r] || r).join(" · ")
+              ? b.geo_coverage.map((r) => labels[r] || r).join(" · ")
               : "Vetted broker partner",
             status: b.status,
             rebate: `${b.cashback_rate}%`,
             rating: `4.${5 + (i % 5)}`,
             type: i % 2 === 0 ? "ECN" : "Market Maker",
-          }));
-          setBrokers(mapped);
-        }
+          };
+        });
+        setBrokers(mapped);
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!cancelled) setError("Unable to load brokers right now.");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const filtered = brokers.filter(
@@ -132,8 +99,8 @@ export default function BrokersPage() {
         <div>
           <h1 className={styles.pageTitle}>Brokers</h1>
           <p className={styles.pageSubtitle}>
-            Every broker is vetted for regulation, spreads, and cashback
-            reliability.
+            Brokers available in your region, vetted for regulation, spreads,
+            and cashback reliability.
           </p>
         </div>
       </div>
@@ -148,58 +115,72 @@ export default function BrokersPage() {
         />
       </div>
 
-      <div className={styles.grid}>
-        {filtered.map((b, i) => (
-          <div key={b.id} className={styles.card}>
-            <div className={styles.cardHeader}>
-              {b.imgSrc ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={b.imgSrc} alt="" className={styles.avatar} />
-              ) : (
-                <div
-                  className={styles.avatar}
-                  style={{ background: BG_COLORS[i % BG_COLORS.length] }}
-                >
-                  {getInitials(b.name)}
-                </div>
-              )}
-              <div className={styles.brokerInfo}>
-                <div className={styles.brokerName}>{b.name}</div>
-                <div className={styles.brokerType}>{b.type}</div>
-              </div>
-              <div className={styles.featuredBadge}>FEATURED</div>
-            </div>
-
-            <div className={styles.brokerDesc}>{b.company}</div>
-
-            <div className={styles.metrics}>
-              <div className={styles.metric}>
-                <span className={styles.metricValue}>{b.rebate}</span>
-                <span className={styles.metricLabel}>Rebate</span>
-              </div>
-              <div className={styles.metricDivider} />
-              <div className={styles.metric}>
-                <span className={styles.metricValue}>⭐ {b.rating}</span>
-                <span className={styles.metricLabel}>Rating</span>
-              </div>
-              <div className={styles.metricDivider} />
-              <div className={styles.metric}>
-                <span className={`${styles.metricValue} ${styles.active}`}>
-                  Active
-                </span>
-                <span className={styles.metricLabel}>Status</span>
-              </div>
-            </div>
-
-            <button className={styles.ctaBtn}>Get cashback →</button>
-          </div>
-        ))}
-      </div>
-
-      {filtered.length === 0 && (
-        <div className={styles.empty}>
-          No brokers match &ldquo;{search}&rdquo;
+      {loading ? (
+        <div className={styles.grid}>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className={styles.skeletonCard} />
+          ))}
         </div>
+      ) : error ? (
+        <div className={styles.empty}>{error}</div>
+      ) : (
+        <>
+          <div className={styles.grid}>
+            {filtered.map((b, i) => (
+              <div key={b.id} className={styles.card}>
+                <div className={styles.cardHeader}>
+                  {b.imgSrc ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={b.imgSrc} alt="" className={styles.avatar} />
+                  ) : (
+                    <div
+                      className={styles.avatar}
+                      style={{ background: BG_COLORS[i % BG_COLORS.length] }}
+                    >
+                      {getInitials(b.name)}
+                    </div>
+                  )}
+                  <div className={styles.brokerInfo}>
+                    <div className={styles.brokerName}>{b.name}</div>
+                    <div className={styles.brokerType}>{b.type}</div>
+                  </div>
+                  <div className={styles.featuredBadge}>FEATURED</div>
+                </div>
+
+                <div className={styles.brokerDesc}>{b.company}</div>
+
+                <div className={styles.metrics}>
+                  <div className={styles.metric}>
+                    <span className={styles.metricValue}>{b.rebate}</span>
+                    <span className={styles.metricLabel}>Rebate</span>
+                  </div>
+                  <div className={styles.metricDivider} />
+                  <div className={styles.metric}>
+                    <span className={styles.metricValue}>⭐ {b.rating}</span>
+                    <span className={styles.metricLabel}>Rating</span>
+                  </div>
+                  <div className={styles.metricDivider} />
+                  <div className={styles.metric}>
+                    <span className={`${styles.metricValue} ${styles.active}`}>
+                      Active
+                    </span>
+                    <span className={styles.metricLabel}>Status</span>
+                  </div>
+                </div>
+
+                <button className={styles.ctaBtn}>Get cashback →</button>
+              </div>
+            ))}
+          </div>
+
+          {filtered.length === 0 && (
+            <div className={styles.empty}>
+              {search
+                ? `No brokers match "${search}"`
+                : "No brokers are currently available in your region."}
+            </div>
+          )}
+        </>
       )}
     </>
   );

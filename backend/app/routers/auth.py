@@ -31,7 +31,7 @@ def register(user: user_schemas.UserCreate, request: Request, db: Session = Depe
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    _, region = detect_region(extract_client_ip(request))
+    country_code, region = detect_region(extract_client_ip(request))
 
     hashed_password = get_password_hash(user.password)
     db_user = models.User(
@@ -39,6 +39,7 @@ def register(user: user_schemas.UserCreate, request: Request, db: Session = Depe
         name=user.name,
         role=user.role,
         region=region,
+        country_code=country_code,
         hashed_password=hashed_password,
     )
     db.add(db_user)

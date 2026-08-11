@@ -23,9 +23,16 @@ def detect_visitor_region(
     ip = extract_client_ip(request)
     country_code, region = detect_region(ip)
 
-    if current_user is not None and region is not None and current_user.region != region:
-        current_user.region = region
-        db.commit()
+    if current_user is not None:
+        changed = False
+        if region is not None and current_user.region != region:
+            current_user.region = region
+            changed = True
+        if country_code is not None and current_user.country_code != country_code:
+            current_user.country_code = country_code
+            changed = True
+        if changed:
+            db.commit()
 
     return {
         "ip": ip,

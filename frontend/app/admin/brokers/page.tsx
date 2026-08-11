@@ -1,7 +1,8 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { api } from "@/helpers/api";
 import { REGIONS, REGION_LABELS } from "@/helpers/regions";
+import { COUNTRIES, COUNTRY_LABELS } from "@/helpers/countries";
 import Card from "@/components/Card";
 import HomepagePlacements from "./HomepagePlacements";
 import styles from "./Brokers.module.scss";
@@ -10,6 +11,7 @@ export interface Broker {
   id: string;
   name: string;
   img_src: string | null;
+  coverage_type: "region" | "country";
   geo_coverage: string[];
   cashback_rate: number;
   referral_id: string | null;
@@ -22,11 +24,18 @@ const STATUS_OPTIONS = ["active", "inactive"];
 const EMPTY_FORM = {
   name: "",
   img_src: "",
+  coverage_type: "region" as "region" | "country",
   geo_coverage: [] as string[],
   cashback_rate: "",
   referral_id: "",
   status: "active",
 };
+
+function coverageLabel(coverageType: string, code: string) {
+  return coverageType === "country"
+    ? COUNTRY_LABELS[code] || code
+    : REGION_LABELS[code] || code;
+}
 
 function getInitials(name: string) {
   return name
@@ -46,6 +55,23 @@ export default function BrokersAdminPage() {
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
+  const [countryDropdownOpen, setCountryDropdownOpen] = useState(false);
+  const [countrySearch, setCountrySearch] = useState("");
+  const countryDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!countryDropdownOpen) return;
+    const onClickOutside = (e: MouseEvent) => {
+      if (
+        countryDropdownRef.current &&
+        !countryDropdownRef.current.contains(e.target as Node)
+      ) {
+        setCountryDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [countryDropdownOpen]);
 
   const fetchBrokers = () => {
     setLoading(true);
@@ -72,6 +98,7 @@ export default function BrokersAdminPage() {
     setFormData({
       name: broker.name,
       img_src: broker.img_src || "",
+      coverage_type: broker.coverage_type || "region",
       geo_coverage: broker.geo_coverage,
       cashback_rate: String(broker.cashback_rate),
       referral_id: broker.referral_id || "",
@@ -86,6 +113,14 @@ export default function BrokersAdminPage() {
     setEditingId(null);
     setFormData(EMPTY_FORM);
     setFormError("");
+    setCountrySearch("");
+    setCountryDropdownOpen(false);
+  };
+
+  const setCoverageType = (coverage_type: "region" | "country") => {
+    setFormData((v) =>
+      v.coverage_type === coverage_type ? v : { ...v, coverage_type, geo_coverage: [] },
+    );
   };
 
   const toggleRegion = (region: string) => {
@@ -97,6 +132,19 @@ export default function BrokersAdminPage() {
     }));
   };
 
+  const toggleCountry = (code: string) => {
+    setFormData((v) => ({
+      ...v,
+      geo_coverage: v.geo_coverage.includes(code)
+        ? v.geo_coverage.filter((c) => c !== code)
+        : [...v.geo_coverage, code],
+    }));
+  };
+
+  const filteredCountries = COUNTRIES.filter((c) =>
+    c.label.toLowerCase().includes(countrySearch.toLowerCase()),
+  );
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) {
@@ -104,7 +152,11 @@ export default function BrokersAdminPage() {
       return;
     }
     if (formData.geo_coverage.length === 0) {
-      setFormError("Select at least one region");
+      setFormError(
+        formData.coverage_type === "country"
+          ? "Select at least one country"
+          : "Select at least one region",
+      );
       return;
     }
     setFormError("");
@@ -113,6 +165,7 @@ export default function BrokersAdminPage() {
       const payload = {
         name: formData.name,
         img_src: formData.img_src || null,
+        coverage_type: formData.coverage_type,
         geo_coverage: formData.geo_coverage,
         cashback_rate: formData.cashback_rate
           ? parseFloat(formData.cashback_rate)
@@ -245,22 +298,104 @@ export default function BrokersAdminPage() {
 
             <div className={styles.field}>
               <label className={styles.label}>Geolocation Coverage *</label>
-              <div className={styles.regionChips}>
-                {REGIONS.map((r) => (
+              <div className={styles.coverageModeToggle}>
+                <button
+                  type="button"
+                  className={`${styles.coverageModeBtn} ${
+                    formData.coverage_type === "region" ? styles.coverageModeBtnActive : ""
+                  }`}
+                  onClick={() => setCoverageType("region")}
+                >
+                  By Region
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.coverageModeBtn} ${
+                    formData.coverage_type === "country" ? styles.coverageModeBtnActive : ""
+                  }`}
+                  onClick={() => setCoverageType("country")}
+                >
+                  By Country
+                </button>
+              </div>
+
+              {formData.coverage_type === "region" ? (
+                <div className={styles.regionChips}>
+                  {REGIONS.map((r) => (
+                    <button
+                      type="button"
+                      key={r.value}
+                      className={`${styles.regionChip} ${
+                        formData.geo_coverage.includes(r.value)
+                          ? styles.regionChipActive
+                          : ""
+                      }`}
+                      onClick={() => toggleRegion(r.value)}
+                    >
+                      {r.label}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className={styles.countryPicker} ref={countryDropdownRef}>
                   <button
                     type="button"
-                    key={r.value}
-                    className={`${styles.regionChip} ${
-                      formData.geo_coverage.includes(r.value)
-                        ? styles.regionChipActive
-                        : ""
-                    }`}
-                    onClick={() => toggleRegion(r.value)}
+                    className={styles.countryDropdownTrigger}
+                    onClick={() => setCountryDropdownOpen((o) => !o)}
                   >
-                    {r.label}
+                    {formData.geo_coverage.length
+                      ? `${formData.geo_coverage.length} countr${
+                          formData.geo_coverage.length === 1 ? "y" : "ies"
+                        } selected`
+                      : "Select countries…"}
+                    <span className={styles.countryDropdownCaret}>▾</span>
                   </button>
-                ))}
-              </div>
+
+                  {countryDropdownOpen && (
+                    <div className={styles.countryDropdownPanel}>
+                      <input
+                        className={styles.countryDropdownSearch}
+                        placeholder="Search countries…"
+                        value={countrySearch}
+                        onChange={(e) => setCountrySearch(e.target.value)}
+                        autoFocus
+                      />
+                      <div className={styles.countryDropdownList}>
+                        {filteredCountries.length === 0 ? (
+                          <div className={styles.countryDropdownEmpty}>No matches</div>
+                        ) : (
+                          filteredCountries.map((c) => (
+                            <label key={c.value} className={styles.countryOption}>
+                              <input
+                                type="checkbox"
+                                checked={formData.geo_coverage.includes(c.value)}
+                                onChange={() => toggleCountry(c.value)}
+                              />
+                              {c.label}
+                            </label>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {formData.geo_coverage.length > 0 && (
+                    <div className={styles.regionChips}>
+                      {formData.geo_coverage.map((code) => (
+                        <button
+                          type="button"
+                          key={code}
+                          className={`${styles.regionChip} ${styles.regionChipActive}`}
+                          onClick={() => toggleCountry(code)}
+                          title="Remove"
+                        >
+                          {COUNTRY_LABELS[code] || code} ✕
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className={styles.field}>
@@ -358,7 +493,7 @@ export default function BrokersAdminPage() {
                       <div className={styles.regionList}>
                         {b.geo_coverage.map((r) => (
                           <span key={r} className={styles.regionTag}>
-                            {REGION_LABELS[r] || r}
+                            {coverageLabel(b.coverage_type, r)}
                           </span>
                         ))}
                       </div>

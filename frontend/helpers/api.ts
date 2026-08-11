@@ -1,3 +1,5 @@
+import { withDebugIp } from './debugIp';
+
 const BASE = '/api/proxy';
 
 export async function apiFetch<T>(
@@ -15,7 +17,7 @@ export async function apiFetch<T>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${BASE}${path}`, { ...options, headers });
+  const res = await fetch(withDebugIp(`${BASE}${path}`), { ...options, headers });
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: 'Request failed' }));

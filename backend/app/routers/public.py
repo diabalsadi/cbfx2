@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 from app.database import get_db
 from app.models.article import Article
@@ -14,6 +14,7 @@ from app.models.analysis import Analysis
 from app.models.forum_reply import ForumReply
 from app.models.forum_thread import ForumThread
 from app.schemas.article import Article as ArticleSchema
+from app.utils.geo import detect_region, extract_client_ip
 
 router = APIRouter(prefix="/public", tags=["public"])
 
@@ -74,9 +75,27 @@ def get_published_analysis(article_id: str, db: Session = Depends(get_db)):
     return article
 
 
+def _covers_visitor(broker: Broker, country_code: Optional[str], region: Optional[str]) -> bool:
+    if broker.coverage_type == "country":
+        return country_code is not None and country_code in broker.geo_coverage
+    return region is not None and region in broker.geo_coverage
+
+
+def _visible_to_visitor(broker: Broker, country_code: Optional[str], region: Optional[str]) -> bool:
+    """Fail-open: if IP geolocation couldn't determine a region/country at all
+    (private IP, lookup down, etc.), show everything rather than an empty page.
+    Once a location is known, only brokers whose coverage includes it are shown."""
+    if country_code is None and region is None:
+        return True
+    return _covers_visitor(broker, country_code, region)
+
+
 @router.get("/brokers")
-def list_brokers(db: Session = Depends(get_db)):
-    """Public — returns active brokers."""
+def list_brokers(request: Request, db: Session = Depends(get_db)):
+    """Public — returns active brokers whose coverage includes the visitor's
+    detected region/country (via best-effort IP geolocation)."""
+    country_code, region = detect_region(extract_client_ip(request))
+
     brokers = (
         db.query(Broker)
         .filter(Broker.status == "active")
@@ -88,21 +107,25 @@ def list_brokers(db: Session = Depends(get_db)):
             "id": b.id,
             "name": b.name,
             "img_src": b.img_src,
+            "coverage_type": b.coverage_type,
             "geo_coverage": b.geo_coverage,
             "cashback_rate": b.cashback_rate,
             "status": b.status,
         }
         for b in brokers
+        if _visible_to_visitor(b, country_code, region)
     ]
 
 
 @router.get("/homepage")
-def homepage_aggregate(db: Session = Depends(get_db)):
+def homepage_aggregate(request: Request, db: Session = Depends(get_db)):
     """
     Public — single call that returns all data needed to render the homepage:
     market prices, top copy traders, latest news, open plays, latest analysis,
-    and recent forum threads.
+    and recent forum threads. Broker placement slots (featured/sponsored/partners)
+    are filtered to brokers covering the visitor's detected region/country.
     """
+    country_code, region = detect_region(extract_client_ip(request))
     market_prices = db.query(MarketPrice).order_by(MarketPrice.symbol).all()
 
     top_traders = (
@@ -161,14 +184,17 @@ def homepage_aggregate(db: Session = Depends(get_db)):
     broker_sections = {section: [] for section in PLACEMENT_SECTIONS}
     for p in placements:
         broker = placed_brokers.get(p.broker_id)
-        if broker and p.section in broker_sections:
-            broker_sections[p.section].append({
-                "position": p.position,
-                "id": broker.id,
-                "name": broker.name,
-                "img_src": broker.img_src,
-                "cashback_rate": broker.cashback_rate,
-            })
+        if not broker or p.section not in broker_sections:
+            continue
+        if not _visible_to_visitor(broker, country_code, region):
+            continue
+        broker_sections[p.section].append({
+            "position": p.position,
+            "id": broker.id,
+            "name": broker.name,
+            "img_src": broker.img_src,
+            "cashback_rate": broker.cashback_rate,
+        })
 
     def mp(m):
         return {"symbol": m.symbol, "price": m.price, "change_pct": m.change_pct, "direction": m.direction}

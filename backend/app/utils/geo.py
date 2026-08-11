@@ -1,7 +1,16 @@
 import ipaddress
 import json
+import os
 import urllib.request
 from typing import Optional, Tuple
+
+# Local dev only: browsers hitting localhost never send X-Forwarded-For (that's set
+# by a real reverse proxy, e.g. Render), so the backend only ever sees the Next.js
+# proxy's own loopback connection and geolocation is always empty. Set
+# ALLOW_DEV_IP_OVERRIDE=true in backend/.env (never in a deployed environment) to
+# let a request supply an X-Debug-IP header or ?debug_ip= query param instead, so
+# the region/country flow can be exercised end-to-end from the browser.
+DEV_IP_OVERRIDE_ENABLED = os.getenv("ALLOW_DEV_IP_OVERRIDE", "false").strip().lower() == "true"
 
 # Mirrors the region codes used by app.schemas.broker.REGIONS
 NORTH_AMERICA = {
@@ -57,6 +66,11 @@ for _code in ASIA:
 
 def extract_client_ip(request) -> Optional[str]:
     """Best-effort real client IP, honoring proxy headers set by the Next.js proxy / Render."""
+    if DEV_IP_OVERRIDE_ENABLED:
+        debug_ip = request.headers.get("x-debug-ip") or request.query_params.get("debug_ip")
+        if debug_ip:
+            return debug_ip.strip()
+
     forwarded = request.headers.get("x-forwarded-for")
     if forwarded:
         return forwarded.split(",")[0].strip()

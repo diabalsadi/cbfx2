@@ -10,6 +10,7 @@ class UserBase(BaseModel):
     name: Optional[str] = None
     role: Optional[str] = "user"
     region: Optional[str] = None
+    country_code: Optional[str] = None
 
 
 class UserCreate(UserBase):

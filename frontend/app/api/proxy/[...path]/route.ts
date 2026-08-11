@@ -2,11 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const BACKEND_URL = 'http://localhost:8000';
 
+const IS_DEV = process.env.NODE_ENV !== 'production';
+
 async function handler(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   const { path } = await params;
   const targetPath = '/' + path.join('/');
-  const search = req.nextUrl.search;
-  const url = `${BACKEND_URL}${targetPath}${search}`;
+
+  const searchParams = new URLSearchParams(req.nextUrl.search);
+  if (!IS_DEV) {
+    // debug_ip lets local dev spoof a client IP for geolocation testing (see
+    // backend/app/utils/geo.py ALLOW_DEV_IP_OVERRIDE). Strip it outside dev so a
+    // production deployment never forwards it, even if the backend flag were
+    // ever misconfigured.
+    searchParams.delete('debug_ip');
+  }
+  const search = searchParams.toString();
+  const url = `${BACKEND_URL}${targetPath}${search ? `?${search}` : ''}`;
 
   const headers: Record<string, string> = {};
   const contentType = req.headers.get('content-type');
@@ -21,6 +32,10 @@ async function handler(req: NextRequest, { params }: { params: Promise<{ path: s
   if (forwardedFor) headers['X-Forwarded-For'] = forwardedFor;
   const realIp = req.headers.get('x-real-ip');
   if (realIp) headers['X-Real-IP'] = realIp;
+  if (IS_DEV) {
+    const debugIp = req.headers.get('x-debug-ip');
+    if (debugIp) headers['X-Debug-IP'] = debugIp;
+  }
 
   let body: Blob | undefined;
   if (req.method !== 'GET' && req.method !== 'HEAD') {

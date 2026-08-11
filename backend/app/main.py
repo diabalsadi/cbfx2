@@ -34,6 +34,8 @@ with engine.begin() as connection:
     connection.execute(text("ALTER TABLE forum_replies ADD COLUMN IF NOT EXISTS image_url VARCHAR"))
     connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS referral_id VARCHAR"))
     connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS region VARCHAR"))
+    connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS coverage_type VARCHAR DEFAULT 'region'"))
+    connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS country_code VARCHAR"))
 
 app = FastAPI(title="CBFX API", version="1.0.0")
 

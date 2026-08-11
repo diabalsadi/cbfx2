@@ -11,6 +11,7 @@ import { useState } from "react";
 const navItems = [
   { label: "Home", href: "/" },
   { label: "Markets", href: "/markets" },
+  { label: "Brokers", href: "/brokers" },
   { label: "Copy Trading", href: "/copy-trading" },
   { label: "Plays", href: "/plays" },
   { label: "Analysis", href: "/analysis" },
