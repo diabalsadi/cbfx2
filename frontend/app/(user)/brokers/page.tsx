@@ -1,11 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
+import { REGION_LABELS } from "@/helpers/regions";
 import styles from "./brokers.module.scss";
 
 type Broker = {
   id: string;
   name: string;
-  company: string | null;
+  img_src: string | null;
+  geo_coverage: string[];
+  cashback_rate: number;
   status: string;
 };
 
@@ -13,6 +16,7 @@ const FALLBACK_BROKERS = [
   {
     id: "1",
     name: "Apex Markets",
+    imgSrc: null as string | null,
     company: "Pro-grade execution · Up to 85% rebates",
     status: "active",
     rebate: "85%",
@@ -22,6 +26,7 @@ const FALLBACK_BROKERS = [
   {
     id: "2",
     name: "IC Markets",
+    imgSrc: null as string | null,
     company: "Raw spreads from 0.0 pips · True ECN",
     status: "active",
     rebate: "80%",
@@ -31,6 +36,7 @@ const FALLBACK_BROKERS = [
   {
     id: "3",
     name: "XM Global",
+    imgSrc: null as string | null,
     company: "Multi-asset broker · 1000+ instruments",
     status: "active",
     rebate: "75%",
@@ -40,6 +46,7 @@ const FALLBACK_BROKERS = [
   {
     id: "4",
     name: "Exness",
+    imgSrc: null as string | null,
     company: "Instant withdrawals · Tight spreads",
     status: "active",
     rebate: "70%",
@@ -49,6 +56,7 @@ const FALLBACK_BROKERS = [
   {
     id: "5",
     name: "Pepperstone",
+    imgSrc: null as string | null,
     company: "Award-winning · ASIC & FCA regulated",
     status: "active",
     rebate: "72%",
@@ -58,6 +66,7 @@ const FALLBACK_BROKERS = [
   {
     id: "6",
     name: "FBS",
+    imgSrc: null as string | null,
     company: "Copy trading · Flexible leverage",
     status: "active",
     rebate: "65%",
@@ -96,9 +105,12 @@ export default function BrokersPage() {
           const mapped = data.map((b, i) => ({
             id: b.id,
             name: b.name,
-            company: b.company || "Vetted broker partner",
+            imgSrc: b.img_src,
+            company: b.geo_coverage.length
+              ? b.geo_coverage.map((r) => REGION_LABELS[r] || r).join(" · ")
+              : "Vetted broker partner",
             status: b.status,
-            rebate: `${70 + (i % 4) * 5}%`,
+            rebate: `${b.cashback_rate}%`,
             rating: `4.${5 + (i % 5)}`,
             type: i % 2 === 0 ? "ECN" : "Market Maker",
           }));
@@ -140,12 +152,17 @@ export default function BrokersPage() {
         {filtered.map((b, i) => (
           <div key={b.id} className={styles.card}>
             <div className={styles.cardHeader}>
-              <div
-                className={styles.avatar}
-                style={{ background: BG_COLORS[i % BG_COLORS.length] }}
-              >
-                {getInitials(b.name)}
-              </div>
+              {b.imgSrc ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={b.imgSrc} alt="" className={styles.avatar} />
+              ) : (
+                <div
+                  className={styles.avatar}
+                  style={{ background: BG_COLORS[i % BG_COLORS.length] }}
+                >
+                  {getInitials(b.name)}
+                </div>
+              )}
               <div className={styles.brokerInfo}>
                 <div className={styles.brokerName}>{b.name}</div>
                 <div className={styles.brokerType}>{b.type}</div>

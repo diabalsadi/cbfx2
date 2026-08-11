@@ -14,27 +14,25 @@ const SymbolChart = dynamic(() => import("@/components/SymbolChart"), {
 });
 
 /* ── static (non-API) data ── */
-const FEATURED_BROKERS = [
-  {
-    name: "Apex Markets",
-    desc: "Pro-grade execution. Up to 85% rebates.",
-    color: "#f97316",
-  },
-  {
-    name: "Apex Markets",
-    desc: "Pro-grade execution. Up to 85% rebates.",
-    color: "#f97316",
-  },
+const FEATURED_COLORS = ["#f97316", "#7c3aed", "#0891b2", "#16a34a"];
+
+const BROKER_PALETTE = [
+  { color: "#e53e3e", bg: "#2a1010" },
+  { color: "#2563eb", bg: "#101a2a" },
+  { color: "#059669", bg: "#0f2318" },
+  { color: "#7c3aed", bg: "#1a1028" },
+  { color: "#dc2626", bg: "#2a1010" },
+  { color: "#0284c7", bg: "#0e1d2a" },
 ];
 
-const SPONSORED = [
-  { label: "XM", color: "#e53e3e", bg: "#2a1010" },
-  { label: "FBS", color: "#2563eb", bg: "#101a2a" },
-  { label: "EX", color: "#059669", bg: "#0f2318" },
-  { label: "PP", color: "#7c3aed", bg: "#1a1028" },
-  { label: "OA", color: "#dc2626", bg: "#2a1010" },
-  { label: "IG", color: "#0284c7", bg: "#0e1d2a" },
-];
+function brokerInitials(name: string) {
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
 
 const CALENDAR_EVENTS = [
   { time: "12:30", event: "US CPI YoY", live: true },
@@ -234,31 +232,64 @@ export default function HomePage() {
           Featured Brokers
          ══════════════════════════════ */}
       <section className={styles.section}>
+        <div className={styles.stripHeader}>
+          <div className={styles.sectionTitleGroup}>
+            <div className={styles.sectionIcon}>
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                <path
+                  d="M10 2L12.39 7.26L18 8.18L14 12.08L14.9 18L10 15.27L5.1 18L6 12.08L2 8.18L7.61 7.26L10 2Z"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+            <div className={styles.sectionTitleText}>
+              <h2>Featured Brokers</h2>
+              <p>Vetted brokers with the best cashback rates</p>
+            </div>
+          </div>
+          <Link href="/brokers" className={styles.sectionLink}>
+            See all →
+          </Link>
+        </div>
         <div className={styles.featuredGrid}>
-          {FEATURED_BROKERS.map((b, i) => (
-            <Link href="/brokers" key={i} className={styles.featuredCard}>
+          {(data?.broker_sections.featured ?? []).map((b, i) => (
+            <Link href="/brokers" key={b.id} className={styles.featuredCard}>
               <div className={styles.featuredCardTop}>
                 <span className={styles.featuredTag}>FEATURED BROKER</span>
                 <span className={styles.adBadge}>AD</span>
               </div>
               <div className={styles.featuredCardBody}>
-                <div
-                  className={styles.brokerLogoCircle}
-                  style={{ background: b.color }}
-                >
-                  <svg viewBox="0 0 32 32" fill="none" width="20" height="20">
-                    <polyline
-                      points="4,22 10,14 16,18 24,8"
-                      stroke="white"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </div>
+                {b.img_src ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={b.img_src}
+                    alt=""
+                    className={styles.brokerLogoCircle}
+                    style={{ objectFit: "cover" }}
+                  />
+                ) : (
+                  <div
+                    className={styles.brokerLogoCircle}
+                    style={{ background: FEATURED_COLORS[i % FEATURED_COLORS.length] }}
+                  >
+                    <svg viewBox="0 0 32 32" fill="none" width="20" height="20">
+                      <polyline
+                        points="4,22 10,14 16,18 24,8"
+                        stroke="white"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                )}
                 <div>
                   <div className={styles.brokerName}>{b.name}</div>
-                  <div className={styles.brokerDesc}>{b.desc}</div>
+                  <div className={styles.brokerDesc}>
+                    Up to {b.cashback_rate}% cashback
+                  </div>
                 </div>
               </div>
             </Link>
@@ -282,25 +313,48 @@ export default function HomePage() {
             </svg>
             <span>SPONSORED BROKERS</span>
           </div>
-          <span className={styles.adBadge}>AD</span>
+          <div className={styles.headerRight}>
+            <Link href="/brokers" className={styles.sectionLink}>
+              See all →
+            </Link>
+            <span className={styles.adBadge}>AD</span>
+          </div>
         </div>
         <div className={styles.sponsoredGrid}>
-          {SPONSORED.map((s) => (
-            <div
-              key={s.label}
-              className={styles.sponsoredCard}
-              style={
-                {
-                  "--broker-color": s.color,
-                  "--broker-bg": s.bg,
-                } as React.CSSProperties
-              }
-            >
-              <div className={styles.sponsoredLogo}>
-                <span>{s.label}</span>
-              </div>
-            </div>
-          ))}
+          {(data?.broker_sections.sponsored ?? []).map((b, i) => {
+            const palette = BROKER_PALETTE[i % BROKER_PALETTE.length];
+            return (
+              <Link
+                href="/brokers"
+                key={b.id}
+                className={styles.sponsoredCard}
+                style={
+                  {
+                    "--broker-color": palette.color,
+                    "--broker-bg": palette.bg,
+                  } as React.CSSProperties
+                }
+              >
+                <div className={styles.sponsoredLogo}>
+                  {b.img_src ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={b.img_src}
+                      alt=""
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        borderRadius: "12px",
+                      }}
+                    />
+                  ) : (
+                    <span>{brokerInitials(b.name)}</span>
+                  )}
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </section>
 
@@ -536,25 +590,48 @@ export default function HomePage() {
             </svg>
             <span>FEATURED PARTNERS</span>
           </div>
-          <span className={styles.adBadge}>AD</span>
+          <div className={styles.headerRight}>
+            <Link href="/brokers" className={styles.sectionLink}>
+              See all →
+            </Link>
+            <span className={styles.adBadge}>AD</span>
+          </div>
         </div>
         <div className={styles.sponsoredGrid}>
-          {SPONSORED.map((s) => (
-            <div
-              key={`fp-${s.label}`}
-              className={styles.sponsoredCard}
-              style={
-                {
-                  "--broker-color": s.color,
-                  "--broker-bg": s.bg,
-                } as React.CSSProperties
-              }
-            >
-              <div className={styles.sponsoredLogo}>
-                <span>{s.label}</span>
-              </div>
-            </div>
-          ))}
+          {(data?.broker_sections.partners ?? []).map((b, i) => {
+            const palette = BROKER_PALETTE[i % BROKER_PALETTE.length];
+            return (
+              <Link
+                href="/brokers"
+                key={b.id}
+                className={styles.sponsoredCard}
+                style={
+                  {
+                    "--broker-color": palette.color,
+                    "--broker-bg": palette.bg,
+                  } as React.CSSProperties
+                }
+              >
+                <div className={styles.sponsoredLogo}>
+                  {b.img_src ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={b.img_src}
+                      alt=""
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        borderRadius: "12px",
+                      }}
+                    />
+                  ) : (
+                    <span>{brokerInitials(b.name)}</span>
+                  )}
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </section>
 
@@ -754,25 +831,48 @@ export default function HomePage() {
             </svg>
             <span>MORE PARTNER BROKERS</span>
           </div>
-          <span className={styles.adBadge}>AD</span>
+          <div className={styles.headerRight}>
+            <Link href="/brokers" className={styles.sectionLink}>
+              See all →
+            </Link>
+            <span className={styles.adBadge}>AD</span>
+          </div>
         </div>
         <div className={styles.sponsoredGrid}>
-          {SPONSORED.map((s) => (
-            <div
-              key={`mp-${s.label}`}
-              className={styles.sponsoredCard}
-              style={
-                {
-                  "--broker-color": s.color,
-                  "--broker-bg": s.bg,
-                } as React.CSSProperties
-              }
-            >
-              <div className={styles.sponsoredLogo}>
-                <span>{s.label}</span>
-              </div>
-            </div>
-          ))}
+          {(data?.broker_sections.more_partners ?? []).map((b, i) => {
+            const palette = BROKER_PALETTE[i % BROKER_PALETTE.length];
+            return (
+              <Link
+                href="/brokers"
+                key={b.id}
+                className={styles.sponsoredCard}
+                style={
+                  {
+                    "--broker-color": palette.color,
+                    "--broker-bg": palette.bg,
+                  } as React.CSSProperties
+                }
+              >
+                <div className={styles.sponsoredLogo}>
+                  {b.img_src ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={b.img_src}
+                      alt=""
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        borderRadius: "12px",
+                      }}
+                    />
+                  ) : (
+                    <span>{brokerInitials(b.name)}</span>
+                  )}
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </section>
 

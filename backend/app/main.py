@@ -7,6 +7,7 @@ from app.database import engine, Base
 from app.routers import auth
 from app.routers import articles, clients, campaigns, users, public
 from app.routers import market_prices, copy_traders, plays, analysis, forum
+from app.routers import brokers, geo, broker_placements
 
 # Import all models so SQLAlchemy creates their tables
 import app.models.user
@@ -19,6 +20,8 @@ import app.models.play
 import app.models.analysis
 import app.models.forum_thread
 import app.models.forum_reply
+import app.models.broker
+import app.models.broker_placement
 
 Base.metadata.create_all(bind=engine)
 
@@ -29,6 +32,8 @@ with engine.begin() as connection:
     connection.execute(text("ALTER TABLE articles ADD COLUMN IF NOT EXISTS symbol VARCHAR"))
     connection.execute(text("ALTER TABLE forum_threads ADD COLUMN IF NOT EXISTS image_url VARCHAR"))
     connection.execute(text("ALTER TABLE forum_replies ADD COLUMN IF NOT EXISTS image_url VARCHAR"))
+    connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS referral_id VARCHAR"))
+    connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS region VARCHAR"))
 
 app = FastAPI(title="CBFX API", version="1.0.0")
 
@@ -51,6 +56,9 @@ app.include_router(copy_traders.router)
 app.include_router(plays.router)
 app.include_router(analysis.router)
 app.include_router(forum.router)
+app.include_router(brokers.router)
+app.include_router(geo.router)
+app.include_router(broker_placements.router)
 
 
 @app.get("/")

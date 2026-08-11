@@ -4,7 +4,9 @@ from typing import List
 
 from app.database import get_db
 from app.models.article import Article
-from app.models.client import Client
+from app.models.broker import Broker
+from app.models.broker_placement import BrokerPlacement
+from app.schemas.broker_placement import SECTIONS as PLACEMENT_SECTIONS
 from app.models.market_price import MarketPrice
 from app.models.copy_trader import CopyTrader
 from app.models.play import Play
@@ -74,21 +76,23 @@ def get_published_analysis(article_id: str, db: Session = Depends(get_db)):
 
 @router.get("/brokers")
 def list_brokers(db: Session = Depends(get_db)):
-    """Public — returns active broker/client list."""
-    clients = (
-        db.query(Client)
-        .filter(Client.status == "active")
-        .order_by(Client.created_at.desc())
+    """Public — returns active brokers."""
+    brokers = (
+        db.query(Broker)
+        .filter(Broker.status == "active")
+        .order_by(Broker.created_at.desc())
         .all()
     )
     return [
         {
-            "id": c.id,
-            "name": c.name,
-            "company": c.company,
-            "status": c.status,
+            "id": b.id,
+            "name": b.name,
+            "img_src": b.img_src,
+            "geo_coverage": b.geo_coverage,
+            "cashback_rate": b.cashback_rate,
+            "status": b.status,
         }
-        for c in clients
+        for b in brokers
     ]
 
 
@@ -141,6 +145,31 @@ def homepage_aggregate(db: Session = Depends(get_db)):
     for thread in recent_threads:
         thread.reply_count = db.query(ForumReply).filter(ForumReply.thread_id == thread.id).count()
 
+    placements = (
+        db.query(BrokerPlacement)
+        .order_by(BrokerPlacement.section, BrokerPlacement.position)
+        .all()
+    )
+    placed_brokers = (
+        {
+            b.id: b
+            for b in db.query(Broker).filter(Broker.id.in_({p.broker_id for p in placements})).all()
+        }
+        if placements
+        else {}
+    )
+    broker_sections = {section: [] for section in PLACEMENT_SECTIONS}
+    for p in placements:
+        broker = placed_brokers.get(p.broker_id)
+        if broker and p.section in broker_sections:
+            broker_sections[p.section].append({
+                "position": p.position,
+                "id": broker.id,
+                "name": broker.name,
+                "img_src": broker.img_src,
+                "cashback_rate": broker.cashback_rate,
+            })
+
     def mp(m):
         return {"symbol": m.symbol, "price": m.price, "change_pct": m.change_pct, "direction": m.direction}
 
@@ -185,4 +214,5 @@ def homepage_aggregate(db: Session = Depends(get_db)):
         "open_plays": [play(p) for p in open_plays],
         "latest_analysis": [analysis(a) for a in latest_analysis],
         "recent_threads": [thread(th) for th in recent_threads],
+        "broker_sections": broker_sections,
     }

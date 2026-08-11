@@ -12,6 +12,7 @@ interface User {
   email: string;
   name: string | null;
   role: string;
+  region: string | null;
 }
 
 interface AuthContextType {
@@ -53,6 +54,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     }
   }, [fetchMe]);
+
+  // Best-effort IP-based region classification for this visit. Works for
+  // anonymous visitors too; when a token is present the backend persists the
+  // detected region on the user's account so it stays fresh across visits.
+  useEffect(() => {
+    const stored = localStorage.getItem("cbfx_token");
+    fetch("/api/proxy/geo/detect", {
+      headers: stored ? { Authorization: `Bearer ${stored}` } : {},
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { region: string | null } | null) => {
+        if (data?.region) {
+          setUser((prev) => (prev ? { ...prev, region: data.region } : prev));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const login = async (email: string, password: string) => {
     const res = await fetch("/api/proxy/auth/login", {

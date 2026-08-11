@@ -15,6 +15,7 @@ from app.models.forum_thread import ForumThread
 from app.models.forum_reply import ForumReply
 from app.models.client import Client
 from app.models.campaign import Campaign
+from app.models.broker import Broker
 import bcrypt
 
 
@@ -514,6 +515,33 @@ def seed_campaigns(db):
             print(f"  . Campaign exists: {c['name']}")
 
 
+# ── Brokers ────────────────────────────────────────────────────────────────────
+
+def seed_brokers(db):
+    brokers = [
+        {
+            "name": "CFI",
+            "img_src": None,
+            "geo_coverage": ["middle_east", "africa", "europe"],
+            "cashback_rate": 75.0,
+            "status": "active",
+        },
+        {
+            "name": "Exness",
+            "img_src": None,
+            "geo_coverage": ["europe", "asia", "africa", "middle_east", "south_america"],
+            "cashback_rate": 88.0,
+            "status": "active",
+        },
+    ]
+    for b in brokers:
+        if not db.query(Broker).filter(Broker.name == b["name"]).first():
+            db.add(Broker(**b))
+            print(f"  + Broker: {b['name']}")
+        else:
+            print(f"  . Broker exists: {b['name']}")
+
+
 # -- Main ---------------------------------------------------------------------
 
 if __name__ == "__main__":
@@ -526,6 +554,7 @@ if __name__ == "__main__":
     import app.models.forum_reply    # noqa
     import app.models.client         # noqa
     import app.models.campaign       # noqa
+    import app.models.broker         # noqa
 
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
@@ -570,6 +599,10 @@ if __name__ == "__main__":
 
         print("\n-- Campaigns -------------------------")
         seed_campaigns(db)
+        db.flush()
+
+        print("\n-- Brokers ---------------------------")
+        seed_brokers(db)
         db.flush()
 
         db.commit()

@@ -159,6 +159,16 @@ export interface ForumThreadDetail extends ForumThread {
   replies: ForumReply[];
 }
 
+export interface BrokerSlot {
+  position: number;
+  id: string;
+  name: string;
+  img_src: string | null;
+  cashback_rate: number;
+}
+
+export type BrokerSectionKey = "featured" | "sponsored" | "partners" | "more_partners";
+
 export interface HomepageData {
   market_prices: Array<{ symbol: string; price: string; change_pct: string; direction: string }>;
   top_traders: Array<{ id: string; name: string; avatar_initials: string; roi_12m: number; followers: number; win_rate: number; strategy: string; pairs: string[] }>;
@@ -166,6 +176,16 @@ export interface HomepageData {
   open_plays: Array<{ id: string; pair: string; direction: string; entry_price: string; take_profit?: string; stop_loss?: string; timeframe?: string; play_type: string; status: string }>;
   latest_analysis: Array<{ id: string; pair: string; timeframe: string; bias: string; summary?: string }>;
   recent_threads: Array<{ id: string; title: string; category: string; author_email: string; reply_count: number; is_pinned: boolean; created_at: string }>;
+  broker_sections: Record<BrokerSectionKey, BrokerSlot[]>;
+}
+
+export interface BrokerPlacement {
+  id: string;
+  section: BrokerSectionKey;
+  position: number;
+  broker_id: string;
+  created_at: string;
+  updated_at: string;
 }
 
 // ── Domain APIs ────────────────────────────────────────────────────────────────
@@ -225,4 +245,13 @@ export const forumApi = {
 
 export const publicApi = {
   homepage: () => api.get<HomepageData>('/public/homepage'),
+};
+
+export const brokerPlacementsApi = {
+  list: (section?: BrokerSectionKey) =>
+    api.get<BrokerPlacement[]>(`/broker-placements/${section ? `?section=${section}` : ''}`),
+  set: (section: BrokerSectionKey, position: number, brokerId: string) =>
+    api.put<BrokerPlacement>(`/broker-placements/${section}/${position}`, { broker_id: brokerId }),
+  clear: (section: BrokerSectionKey, position: number) =>
+    api.delete<void>(`/broker-placements/${section}/${position}`),
 };

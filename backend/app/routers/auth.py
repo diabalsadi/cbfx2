@@ -1,5 +1,5 @@
 from datetime import timedelta
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -13,6 +13,7 @@ from app.utils.auth import (
     get_current_user,
     ACCESS_TOKEN_EXPIRE_MINUTES,
 )
+from app.utils.geo import detect_region, extract_client_ip
 
 router = APIRouter(
     prefix="/auth",
@@ -24,17 +25,20 @@ router = APIRouter(
 @router.post(
     "/register", response_model=user_schemas.User, status_code=status.HTTP_201_CREATED
 )
-def register(user: user_schemas.UserCreate, db: Session = Depends(get_db)):
+def register(user: user_schemas.UserCreate, request: Request, db: Session = Depends(get_db)):
     """Register a new user."""
     db_user = db.query(models.User).filter(models.User.email == user.email).first()
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
+
+    _, region = detect_region(extract_client_ip(request))
 
     hashed_password = get_password_hash(user.password)
     db_user = models.User(
         email=user.email,
         name=user.name,
         role=user.role,
+        region=region,
         hashed_password=hashed_password,
     )
     db.add(db_user)

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_URL = 'https://cbfx.onrender.com';
+const BACKEND_URL = 'http://localhost:8000';
 
 async function handler(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   const { path } = await params;
@@ -16,6 +16,11 @@ async function handler(req: NextRequest, { params }: { params: Promise<{ path: s
 
   const auth = req.headers.get('authorization');
   if (auth) headers['Authorization'] = auth;
+
+  const forwardedFor = req.headers.get('x-forwarded-for');
+  if (forwardedFor) headers['X-Forwarded-For'] = forwardedFor;
+  const realIp = req.headers.get('x-real-ip');
+  if (realIp) headers['X-Real-IP'] = realIp;
 
   let body: Blob | undefined;
   if (req.method !== 'GET' && req.method !== 'HEAD') {

@@ -9,6 +9,7 @@ class UserBase(BaseModel):
     email: EmailStr
     name: Optional[str] = None
     role: Optional[str] = "user"
+    region: Optional[str] = None
 
 
 class UserCreate(UserBase):

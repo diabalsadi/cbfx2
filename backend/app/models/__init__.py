@@ -8,6 +8,7 @@ from app.models.play import Play
 from app.models.analysis import Analysis
 from app.models.forum_thread import ForumThread
 from app.models.forum_reply import ForumReply
+from app.models.broker import Broker
 
 __all__ = [
     "User",
@@ -20,4 +21,5 @@ __all__ = [
     "Analysis",
     "ForumThread",
     "ForumReply",
+    "Broker",
 ]

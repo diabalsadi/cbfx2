@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { api } from "@/helpers/api";
+import { REGION_LABELS } from "@/helpers/regions";
 import Card from "@/components/Card";
 import styles from "./Users.module.scss";
 
@@ -8,6 +9,7 @@ interface User {
   email: string;
   name: string | null;
   role: string;
+  region: string | null;
   created_at: string;
 }
 
@@ -190,6 +192,7 @@ export default function UsersPage() {
                 <th>Name</th>
                 <th>Email</th>
                 <th>Role</th>
+                <th>Region</th>
                 <th>Joined</th>
                 <th>Actions</th>
               </tr>
@@ -197,13 +200,13 @@ export default function UsersPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className={styles.empty}>
+                  <td colSpan={6} className={styles.empty}>
                     Loading…
                   </td>
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className={styles.empty}>
+                  <td colSpan={6} className={styles.empty}>
                     No users found.
                   </td>
                 </tr>
@@ -227,6 +230,9 @@ export default function UsersPage() {
                           </option>
                         ))}
                       </select>
+                    </td>
+                    <td className={styles.region}>
+                      {u.region ? REGION_LABELS[u.region] || u.region : "—"}
                     </td>
                     <td className={styles.date}>
                       {new Date(u.created_at).toLocaleDateString("en-US", {
