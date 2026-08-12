@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_URL = 'https://cbfx.onrender.com';
-
 const IS_DEV = process.env.NODE_ENV !== 'production';
+
+const BACKEND_URL = IS_DEV ? 'http://localhost:8000': 'https://cbfx.onrender.com';
+
 
 async function handler(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   const { path } = await params;
