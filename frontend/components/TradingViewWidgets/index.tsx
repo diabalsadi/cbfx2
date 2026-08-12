@@ -51,6 +51,22 @@ interface WidgetProps {
   theme: TvTheme;
 }
 
+/** Compact single-symbol name + last price + change widget, no chart. */
+export function SingleTickerWidget({ tvSymbol, theme }: WidgetProps) {
+  return (
+    <TradingViewScriptEmbed
+      scriptSrc="https://s3.tradingview.com/external-embedding/embed-widget-single-quote.js"
+      config={{
+        symbol: tvSymbol,
+        width: "100%",
+        locale: "en",
+        colorTheme: theme,
+        isTransparent: true,
+      }}
+    />
+  );
+}
+
 export function AdvancedChartWidget({ tvSymbol, theme }: WidgetProps) {
   return (
     <TradingViewScriptEmbed

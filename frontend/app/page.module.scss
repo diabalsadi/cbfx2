@@ -203,7 +203,8 @@
   display: block;
 }
 
-/* Hero price-card grid (2×3) */
+/* Hero price-card grid (2×3) — each card is a Link wrapping a live
+   TradingView single-ticker widget (see .tickerWrap). */
 .priceGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -211,11 +212,12 @@
 }
 
 .priceCard {
+  display: block;
   background: var(--bg-primary);
   border: 1px solid var(--border);
   border-radius: 14px;
-  padding: 18px 20px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  text-decoration: none;
   transition:
     border-color 0.15s,
     box-shadow 0.15s;
@@ -224,42 +226,14 @@
     border-color: var(--accent);
     box-shadow: 0 4px 16px rgba(249, 115, 22, 0.1);
   }
+}
 
-  .pair {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-muted);
-    letter-spacing: 0.5px;
-    margin-bottom: 6px;
-    text-transform: uppercase;
-  }
-
-  .price {
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--text-primary);
-    letter-spacing: -0.5px;
-    margin-bottom: 4px;
-  }
-
-  .change {
-    font-size: 13px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 3px;
-
-    &.up {
-      color: #16a34a;
-    }
-    &.down {
-      color: #dc2626;
-    }
-  }
-
-  .changeArrow {
-    font-size: 14px;
-  }
+/* Neutralizes the embedded widget's own iframe clicks so they fall through
+   to the wrapping Link (.priceCard / .stripCard) instead of TradingView. */
+.tickerWrap {
+  height: 112px;
+  overflow: hidden;
+  pointer-events: none;
 }
 
 /* ═══════════════════════════════
@@ -344,7 +318,8 @@
   }
 }
 
-/* 6-column horizontal grid */
+/* 6-column horizontal grid — each card is a Link wrapping a live
+   TradingView single-ticker widget (see .tickerWrap). */
 .marketsStrip {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
@@ -359,11 +334,12 @@
 }
 
 .stripCard {
+  display: block;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 16px;
-  cursor: pointer;
+  overflow: hidden;
+  text-decoration: none;
   transition:
     border-color 0.15s,
     box-shadow 0.15s;
@@ -371,34 +347,6 @@
   &:hover {
     border-color: var(--accent);
     box-shadow: 0 4px 16px rgba(249, 115, 22, 0.1);
-  }
-
-  .stripPair {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-muted);
-    letter-spacing: 0.4px;
-    margin-bottom: 8px;
-    text-transform: uppercase;
-  }
-
-  .stripPrice {
-    font-size: 17px;
-    font-weight: 700;
-    color: var(--text-primary);
-    letter-spacing: -0.4px;
-    margin-bottom: 5px;
-  }
-
-  .stripChange {
-    font-size: 12px;
-    font-weight: 600;
-    &.up {
-      color: #16a34a;
-    }
-    &.down {
-      color: #dc2626;
-    }
   }
 }
 

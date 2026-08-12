@@ -34,31 +34,6 @@
   margin: 0;
 }
 
-.priceBlock {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-}
-
-.price {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: -0.3px;
-}
-
-.change {
-  font-size: 14px;
-  font-weight: 600;
-
-  &.up {
-    color: #16a34a;
-  }
-  &.down {
-    color: #dc2626;
-  }
-}
-
 .chartPanel {
   background: var(--bg-card);
   border: 1px solid var(--border);

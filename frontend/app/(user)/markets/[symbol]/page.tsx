@@ -3,7 +3,6 @@
 import { use } from "react";
 import Link from "next/link";
 import { useTheme } from "@/contexts/ThemeContext";
-import { getMarketEntryBySlug } from "@/data/marketSymbols";
 import { getTradingViewSymbol } from "@/helpers/tradingviewSymbols";
 import {
   AdvancedChartWidget,
@@ -22,7 +21,6 @@ export default function SymbolPage({
   const { theme } = useTheme();
 
   const tvInfo = getTradingViewSymbol(slug);
-  const entry = getMarketEntryBySlug(slug);
 
   if (!tvInfo) {
     return (
@@ -36,7 +34,7 @@ export default function SymbolPage({
     );
   }
 
-  const displayName = entry?.name ?? tvInfo.displayName;
+  const displayName = tvInfo.displayName;
 
   return (
     <div className={styles.page}>
@@ -46,16 +44,6 @@ export default function SymbolPage({
         </Link>
         <div className={styles.headerRow}>
           <h1 className={styles.title}>{displayName}</h1>
-          {entry && (
-            <div className={styles.priceBlock}>
-              <span className={styles.price}>{entry.price}</span>
-              <span
-                className={`${styles.change} ${entry.up ? styles.up : styles.down}`}
-              >
-                {entry.up ? "↗" : "↘"} {entry.change}
-              </span>
-            </div>
-          )}
         </div>
       </div>
 

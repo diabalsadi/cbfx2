@@ -1,26 +1,20 @@
 "use client";
 import { useState } from "react";
-import dynamic from "next/dynamic";
+import Link from "next/link";
+import { useTheme } from "@/contexts/ThemeContext";
+import { SingleTickerWidget } from "@/components/TradingViewWidgets";
+import { getSymbols, symbolHref, type MarketTab } from "@/helpers/tradingviewSymbols";
 import styles from "./markets.module.scss";
-import { MARKETS, type MarketEntry, type MarketTab } from "@/data/marketSymbols";
 
-const SymbolChart = dynamic(() => import("@/components/SymbolChart"), {
-  ssr: false,
-});
-
-type Tab = MarketTab;
-
-type SelectedSymbol = MarketEntry | null;
+const TABS: MarketTab[] = ["Forex", "Crypto", "Metals", "Indices", "Commodities"];
 
 export default function MarketsPage() {
-  const [activeTab, setActiveTab] = useState<Tab>("Forex");
+  const [activeTab, setActiveTab] = useState<MarketTab>("Forex");
   const [search, setSearch] = useState("");
-  const [selected, setSelected] = useState<SelectedSymbol>(null);
+  const { theme } = useTheme();
 
-  const tabs: Tab[] = ["Forex", "Crypto", "Metals", "Indices"];
-
-  const filtered = MARKETS[activeTab].filter((m) =>
-    m.name.toLowerCase().includes(search.toLowerCase()),
+  const filtered = getSymbols(activeTab).filter((s) =>
+    s.displayName.toLowerCase().includes(search.toLowerCase()),
   );
 
   return (
@@ -41,7 +35,7 @@ export default function MarketsPage() {
         </div>
 
         <div className={styles.tabs}>
-          {tabs.map((tab) => (
+          {TABS.map((tab) => (
             <button
               key={tab}
               className={`${styles.tab} ${activeTab === tab ? styles.activeTab : ""}`}
@@ -59,42 +53,19 @@ export default function MarketsPage() {
             No symbols match &ldquo;{search}&rdquo;
           </div>
         ) : (
-          filtered.map((m) => (
-            <div
-              key={m.name}
+          filtered.map((s) => (
+            <Link
+              key={s.displayName}
+              href={symbolHref(s.displayName)}
               className={styles.row}
-              onClick={() => setSelected(m)}
             >
-              <div className={styles.rowLeft}>
-                <div className={styles.symbolBadge}>{m.symbol}</div>
-                <div>
-                  <div className={styles.symbolName}>{m.name}</div>
-                  <div className={styles.symbolMeta}>Spot · Live</div>
-                </div>
+              <div className={styles.tickerWrap}>
+                <SingleTickerWidget tvSymbol={s.tvSymbol} theme={theme} />
               </div>
-              <div className={styles.rowRight}>
-                <div className={styles.symbolPrice}>{m.price}</div>
-                <div
-                  className={`${styles.symbolChange} ${m.up ? styles.up : styles.down}`}
-                >
-                  {m.up ? "↗" : "↘"} {m.change}
-                </div>
-              </div>
-            </div>
+            </Link>
           ))
         )}
       </div>
-
-      {selected && (
-        <SymbolChart
-          symbol={selected.symbol}
-          name={selected.name}
-          price={selected.price}
-          change={selected.change}
-          up={selected.up}
-          onClose={() => setSelected(null)}
-        />
-      )}
     </>
   );
 }

@@ -1,20 +1,23 @@
 "use client";
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { useState, useEffect } from "react";
 import UserNav from "@/components/UserNav";
 import LoginModal from "@/components/LoginModal";
 import { LoginModalProvider } from "@/contexts/LoginModalContext";
+import { useTheme } from "@/contexts/ThemeContext";
+import { SingleTickerWidget } from "@/components/TradingViewWidgets";
+import { getSymbolByDisplayName, symbolHref } from "@/helpers/tradingviewSymbols";
 import styles from "./page.module.scss";
 import userStyles from "./(user)/user.module.scss";
 import { publicApi, type HomepageData } from "@/helpers/api";
 
-const SymbolChart = dynamic(() => import("@/components/SymbolChart"), {
-  ssr: false,
-});
-
 /* ── static (non-API) data ── */
 const FEATURED_COLORS = ["#f97316", "#7c3aed", "#0891b2", "#16a34a"];
+
+/* Curated symbols shown on the homepage price sections. */
+const HOMEPAGE_SYMBOLS = ["EUR/USD", "GBP/USD", "BTC/USD", "ETH/USD", "XAU/USD", "WTI Crude Oil"]
+  .map(getSymbolByDisplayName)
+  .filter((s): s is NonNullable<typeof s> => s !== null);
 
 const BROKER_PALETTE = [
   { color: "#e53e3e", bg: "#2a1010" },
@@ -40,9 +43,6 @@ const CALENDAR_EVENTS = [
   { time: "18:00", event: "Fed Speak — Powell", live: false },
 ];
 
-/* ── market entry type for the chart modal ── */
-type MarketEntry = { pair: string; price: string; change: string; up: boolean };
-
 /* ── time-ago helper ── */
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -53,21 +53,15 @@ function timeAgo(iso: string): string {
 }
 
 export default function HomePage() {
-  const [selected, setSelected] = useState<MarketEntry | null>(null);
   const [demoDismissed, setDemoDismissed] = useState(false);
   const [data, setData] = useState<HomepageData | null>(null);
+  const { theme } = useTheme();
 
   useEffect(() => {
     publicApi.homepage().then(setData).catch(console.error);
   }, []);
 
   /* ── derived data (falls back to empty arrays while loading) ── */
-  const MARKET_PRICES: MarketEntry[] = (data?.market_prices ?? []).map((m) => ({
-    pair: m.symbol,
-    price: m.price,
-    change: m.change_pct,
-    up: m.direction === "up",
-  }));
 
   const COPY_TRADERS = (data?.top_traders ?? []).map((t) => ({
     name: t.name,
@@ -207,22 +201,16 @@ export default function HomePage() {
           </div>
 
           <div className={styles.priceGrid}>
-            {MARKET_PRICES.map((m) => (
-              <div
-                key={m.pair}
+            {HOMEPAGE_SYMBOLS.map((s) => (
+              <Link
+                key={s.displayName}
+                href={symbolHref(s.displayName)}
                 className={styles.priceCard}
-                onClick={() => setSelected(m)}
-                style={{ cursor: "pointer" }}
               >
-                <div className={styles.pair}>{m.pair}</div>
-                <div className={styles.price}>{m.price}</div>
-                <div
-                  className={`${styles.change} ${m.up ? styles.up : styles.down}`}
-                >
-                  <span className={styles.changeArrow}>{m.up ? "↗" : "↘"}</span>{" "}
-                  {m.change}
+                <div className={styles.tickerWrap}>
+                  <SingleTickerWidget tvSymbol={s.tvSymbol} theme={theme} />
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </section>
@@ -385,20 +373,16 @@ export default function HomePage() {
           </Link>
         </div>
         <div className={styles.marketsStrip}>
-          {MARKET_PRICES.map((m) => (
-            <div
-              key={m.pair}
+          {HOMEPAGE_SYMBOLS.map((s) => (
+            <Link
+              key={s.displayName}
+              href={symbolHref(s.displayName)}
               className={styles.stripCard}
-              onClick={() => setSelected(m)}
             >
-              <div className={styles.stripPair}>{m.pair}</div>
-              <div className={styles.stripPrice}>{m.price}</div>
-              <div
-                className={`${styles.stripChange} ${m.up ? styles.up : styles.down}`}
-              >
-                {m.up ? "↗" : "↘"} {m.change}
+              <div className={styles.tickerWrap}>
+                <SingleTickerWidget tvSymbol={s.tvSymbol} theme={theme} />
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </section>
@@ -875,18 +859,6 @@ export default function HomePage() {
           })}
         </div>
       </section>
-
-      {/* Chart modal */}
-      {selected && (
-        <SymbolChart
-          symbol={selected.pair.split("/")[0]}
-          name={selected.pair}
-          price={selected.price}
-          change={selected.change}
-          up={selected.up}
-          onClose={() => setSelected(null)}
-        />
-      )}
       </div>
       <footer className={userStyles.footer}>© 2026 CBFX — Trade smarter.</footer>
       <LoginModal />

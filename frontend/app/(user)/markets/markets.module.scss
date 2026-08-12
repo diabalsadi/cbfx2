@@ -91,16 +91,15 @@
   box-shadow: var(--shadow);
 }
 
+/* Each row is a Link wrapping a live TradingView ticker widget. The widget's
+   own iframe has pointer-events disabled (see .tickerWrap) so clicks fall
+   through to this anchor instead of TradingView's own click handling. */
 .row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 18px 20px;
+  display: block;
   border-bottom: 1px solid var(--border-subtle);
-  transition:
-    background 0.12s,
-    border-color 0.12s;
+  text-decoration: none;
   cursor: pointer;
+  transition: background 0.12s;
 
   &:last-child {
     border-bottom: none;
@@ -111,60 +110,10 @@
   }
 }
 
-.rowLeft {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.symbolBadge {
-  width: 42px;
-  height: 42px;
-  border-radius: 10px;
-  background: var(--accent-light);
-  color: var(--accent);
-  font-size: 11px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  letter-spacing: 0.3px;
-}
-
-.symbolName {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 2px;
-}
-
-.symbolMeta {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.rowRight {
-  text-align: right;
-}
-
-.symbolPrice {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: -0.3px;
-  margin-bottom: 3px;
-}
-
-.symbolChange {
-  font-size: 13px;
-  font-weight: 600;
-
-  &.up {
-    color: #16a34a;
-  }
-  &.down {
-    color: #dc2626;
-  }
+.tickerWrap {
+  height: 112px;
+  overflow: hidden;
+  pointer-events: none;
 }
 
 .empty {
