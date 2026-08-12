@@ -36,6 +36,26 @@ with engine.begin() as connection:
     connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS region VARCHAR"))
     connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS coverage_type VARCHAR DEFAULT 'region'"))
     connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS country_code VARCHAR"))
+    connection.execute(text("ALTER TABLE broker_placements ADD COLUMN IF NOT EXISTS region VARCHAR DEFAULT 'default'"))
+    connection.execute(text("UPDATE broker_placements SET region = 'default' WHERE region IS NULL"))
+    connection.execute(text(
+        "ALTER TABLE broker_placements DROP CONSTRAINT IF EXISTS uq_broker_placement_section_position"
+    ))
+    # Postgres has no ADD CONSTRAINT IF NOT EXISTS, and this block re-runs on
+    # every startup, so guard it explicitly to stay idempotent.
+    connection.execute(text(
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint WHERE conname = 'uq_broker_placement_section_region_position'
+            ) THEN
+                ALTER TABLE broker_placements
+                    ADD CONSTRAINT uq_broker_placement_section_region_position UNIQUE (section, region, position);
+            END IF;
+        END $$;
+        """
+    ))
 
 app = FastAPI(title="CBFX API", version="1.0.0")
 

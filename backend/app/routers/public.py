@@ -170,7 +170,7 @@ def homepage_aggregate(request: Request, db: Session = Depends(get_db)):
 
     placements = (
         db.query(BrokerPlacement)
-        .order_by(BrokerPlacement.section, BrokerPlacement.position)
+        .order_by(BrokerPlacement.section, BrokerPlacement.region, BrokerPlacement.position)
         .all()
     )
     placed_brokers = (
@@ -181,20 +181,36 @@ def homepage_aggregate(request: Request, db: Session = Depends(get_db)):
         if placements
         else {}
     )
-    broker_sections = {section: [] for section in PLACEMENT_SECTIONS}
+
+    # Group by section, then by the coverage scope the ordering was configured
+    # for, so each section can use its most specific match for the visitor:
+    # a country-level override, then a region-level override, then the
+    # section's "default" order.
+    by_section_region: dict = {}
     for p in placements:
-        broker = placed_brokers.get(p.broker_id)
-        if not broker or p.section not in broker_sections:
-            continue
-        if not _visible_to_visitor(broker, country_code, region):
-            continue
-        broker_sections[p.section].append({
-            "position": p.position,
-            "id": broker.id,
-            "name": broker.name,
-            "img_src": broker.img_src,
-            "cashback_rate": broker.cashback_rate,
-        })
+        by_section_region.setdefault(p.section, {}).setdefault(p.region, []).append(p)
+
+    broker_sections = {section: [] for section in PLACEMENT_SECTIONS}
+    for section in PLACEMENT_SECTIONS:
+        region_map = by_section_region.get(section, {})
+        chosen = region_map.get(country_code) if country_code else None
+        if not chosen and region:
+            chosen = region_map.get(region)
+        if not chosen:
+            chosen = region_map.get("default", [])
+        for p in chosen:
+            broker = placed_brokers.get(p.broker_id)
+            if not broker:
+                continue
+            if not _visible_to_visitor(broker, country_code, region):
+                continue
+            broker_sections[section].append({
+                "position": p.position,
+                "id": broker.id,
+                "name": broker.name,
+                "img_src": broker.img_src,
+                "cashback_rate": broker.cashback_rate,
+            })
 
     def mp(m):
         return {"symbol": m.symbol, "price": m.price, "change_pct": m.change_pct, "direction": m.direction}

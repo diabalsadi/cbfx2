@@ -56,3 +56,37 @@ export const COUNTRIES = [
 export const COUNTRY_LABELS: Record<string, string> = Object.fromEntries(
   COUNTRIES.map((c) => [c.value, c.label]),
 );
+
+// Mirrors backend/app/utils/geo.py's region buckets — used to let the admin
+// narrow the country picker down by region instead of scanning ~190 entries.
+const NORTH_AMERICA = new Set([
+  "US", "CA", "MX", "GT", "BZ", "SV", "HN", "NI", "CR", "PA",
+  "CU", "JM", "HT", "DO", "BS", "BB", "TT", "GD", "LC", "VC", "AG", "DM", "KN",
+]);
+const SOUTH_AMERICA = new Set(["BR", "AR", "CL", "CO", "PE", "VE", "EC", "BO", "PY", "UY", "GY", "SR"]);
+const EUROPE = new Set([
+  "GB", "IE", "FR", "DE", "ES", "PT", "IT", "NL", "BE", "LU", "CH", "AT", "DK", "SE", "NO", "FI", "IS",
+  "PL", "CZ", "SK", "HU", "RO", "BG", "GR", "HR", "SI", "RS", "BA", "ME", "MK", "AL", "XK",
+  "EE", "LV", "LT", "BY", "UA", "MD", "RU", "MT", "CY", "AD", "MC", "SM", "VA", "LI",
+]);
+const MIDDLE_EAST = new Set(["AE", "SA", "QA", "KW", "BH", "OM", "JO", "LB", "SY", "IQ", "IL", "PS", "YE", "IR", "TR"]);
+const AFRICA = new Set([
+  "EG", "LY", "TN", "DZ", "MA", "SD", "SS",
+  "NG", "GH", "CI", "SN", "ML", "BF", "NE", "TD", "CM", "CF", "CG", "CD", "GA", "GQ", "ST", "AO",
+  "KE", "TZ", "UG", "RW", "BI", "ET", "ER", "DJ", "SO", "ZM", "ZW", "MW", "MZ", "NA", "BW", "ZA", "LS", "SZ",
+  "MG", "MU", "SC", "KM", "CV", "GM", "GW", "GN", "SL", "LR", "TG", "BJ", "MR",
+]);
+const ASIA = new Set([
+  "CN", "JP", "KR", "KP", "MN", "TW", "HK", "MO",
+  "IN", "PK", "BD", "LK", "NP", "BT", "MV",
+  "TH", "VN", "KH", "LA", "MM", "MY", "SG", "ID", "PH", "BN", "TL",
+  "KZ", "UZ", "TM", "TJ", "KG", "AF",
+]);
+
+export const COUNTRY_TO_REGION: Record<string, string> = {};
+for (const code of NORTH_AMERICA) COUNTRY_TO_REGION[code] = "north_america";
+for (const code of SOUTH_AMERICA) COUNTRY_TO_REGION[code] = "south_america";
+for (const code of EUROPE) COUNTRY_TO_REGION[code] = "europe";
+for (const code of MIDDLE_EAST) COUNTRY_TO_REGION[code] = "middle_east";
+for (const code of AFRICA) COUNTRY_TO_REGION[code] = "africa";
+for (const code of ASIA) COUNTRY_TO_REGION[code] = "asia";

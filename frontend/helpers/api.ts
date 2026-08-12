@@ -181,9 +181,16 @@ export interface HomepageData {
   broker_sections: Record<BrokerSectionKey, BrokerSlot[]>;
 }
 
+// Coverage scope a placement's order applies to: "default" is the fallback
+// order shown when a visitor's detected region has no override, a broker
+// geo_coverage region code (e.g. "europe") for a region-specific order, or an
+// ISO country code (e.g. "US") to drill down to a single country.
+export type BrokerPlacementRegion = string;
+
 export interface BrokerPlacement {
   id: string;
   section: BrokerSectionKey;
+  region: BrokerPlacementRegion;
   position: number;
   broker_id: string;
   created_at: string;
@@ -252,8 +259,8 @@ export const publicApi = {
 export const brokerPlacementsApi = {
   list: (section?: BrokerSectionKey) =>
     api.get<BrokerPlacement[]>(`/broker-placements/${section ? `?section=${section}` : ''}`),
-  set: (section: BrokerSectionKey, position: number, brokerId: string) =>
-    api.put<BrokerPlacement>(`/broker-placements/${section}/${position}`, { broker_id: brokerId }),
-  clear: (section: BrokerSectionKey, position: number) =>
-    api.delete<void>(`/broker-placements/${section}/${position}`),
+  set: (section: BrokerSectionKey, region: BrokerPlacementRegion, position: number, brokerId: string) =>
+    api.put<BrokerPlacement>(`/broker-placements/${section}/${region}/${position}`, { broker_id: brokerId }),
+  clear: (section: BrokerSectionKey, region: BrokerPlacementRegion, position: number) =>
+    api.delete<void>(`/broker-placements/${section}/${region}/${position}`),
 };
