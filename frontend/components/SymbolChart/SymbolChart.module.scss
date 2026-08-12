@@ -171,6 +171,25 @@
   color: #fff !important;
 }
 
+/* Full analysis link */
+.fullAnalysisRow {
+  padding: 12px 24px;
+  background: #0d0d0d;
+  border-top: 1px solid #1a1a1a;
+  text-align: center;
+}
+
+.fullAnalysisLink {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ff6b00;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
 /* Trade buttons */
 .tradeRow {
   display: grid;

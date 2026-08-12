@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useRef, useState, useCallback } from "react";
+import Link from "next/link";
 import styles from "./SymbolChart.module.scss";
+import { symbolHref } from "@/helpers/tradingviewSymbols";
 
 type Timeframe = "1m" | "5m" | "15m" | "1h" | "4h" | "1D";
 
@@ -218,6 +220,17 @@ export default function SymbolChart({
               {t}
             </button>
           ))}
+        </div>
+
+        {/* Full analysis link */}
+        <div className={styles.fullAnalysisRow}>
+          <Link
+            href={symbolHref(name)}
+            className={styles.fullAnalysisLink}
+            onClick={onClose}
+          >
+            View full analysis →
+          </Link>
         </div>
 
         {/* Sell / Buy */}
