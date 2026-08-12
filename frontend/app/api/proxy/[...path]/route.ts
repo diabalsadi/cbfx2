@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_URL = 'http://localhost:8000';
+const BACKEND_URL = 'https://cbfx.onrender.com';
 
 const IS_DEV = process.env.NODE_ENV !== 'production';
 
