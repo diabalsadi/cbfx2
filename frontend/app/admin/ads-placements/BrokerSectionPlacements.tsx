@@ -8,7 +8,7 @@ import {
 import { REGIONS, REGION_LABELS } from "@/helpers/regions";
 import { COUNTRIES, COUNTRY_LABELS, COUNTRY_TO_REGION } from "@/helpers/countries";
 import Card from "@/components/Card";
-import styles from "./HomepagePlacements.module.scss";
+import styles from "./BrokerSectionPlacements.module.scss";
 
 interface SlotRow {
   position: number;
@@ -66,7 +66,7 @@ const EMPTY_SEARCH: Record<BrokerSectionKey, string> = {
   more_partners: "",
 };
 
-export default function HomepagePlacements({
+export default function BrokerSectionPlacements({
   brokers,
 }: {
   brokers: { id: string; name: string }[];
@@ -175,12 +175,13 @@ export default function HomepagePlacements({
   return (
     <Card className={styles.container}>
       <div>
-        <h3 className={styles.title}>Homepage Placement</h3>
+        <h3 className={styles.title}>Broker Section Placements</h3>
         <p className={styles.subtitle}>
-          Choose which broker fills each slot in every homepage section. Optionally
-          set a different order per coverage region or country — visitors detected
-          there see it instead of the default order (a country override wins over
-          a region override, which wins over the default).
+          Choose which broker fills each slot in every broker-driven section on
+          this route. Optionally set a different order per coverage region or
+          country — visitors detected there see it instead of the default
+          order (a country override wins over a region override, which wins
+          over the default).
         </p>
       </div>
 

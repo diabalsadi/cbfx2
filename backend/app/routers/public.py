@@ -7,6 +7,7 @@ from app.models.article import Article
 from app.models.broker import Broker
 from app.models.broker_placement import BrokerPlacement
 from app.schemas.broker_placement import SECTIONS as PLACEMENT_SECTIONS
+from app.models.ad_banner import AdBanner
 from app.models.market_price import MarketPrice
 from app.models.copy_trader import CopyTrader
 from app.models.play import Play
@@ -124,6 +125,8 @@ def homepage_aggregate(request: Request, db: Session = Depends(get_db)):
     market prices, top copy traders, latest news, open plays, latest analysis,
     and recent forum threads. Broker placement slots (featured/sponsored/partners)
     are filtered to brokers covering the visitor's detected region/country.
+    Banner ad slots (e.g. demo_banner, prime_banner) are included only when an
+    admin has configured active content for them in the Ad Placements CMS.
     """
     country_code, region = detect_region(extract_client_ip(request))
     market_prices = db.query(MarketPrice).order_by(MarketPrice.symbol).all()
@@ -249,6 +252,40 @@ def homepage_aggregate(request: Request, db: Session = Depends(get_db)):
             "is_pinned": th.is_pinned, "created_at": th.created_at.isoformat(),
         }
 
+    banners = (
+        db.query(AdBanner)
+        .filter(AdBanner.page == "homepage", AdBanner.status == "active")
+        .all()
+    )
+
+    def banner(b):
+        return {
+            "sponsor_name": b.sponsor_name,
+            "description": b.description,
+            "badge_text": b.badge_text,
+            "logo_src": b.logo_src,
+            "link_url": b.link_url,
+            "cta_label": b.cta_label,
+            "dismissible": b.dismissible,
+        }
+
+    # Same targeting rule as broker_sections: a banner slot can have
+    # region/country-scoped content, resolved most-specific-first for the
+    # visitor (country override > region override > default).
+    banners_by_slot: dict = {}
+    for b in banners:
+        banners_by_slot.setdefault(b.slot, {})[b.region] = b
+
+    ad_banners = {}
+    for slot, region_map in banners_by_slot.items():
+        chosen = region_map.get(country_code) if country_code else None
+        if not chosen and region:
+            chosen = region_map.get(region)
+        if not chosen:
+            chosen = region_map.get("default")
+        if chosen:
+            ad_banners[slot] = banner(chosen)
+
     return {
         "market_prices": [mp(m) for m in market_prices],
         "top_traders": [trader(t) for t in top_traders],
@@ -257,4 +294,5 @@ def homepage_aggregate(request: Request, db: Session = Depends(get_db)):
         "latest_analysis": [analysis(a) for a in latest_analysis],
         "recent_threads": [thread(th) for th in recent_threads],
         "broker_sections": broker_sections,
+        "ad_banners": ad_banners,
     }

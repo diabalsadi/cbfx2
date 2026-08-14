@@ -4,7 +4,6 @@ import { api } from "@/helpers/api";
 import { REGIONS, REGION_LABELS } from "@/helpers/regions";
 import { COUNTRIES, COUNTRY_LABELS } from "@/helpers/countries";
 import Card from "@/components/Card";
-import HomepagePlacements from "./HomepagePlacements";
 import styles from "./Brokers.module.scss";
 
 export interface Broker {
@@ -537,8 +536,6 @@ export default function BrokersAdminPage() {
           </table>
         </div>
       </Card>
-
-      <HomepagePlacements brokers={brokers} />
     </div>
   );
 }

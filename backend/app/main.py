@@ -7,7 +7,7 @@ from app.database import engine, Base
 from app.routers import auth
 from app.routers import articles, clients, campaigns, users, public
 from app.routers import market_prices, copy_traders, plays, analysis, forum
-from app.routers import brokers, geo, broker_placements
+from app.routers import brokers, geo, broker_placements, ad_banners
 
 # Import all models so SQLAlchemy creates their tables
 import app.models.user
@@ -22,6 +22,7 @@ import app.models.forum_thread
 import app.models.forum_reply
 import app.models.broker
 import app.models.broker_placement
+import app.models.ad_banner
 
 Base.metadata.create_all(bind=engine)
 
@@ -56,6 +57,24 @@ with engine.begin() as connection:
         END $$;
         """
     ))
+    connection.execute(text("ALTER TABLE ad_banners ADD COLUMN IF NOT EXISTS region VARCHAR DEFAULT 'default'"))
+    connection.execute(text("UPDATE ad_banners SET region = 'default' WHERE region IS NULL"))
+    connection.execute(text(
+        "ALTER TABLE ad_banners DROP CONSTRAINT IF EXISTS uq_ad_banner_page_slot"
+    ))
+    connection.execute(text(
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint WHERE conname = 'uq_ad_banner_page_slot_region'
+            ) THEN
+                ALTER TABLE ad_banners
+                    ADD CONSTRAINT uq_ad_banner_page_slot_region UNIQUE (page, slot, region);
+            END IF;
+        END $$;
+        """
+    ))
 
 app = FastAPI(title="CBFX API", version="1.0.0")
 
@@ -81,6 +100,7 @@ app.include_router(forum.router)
 app.include_router(brokers.router)
 app.include_router(geo.router)
 app.include_router(broker_placements.router)
+app.include_router(ad_banners.router)
 
 
 @app.get("/")

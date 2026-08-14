@@ -9,6 +9,8 @@ from app.models.analysis import Analysis
 from app.models.forum_thread import ForumThread
 from app.models.forum_reply import ForumReply
 from app.models.broker import Broker
+from app.models.broker_placement import BrokerPlacement
+from app.models.ad_banner import AdBanner
 
 __all__ = [
     "User",
@@ -22,4 +24,6 @@ __all__ = [
     "ForumThread",
     "ForumReply",
     "Broker",
+    "BrokerPlacement",
+    "AdBanner",
 ]

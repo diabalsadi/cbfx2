@@ -179,6 +179,7 @@ export interface HomepageData {
   latest_analysis: Array<{ id: string; pair: string; timeframe: string; bias: string; summary?: string }>;
   recent_threads: Array<{ id: string; title: string; category: string; author_email: string; reply_count: number; is_pinned: boolean; created_at: string }>;
   broker_sections: Record<BrokerSectionKey, BrokerSlot[]>;
+  ad_banners: Record<string, AdBannerContent>;
 }
 
 // Coverage scope a placement's order applies to: "default" is the fallback
@@ -195,6 +196,40 @@ export interface BrokerPlacement {
   broker_id: string;
   created_at: string;
   updated_at: string;
+}
+
+// ── Ad Placements (per-route CMS: broker-section slots + standalone banner ads) ─
+
+// Routes with configurable ad placements. Add a key here (and on the backend's
+// PAGE_BANNER_SLOTS / broker-placement SECTIONS) when another page gets its own
+// ad blocks.
+export type AdPlacementPage = "homepage";
+
+export interface AdBannerContent {
+  sponsor_name: string;
+  description: string;
+  badge_text: string;
+  logo_src: string | null;
+  link_url: string | null;
+  cta_label: string | null;
+  dismissible: boolean;
+}
+
+export interface AdBanner extends AdBannerContent {
+  id: string;
+  page: AdPlacementPage;
+  slot: string;
+  // Coverage scope this content targets: "default" (fallback), a broker
+  // geo_coverage region code (e.g. "europe"), or an ISO country code — same
+  // scope semantics as BrokerPlacementRegion.
+  region: BrokerPlacementRegion;
+  status: "active" | "inactive";
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdBannerUpsert extends AdBannerContent {
+  status: "active" | "inactive";
 }
 
 // ── Domain APIs ────────────────────────────────────────────────────────────────
@@ -263,4 +298,13 @@ export const brokerPlacementsApi = {
     api.put<BrokerPlacement>(`/broker-placements/${section}/${region}/${position}`, { broker_id: brokerId }),
   clear: (section: BrokerSectionKey, region: BrokerPlacementRegion, position: number) =>
     api.delete<void>(`/broker-placements/${section}/${region}/${position}`),
+};
+
+export const adBannersApi = {
+  list: (page?: AdPlacementPage) =>
+    api.get<AdBanner[]>(`/ad-banners/${page ? `?page=${page}` : ""}`),
+  set: (page: AdPlacementPage, slot: string, region: BrokerPlacementRegion, data: AdBannerUpsert) =>
+    api.put<AdBanner>(`/ad-banners/${page}/${slot}/${region}`, data),
+  clear: (page: AdPlacementPage, slot: string, region: BrokerPlacementRegion) =>
+    api.delete<void>(`/ad-banners/${page}/${slot}/${region}`),
 };

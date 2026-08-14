@@ -53,13 +53,25 @@ function timeAgo(iso: string): string {
 }
 
 export default function HomePage() {
-  const [demoDismissed, setDemoDismissed] = useState(false);
+  const [dismissedBanners, setDismissedBanners] = useState<Set<string>>(new Set());
   const [data, setData] = useState<HomepageData | null>(null);
   const { theme } = useTheme();
 
   useEffect(() => {
     publicApi.homepage().then(setData).catch(console.error);
   }, []);
+
+  const dismissBanner = (slot: string) =>
+    setDismissedBanners((prev) => new Set(prev).add(slot));
+
+  const demoBanner =
+    data?.ad_banners?.demo_banner && !dismissedBanners.has("demo_banner")
+      ? data.ad_banners.demo_banner
+      : null;
+  const primeBanner =
+    data?.ad_banners?.prime_banner && !dismissedBanners.has("prime_banner")
+      ? data.ad_banners.prime_banner
+      : null;
 
   /* ── derived data (falls back to empty arrays while loading) ── */
 
@@ -437,35 +449,44 @@ export default function HomePage() {
       {/* ══════════════════════════════
           Demo broker sponsored banner
          ══════════════════════════════ */}
-      {!demoDismissed && (
+      {demoBanner && (
         <div className={styles.demoBanner}>
           <div className={styles.demoBannerLeft}>
-            <span className={styles.sponsoredChip}>SPONSORED</span>
+            <span className={styles.sponsoredChip}>{demoBanner.badge_text}</span>
             <div className={styles.demoBrokerLogo}>
-              <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-                <polyline
-                  points="2,14 7,8 11,11 18,4"
-                  stroke="white"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+              {demoBanner.logo_src ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={demoBanner.logo_src}
+                  alt=""
+                  style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }}
                 />
-              </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                  <polyline
+                    points="2,14 7,8 11,11 18,4"
+                    stroke="white"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
             </div>
             <div>
-              <div className={styles.demoBrokerName}>Demo FX Broker</div>
-              <div className={styles.demoBrokerDesc}>
-                Trade with confidence. 0 commission on all pairs.
-              </div>
+              <div className={styles.demoBrokerName}>{demoBanner.sponsor_name}</div>
+              <div className={styles.demoBrokerDesc}>{demoBanner.description}</div>
             </div>
           </div>
-          <button
-            className={styles.demoDismiss}
-            onClick={() => setDemoDismissed(true)}
-            aria-label="Dismiss"
-          >
-            ✕
-          </button>
+          {demoBanner.dismissible && (
+            <button
+              className={styles.demoDismiss}
+              onClick={() => dismissBanner("demo_banner")}
+              aria-label="Dismiss"
+            >
+              ✕
+            </button>
+          )}
         </div>
       )}
 
@@ -738,34 +759,43 @@ export default function HomePage() {
       {/* ══════════════════════════════
           PrimeTrade sponsored banner
          ══════════════════════════════ */}
-      <div className={styles.primeBanner}>
-        <div className={styles.primeBannerLeft}>
-          <div className={styles.primeLogo}>
-            <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-              <polyline
-                points="2,14 7,8 11,11 18,4"
-                stroke="white"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </div>
-          <div>
-            <div className={styles.primeChips}>
-              <span className={styles.sponsoredChip}>SPONSORED</span>
-              <span className={styles.adBadge}>AD</span>
+      {primeBanner && (
+        <div className={styles.primeBanner}>
+          <div className={styles.primeBannerLeft}>
+            <div className={styles.primeLogo}>
+              {primeBanner.logo_src ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={primeBanner.logo_src}
+                  alt=""
+                  style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }}
+                />
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                  <polyline
+                    points="2,14 7,8 11,11 18,4"
+                    stroke="white"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
             </div>
-            <div className={styles.primeName}>PrimeTrade</div>
-            <div className={styles.primeDesc}>
-              Trade with a trusted partner — exclusive perks for CBFX members.
+            <div>
+              <div className={styles.primeChips}>
+                <span className={styles.sponsoredChip}>{primeBanner.badge_text}</span>
+                <span className={styles.adBadge}>AD</span>
+              </div>
+              <div className={styles.primeName}>{primeBanner.sponsor_name}</div>
+              <div className={styles.primeDesc}>{primeBanner.description}</div>
             </div>
           </div>
+          <a href={primeBanner.link_url || "#"} className={styles.primeLearnMore}>
+            {primeBanner.cta_label || "Learn more"} ↗
+          </a>
         </div>
-        <a href="#" className={styles.primeLearnMore}>
-          Learn more ↗
-        </a>
-      </div>
+      )}
 
       {/* ══════════════════════════════
           Cashback CTA

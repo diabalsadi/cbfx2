@@ -51,6 +51,12 @@ const navItems = [
     roles: ["super_admin", "broker"],
   },
   {
+    label: "Ad Placements",
+    href: "/admin/ads-placements",
+    icon: "▤",
+    roles: ["super_admin", "broker"],
+  },
+  {
     label: "Reports",
     href: "/admin/reports",
     icon: "▣",
