@@ -124,6 +124,23 @@ export function TopStoriesWidget({ tvSymbol, theme }: WidgetProps) {
   );
 }
 
+/** Live economic/financial events calendar — not tied to a single symbol. */
+export function EconomicCalendarWidget({ theme }: { theme: TvTheme }) {
+  return (
+    <TradingViewScriptEmbed
+      scriptSrc="https://s3.tradingview.com/external-embedding/embed-widget-events.js"
+      config={{
+        width: "100%",
+        height: "100%",
+        colorTheme: theme,
+        isTransparent: true,
+        locale: "en",
+        importanceFilter: "-1,0,1",
+      }}
+    />
+  );
+}
+
 export function SymbolOverviewWidget({
   tvSymbol,
   theme,
