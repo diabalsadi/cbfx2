@@ -1,4 +1,5 @@
 import { withDebugIp } from './debugIp';
+import type { SeoRoute } from './seo';
 
 const BASE = '/api/proxy';
 
@@ -196,6 +197,12 @@ export interface NewsArticle {
   author_email: string;
   created_at: string;
   updated_at: string;
+  // Optional per-article SEO overrides — when set, take priority over the
+  // generic news_detail/analysis_detail SEO template for this article.
+  meta_title?: string | null;
+  meta_description?: string | null;
+  meta_keywords?: string | null;
+  og_image?: string | null;
 }
 
 export interface Article extends NewsArticle {
@@ -384,6 +391,56 @@ export const mt5AccountsApi = {
   create: (payload: { broker_id: string; mt5_number: string }) =>
     api.post<MT5Account>('/mt5-accounts/', payload),
   listTransactions: () => api.get<WalletTransaction[]>('/mt5-accounts/me/transactions'),
+};
+
+export interface SeoMetaUpsert {
+  title: string;
+  description: string;
+  keywords: string | null;
+  og_title: string | null;
+  og_description: string | null;
+  og_image: string | null;
+  twitter_card: string;
+  canonical_path: string | null;
+  robots: string;
+}
+
+// The full admin-facing record — includes id/sub_key/timestamps that the
+// public-facing SeoMetaData (helpers/seo.ts, used by generateMetadata)
+// deliberately omits.
+export interface AdminSeoMeta extends SeoMetaUpsert {
+  id: string;
+  route: string;
+  sub_key: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SeoSettingsUpsert {
+  google_site_verification: string | null;
+  bing_site_verification: string | null;
+  pinterest_site_verification: string | null;
+  facebook_domain_verification: string | null;
+  twitter_site: string | null;
+  default_share_title: string | null;
+  default_share_description: string | null;
+  default_share_image: string | null;
+  default_keywords: string | null;
+}
+
+export interface AdminSeoSettings extends SeoSettingsUpsert {
+  updated_at: string;
+}
+
+export const seoApi = {
+  list: () => api.get<AdminSeoMeta[]>('/seo/'),
+  listRoutes: () => api.get<SeoRoute[]>('/seo/routes'),
+  set: (route: SeoRoute, payload: SeoMetaUpsert, subKey?: string) =>
+    api.put<AdminSeoMeta>(`/seo/${route}${subKey ? `?sub_key=${encodeURIComponent(subKey)}` : ''}`, payload),
+  clear: (route: SeoRoute, subKey: string) =>
+    api.delete<void>(`/seo/${route}?sub_key=${encodeURIComponent(subKey)}`),
+  getSettings: () => api.get<AdminSeoSettings>('/seo/settings'),
+  setSettings: (payload: SeoSettingsUpsert) => api.put<AdminSeoSettings>('/seo/settings', payload),
 };
 
 export const brokerPlacementsApi = {

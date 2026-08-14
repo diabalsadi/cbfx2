@@ -22,6 +22,10 @@ interface Article {
   market_category: (typeof MARKET_CATEGORIES)[number] | null;
   symbol: string | null;
   is_published: boolean;
+  meta_title: string | null;
+  meta_description: string | null;
+  meta_keywords: string | null;
+  og_image: string | null;
 }
 
 export default function EditArticlePage({
@@ -41,6 +45,10 @@ export default function EditArticlePage({
     useState<(typeof MARKET_CATEGORIES)[number]>("crypto");
   const [symbol, setSymbol] = useState("");
   const [isPublished, setIsPublished] = useState(false);
+  const [metaTitle, setMetaTitle] = useState("");
+  const [metaDescription, setMetaDescription] = useState("");
+  const [metaKeywords, setMetaKeywords] = useState("");
+  const [ogImage, setOgImage] = useState("");
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -58,6 +66,10 @@ export default function EditArticlePage({
         setMarketCategory(a.market_category || "crypto");
         setSymbol(a.symbol || "");
         setIsPublished(a.is_published);
+        setMetaTitle(a.meta_title || "");
+        setMetaDescription(a.meta_description || "");
+        setMetaKeywords(a.meta_keywords || "");
+        setOgImage(a.og_image || "");
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -84,6 +96,10 @@ export default function EditArticlePage({
         market_category: marketCategory,
         symbol: articleType === "analysis" ? symbol.trim().toUpperCase() : null,
         is_published: isPublished,
+        meta_title: metaTitle || null,
+        meta_description: metaDescription || null,
+        meta_keywords: metaKeywords || null,
+        og_image: ogImage || null,
       });
       router.push("/admin/articles");
     } catch (e: unknown) {
@@ -233,6 +249,50 @@ export default function EditArticlePage({
               >
                 <span className={styles.toggleThumb} />
               </button>
+            </div>
+          </Card>
+
+          <Card className={styles.sideCard}>
+            <h3 className={styles.sideTitle}>SEO</h3>
+            <p className={styles.sideHint}>
+              Overrides the generic template for this article&apos;s page. Leave blank to use the
+              title/excerpt above.
+            </p>
+            <div className={styles.sideField}>
+              <label className={styles.sideLabel}>Meta Title</label>
+              <input
+                className={styles.sideInput}
+                placeholder="Defaults to article title"
+                value={metaTitle}
+                onChange={(e) => setMetaTitle(e.target.value)}
+              />
+            </div>
+            <div className={styles.sideField}>
+              <label className={styles.sideLabel}>Meta Description</label>
+              <input
+                className={styles.sideInput}
+                placeholder="Defaults to excerpt"
+                value={metaDescription}
+                onChange={(e) => setMetaDescription(e.target.value)}
+              />
+            </div>
+            <div className={styles.sideField}>
+              <label className={styles.sideLabel}>Keywords</label>
+              <input
+                className={styles.sideInput}
+                placeholder="comma, separated, keywords"
+                value={metaKeywords}
+                onChange={(e) => setMetaKeywords(e.target.value)}
+              />
+            </div>
+            <div className={styles.sideField}>
+              <label className={styles.sideLabel}>Share Image URL</label>
+              <input
+                className={styles.sideInput}
+                placeholder="Defaults to cover image"
+                value={ogImage}
+                onChange={(e) => setOgImage(e.target.value)}
+              />
             </div>
           </Card>
         </aside>

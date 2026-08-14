@@ -1,81 +1,37 @@
-"use client";
-
-import { use } from "react";
-import Link from "next/link";
-import { useTheme } from "@/contexts/ThemeContext";
+import type { Metadata } from "next";
+import { getSeoMeta, buildMetadata, SITE_URL } from "@/helpers/seo";
+import { webPageJsonLd } from "@/helpers/jsonLd";
 import { getTradingViewSymbol } from "@/helpers/tradingviewSymbols";
-import {
-  AdvancedChartWidget,
-  TechnicalAnalysisWidget,
-  TopStoriesWidget,
-  SymbolOverviewWidget,
-} from "@/components/TradingViewWidgets";
-import styles from "./symbol.module.scss";
+import JsonLd from "@/components/JsonLd";
+import MarketSymbolClient from "./MarketSymbolClient";
 
-export default function SymbolPage({
+export async function generateMetadata({
   params,
 }: {
   params: Promise<{ symbol: string }>;
-}) {
-  const { symbol: slug } = use(params);
-  const { theme } = useTheme();
+}): Promise<Metadata> {
+  const { symbol } = await params;
+  const tvInfo = getTradingViewSymbol(symbol);
+  const seo = await getSeoMeta("markets_symbol", { symbol: tvInfo?.displayName ?? symbol }, symbol);
+  return await buildMetadata(seo, { alternates: { canonical: `${SITE_URL}/markets/${symbol}` } });
+}
 
-  const tvInfo = getTradingViewSymbol(slug);
-
-  if (!tvInfo) {
-    return (
-      <div className={styles.notFound}>
-        <h1>Symbol not found</h1>
-        <p>We don&rsquo;t have data for &ldquo;{slug}&rdquo;.</p>
-        <Link href="/markets" className={styles.backLink}>
-          ← Back to Markets
-        </Link>
-      </div>
-    );
-  }
-
-  const displayName = tvInfo.displayName;
+export default async function Page({ params }: { params: Promise<{ symbol: string }> }) {
+  const { symbol } = await params;
+  const tvInfo = getTradingViewSymbol(symbol);
 
   return (
-    <div className={styles.page}>
-      <div className={styles.header}>
-        <Link href="/markets" className={styles.backLink}>
-          ← Markets
-        </Link>
-        <div className={styles.headerRow}>
-          <h1 className={styles.title}>{displayName}</h1>
-        </div>
-      </div>
-
-      <div className={styles.chartPanel}>
-        <AdvancedChartWidget tvSymbol={tvInfo.tvSymbol} theme={theme} />
-      </div>
-
-      <div className={styles.midGrid}>
-        <div className={styles.panel}>
-          <h2 className={styles.panelTitle}>Technical Analysis</h2>
-          <div className={styles.panelBody}>
-            <TechnicalAnalysisWidget tvSymbol={tvInfo.tvSymbol} theme={theme} />
-          </div>
-        </div>
-        <div className={styles.panel}>
-          <h2 className={styles.panelTitle}>Performance</h2>
-          <div className={styles.panelBody}>
-            <SymbolOverviewWidget
-              tvSymbol={tvInfo.tvSymbol}
-              theme={theme}
-              displayName={displayName}
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className={styles.panel}>
-        <h2 className={styles.panelTitle}>News</h2>
-        <div className={`${styles.panelBody} ${styles.newsBody}`}>
-          <TopStoriesWidget tvSymbol={tvInfo.tvSymbol} theme={theme} />
-        </div>
-      </div>
-    </div>
+    <>
+      {tvInfo && (
+        <JsonLd
+          data={webPageJsonLd({
+            name: `${tvInfo.displayName} Price & Chart`,
+            description: `Live ${tvInfo.displayName} price, chart and technical analysis on CBFX.`,
+            path: `/markets/${symbol}`,
+          })}
+        />
+      )}
+      <MarketSymbolClient params={params} />
+    </>
   );
 }

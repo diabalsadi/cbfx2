@@ -1,21 +1,20 @@
-"use client";
-import { useTheme } from "@/contexts/ThemeContext";
-import { EconomicCalendarWidget } from "@/components/TradingViewWidgets";
-import styles from "./calendar.module.scss";
+import type { Metadata } from "next";
+import { getSeoMeta, buildMetadata } from "@/helpers/seo";
+import { webPageJsonLd } from "@/helpers/jsonLd";
+import JsonLd from "@/components/JsonLd";
+import CalendarClient from "./CalendarClient";
 
-export default function CalendarPage() {
-  const { theme } = useTheme();
+export async function generateMetadata(): Promise<Metadata> {
+  const seo = await getSeoMeta("calendar");
+  return await buildMetadata(seo);
+}
 
+export default async function Page() {
+  const seo = await getSeoMeta("calendar");
   return (
-    <div className={styles.page}>
-      <div className={styles.header}>
-        <h1 className={styles.title}>Economic Calendar</h1>
-        <p className={styles.subtitle}>Live macro events, powered by TradingView</p>
-      </div>
-
-      <div className={styles.calendarPanel}>
-        <EconomicCalendarWidget theme={theme} />
-      </div>
-    </div>
+    <>
+      <JsonLd data={webPageJsonLd({ name: seo.title, description: seo.description, path: seo.canonical_path ?? "/calendar" })} />
+      <CalendarClient />
+    </>
   );
 }

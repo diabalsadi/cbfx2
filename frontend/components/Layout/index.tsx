@@ -57,6 +57,12 @@ const navItems = [
     roles: ["super_admin", "broker"],
   },
   {
+    label: "SEO",
+    href: "/admin/seo",
+    icon: "◇",
+    roles: ["super_admin", "editor"],
+  },
+  {
     label: "Reports",
     href: "/admin/reports",
     icon: "▣",

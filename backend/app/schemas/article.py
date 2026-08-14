@@ -12,6 +12,12 @@ class ArticleBase(BaseModel):
     market_category: Optional[Literal["crypto", "forex", "metals", "indices"]] = None
     symbol: Optional[str] = None
     is_published: Optional[bool] = False
+    # Optional overrides — when set, take priority over the generic
+    # news_detail/analysis_detail SEO template for this article's own page.
+    meta_title: Optional[str] = None
+    meta_description: Optional[str] = None
+    meta_keywords: Optional[str] = None
+    og_image: Optional[str] = None
 
 
 class ArticleCreate(ArticleBase):
@@ -27,6 +33,10 @@ class ArticleUpdate(BaseModel):
     market_category: Optional[Literal["crypto", "forex", "metals", "indices"]] = None
     symbol: Optional[str] = None
     is_published: Optional[bool] = None
+    meta_title: Optional[str] = None
+    meta_description: Optional[str] = None
+    meta_keywords: Optional[str] = None
+    og_image: Optional[str] = None
 
 
 class Article(ArticleBase):

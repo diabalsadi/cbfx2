@@ -8,6 +8,8 @@ from app.models.broker import Broker
 from app.models.broker_placement import BrokerPlacement
 from app.schemas.broker_placement import SECTIONS as PLACEMENT_SECTIONS
 from app.models.ad_banner import AdBanner
+from app.models.seo_meta import SeoMeta, SeoSettings
+from app.schemas.seo_meta import SEO_ROUTES
 from app.models.market_price import MarketPrice
 from app.models.copy_trader import CopyTrader
 from app.models.play import Play
@@ -116,6 +118,72 @@ def list_brokers(request: Request, db: Session = Depends(get_db)):
         for b in brokers
         if _visible_to_visitor(b, country_code, region)
     ]
+
+
+@router.get("/seo/settings")
+def get_public_seo_settings(db: Session = Depends(get_db)):
+    """Public — sitewide SEO settings (verification codes, default social
+    share fallbacks), fetched once by the root layout's generateMetadata()
+    and merged into every page. Missing settings return an all-null object
+    rather than 404, same reasoning as get_seo_meta below."""
+    settings = db.query(SeoSettings).filter(SeoSettings.id == "global").first()
+    if not settings:
+        return {
+            "google_site_verification": None,
+            "bing_site_verification": None,
+            "pinterest_site_verification": None,
+            "facebook_domain_verification": None,
+            "twitter_site": None,
+            "default_share_title": None,
+            "default_share_description": None,
+            "default_share_image": None,
+            "default_keywords": None,
+        }
+    return {
+        "google_site_verification": settings.google_site_verification,
+        "bing_site_verification": settings.bing_site_verification,
+        "pinterest_site_verification": settings.pinterest_site_verification,
+        "facebook_domain_verification": settings.facebook_domain_verification,
+        "twitter_site": settings.twitter_site,
+        "default_share_title": settings.default_share_title,
+        "default_share_description": settings.default_share_description,
+        "default_share_image": settings.default_share_image,
+        "default_keywords": settings.default_keywords,
+    }
+
+
+# Declared ahead so "settings" above is never mistaken for a route key by
+# this catch-all.
+@router.get("/seo/{route}")
+def get_seo_meta(route: str, sub_key: Optional[str] = None, db: Session = Depends(get_db)):
+    """Public — server-side metadata for one route (optionally a specific
+    sub-item, e.g. one market symbol), fetched by the frontend's
+    generateMetadata(). Falls back from a sub_key-specific override to the
+    route's generic template, and returns null (not 404) if neither is
+    configured, so a page never fails to render over missing SEO copy."""
+    if route not in SEO_ROUTES:
+        return None
+    sub_key = (sub_key or "").strip()
+
+    seo = None
+    if sub_key:
+        seo = db.query(SeoMeta).filter(SeoMeta.route == route, SeoMeta.sub_key == sub_key).first()
+    if not seo:
+        seo = db.query(SeoMeta).filter(SeoMeta.route == route, SeoMeta.sub_key == "").first()
+    if not seo:
+        return None
+    return {
+        "route": seo.route,
+        "title": seo.title,
+        "description": seo.description,
+        "keywords": seo.keywords,
+        "og_title": seo.og_title,
+        "og_description": seo.og_description,
+        "og_image": seo.og_image,
+        "twitter_card": seo.twitter_card,
+        "canonical_path": seo.canonical_path,
+        "robots": seo.robots,
+    }
 
 
 def _banner_content(b: AdBanner) -> dict:

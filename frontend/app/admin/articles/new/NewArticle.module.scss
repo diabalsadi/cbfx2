@@ -142,6 +142,9 @@
 }
 
 .sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .sideCard {
@@ -164,6 +167,13 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+.sideHint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: -6px 0 4px;
+  line-height: 1.4;
 }
 
 .sideLabel {

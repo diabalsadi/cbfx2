@@ -7,7 +7,7 @@ from app.database import engine, Base
 from app.routers import auth
 from app.routers import articles, clients, campaigns, users, public
 from app.routers import market_prices, copy_traders, plays, analysis, forum
-from app.routers import brokers, geo, broker_placements, ad_banners, mt5_accounts
+from app.routers import brokers, geo, broker_placements, ad_banners, mt5_accounts, seo_meta
 
 # Import all models so SQLAlchemy creates their tables
 import app.models.user
@@ -25,6 +25,7 @@ import app.models.broker_placement
 import app.models.ad_banner
 import app.models.mt5_account
 import app.models.wallet_transaction
+import app.models.seo_meta
 
 Base.metadata.create_all(bind=engine)
 
@@ -33,6 +34,10 @@ Base.metadata.create_all(bind=engine)
 with engine.begin() as connection:
     connection.execute(text("ALTER TABLE articles ADD COLUMN IF NOT EXISTS market_category VARCHAR"))
     connection.execute(text("ALTER TABLE articles ADD COLUMN IF NOT EXISTS symbol VARCHAR"))
+    connection.execute(text("ALTER TABLE articles ADD COLUMN IF NOT EXISTS meta_title VARCHAR"))
+    connection.execute(text("ALTER TABLE articles ADD COLUMN IF NOT EXISTS meta_description VARCHAR"))
+    connection.execute(text("ALTER TABLE articles ADD COLUMN IF NOT EXISTS og_image VARCHAR"))
+    connection.execute(text("ALTER TABLE articles ADD COLUMN IF NOT EXISTS meta_keywords VARCHAR"))
     connection.execute(text("ALTER TABLE forum_threads ADD COLUMN IF NOT EXISTS image_url VARCHAR"))
     connection.execute(text("ALTER TABLE forum_replies ADD COLUMN IF NOT EXISTS image_url VARCHAR"))
     connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS referral_id VARCHAR"))
@@ -79,6 +84,23 @@ with engine.begin() as connection:
     ))
     connection.execute(text("ALTER TABLE ad_banners ADD COLUMN IF NOT EXISTS features JSON DEFAULT '[]'::json"))
     connection.execute(text("ALTER TABLE ad_banners ADD COLUMN IF NOT EXISTS disclaimer VARCHAR"))
+    connection.execute(text("ALTER TABLE seo_meta ADD COLUMN IF NOT EXISTS sub_key VARCHAR DEFAULT ''"))
+    connection.execute(text("UPDATE seo_meta SET sub_key = '' WHERE sub_key IS NULL"))
+    connection.execute(text("ALTER TABLE seo_meta DROP CONSTRAINT IF EXISTS seo_meta_route_key"))
+    connection.execute(text(
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint WHERE conname = 'uq_seo_meta_route_sub_key'
+            ) THEN
+                ALTER TABLE seo_meta
+                    ADD CONSTRAINT uq_seo_meta_route_sub_key UNIQUE (route, sub_key);
+            END IF;
+        END $$;
+        """
+    ))
+    connection.execute(text("ALTER TABLE seo_settings ADD COLUMN IF NOT EXISTS default_keywords VARCHAR"))
 
 app = FastAPI(title="CBFX API", version="1.0.0")
 
@@ -106,6 +128,7 @@ app.include_router(geo.router)
 app.include_router(broker_placements.router)
 app.include_router(ad_banners.router)
 app.include_router(mt5_accounts.router)
+app.include_router(seo_meta.router)
 
 
 @app.get("/")

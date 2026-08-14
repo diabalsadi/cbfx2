@@ -19,6 +19,7 @@ from app.models.campaign import Campaign
 from app.models.broker import Broker
 from app.models.mt5_account import MT5Account
 from app.models.wallet_transaction import WalletTransaction
+from app.models.seo_meta import SeoMeta
 import bcrypt
 
 
@@ -701,6 +702,121 @@ def seed_wallet_transactions(db):
             print(f"  + Transaction: {broker_name} #{mt5_number} {tx['type']} ${tx['amount']}")
 
 
+# ── SEO Meta ───────────────────────────────────────────────────────────────────
+
+def seed_seo_meta(db):
+    # Dynamic-route entries ("_detail"/"_symbol") are templates — {token}
+    # placeholders get filled in with real page data at render time.
+    entries = [
+        {
+            "route": "homepage",
+            "title": "CBFX — Trade Smarter. Earn Cashback on Every Pip.",
+            "description": "Cashback, copy trading, premium trading signals and a live community — all in one cockpit. Join CBFX free.",
+            "keywords": "forex cashback, copy trading, trading signals, forex rebates",
+            "canonical_path": "/",
+        },
+        {
+            "route": "login",
+            "title": "Sign In | CBFX",
+            "description": "Sign in to your CBFX account to track your cashback, copy trades and manage your MT5 accounts.",
+            "canonical_path": "/login",
+        },
+        {
+            "route": "register",
+            "title": "Create Your Free CBFX Account",
+            "description": "Sign up free and start earning cashback on every trade. Link your MT5 account and get rebates from top forex brokers.",
+            "canonical_path": "/register",
+        },
+        {
+            "route": "account",
+            "title": "My Account | CBFX",
+            "description": "Manage your CBFX profile, password and account settings.",
+            "canonical_path": "/account",
+            "robots": "noindex, nofollow",
+        },
+        {
+            "route": "analysis",
+            "title": "Forex, Crypto & Metals Technical Analysis | CBFX",
+            "description": "Daily technical analysis and market bias across forex, crypto and metals pairs from the CBFX trading desk.",
+            "canonical_path": "/analysis",
+        },
+        {
+            "route": "analysis_detail",
+            "title": "{title} | CBFX Analysis",
+            "description": "{title} — in-depth technical analysis from the CBFX trading desk.",
+        },
+        {
+            "route": "brokers",
+            "title": "Best Forex Cashback Brokers — Compare Rebates | CBFX",
+            "description": "Compare vetted forex brokers by cashback rate and coverage. Get the highest rebates on every trade with CBFX.",
+            "canonical_path": "/brokers",
+        },
+        {
+            "route": "calendar",
+            "title": "Live Economic Calendar | CBFX",
+            "description": "Track upcoming macro events, central bank decisions and economic releases in real time on CBFX's live calendar.",
+            "canonical_path": "/calendar",
+        },
+        {
+            "route": "cashback",
+            "title": "Forex Cashback — Track Your Rebates | CBFX",
+            "description": "See your cashback balance across every linked MT5 account and track money in and money out, all in one place.",
+            "canonical_path": "/cashback",
+        },
+        {
+            "route": "copy_trading",
+            "title": "Copy Trading — Follow Top Traders | CBFX",
+            "description": "Copy the trades of vetted, top-performing traders automatically. Compare ROI, win rate and strategy on CBFX.",
+            "canonical_path": "/copy-trading",
+        },
+        {
+            "route": "forum",
+            "title": "Trading Forum & Community | CBFX",
+            "description": "Join the CBFX trading community — share setups, ask questions and discuss the markets with fellow traders.",
+            "canonical_path": "/forum",
+        },
+        {
+            "route": "forum_detail",
+            "title": "{title} | CBFX Forum",
+            "description": "Join the discussion: {title} — trading ideas and community insights on CBFX.",
+        },
+        {
+            "route": "markets",
+            "title": "Live Market Prices — Forex, Crypto & Metals | CBFX",
+            "description": "Real-time prices and charts across forex, crypto and metals. Track the markets that matter on CBFX.",
+            "canonical_path": "/markets",
+        },
+        {
+            "route": "markets_symbol",
+            "title": "{symbol} Price, Chart & Live Analysis | CBFX",
+            "description": "Live {symbol} price, real-time chart, technical analysis and news — track it free on CBFX.",
+        },
+        {
+            "route": "news",
+            "title": "Forex & Crypto News | CBFX",
+            "description": "Breaking forex, crypto and metals news, updated throughout the trading day.",
+            "canonical_path": "/news",
+        },
+        {
+            "route": "news_detail",
+            "title": "{title} | CBFX News",
+            "description": "{title} — the latest forex, crypto and metals news from CBFX.",
+        },
+        {
+            "route": "plays",
+            "title": "Trading Plays & Setups | CBFX",
+            "description": "Live trade ideas and setups from the CBFX desk — entries, targets and stop losses, updated in real time.",
+            "canonical_path": "/plays",
+        },
+    ]
+    for e in entries:
+        if not db.query(SeoMeta).filter(SeoMeta.route == e["route"]).first():
+            db.add(SeoMeta(**e))
+            print(f"  + SeoMeta: {e['route']}")
+        else:
+            print(f"  . SeoMeta exists: {e['route']}")
+
+
 # -- Main ---------------------------------------------------------------------
 
 if __name__ == "__main__":
@@ -716,6 +832,7 @@ if __name__ == "__main__":
     import app.models.broker         # noqa
     import app.models.mt5_account    # noqa
     import app.models.wallet_transaction  # noqa
+    import app.models.seo_meta       # noqa
 
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
@@ -772,6 +889,10 @@ if __name__ == "__main__":
 
         print("\n-- Wallet Transactions -----------------")
         seed_wallet_transactions(db)
+        db.flush()
+
+        print("\n-- SEO Meta ---------------------------")
+        seed_seo_meta(db)
         db.flush()
 
         db.commit()

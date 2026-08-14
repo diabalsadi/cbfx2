@@ -16,6 +16,14 @@ class Article(Base):
     market_category = Column(String, nullable=True)  # crypto | forex | metals | indices
     symbol = Column(String, nullable=True)  # Required for analysis articles
     is_published = Column(Boolean, default=False)
+    # Optional per-article SEO overrides. When set, these take priority over
+    # the generic news_detail/analysis_detail SEO template for this article's
+    # own page (see app.routers.public.get_seo_meta and the frontend's
+    # [id]/page.tsx generateMetadata()).
+    meta_title = Column(String, nullable=True)
+    meta_description = Column(String, nullable=True)
+    meta_keywords = Column(String, nullable=True)
+    og_image = Column(String, nullable=True)
     author_email = Column(String, ForeignKey("users.email"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

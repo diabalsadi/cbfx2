@@ -23,6 +23,10 @@ export default function NewArticlePage() {
     useState<(typeof MARKET_CATEGORIES)[number]>("crypto");
   const [symbol, setSymbol] = useState("");
   const [isPublished, setIsPublished] = useState(false);
+  const [metaTitle, setMetaTitle] = useState("");
+  const [metaDescription, setMetaDescription] = useState("");
+  const [metaKeywords, setMetaKeywords] = useState("");
+  const [ogImage, setOgImage] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -47,6 +51,10 @@ export default function NewArticlePage() {
         market_category: marketCategory,
         symbol: articleType === "analysis" ? symbol.trim().toUpperCase() : null,
         is_published: publish ?? isPublished,
+        meta_title: metaTitle || null,
+        meta_description: metaDescription || null,
+        meta_keywords: metaKeywords || null,
+        og_image: ogImage || null,
       });
       router.push("/admin/articles");
     } catch (e: unknown) {
@@ -173,6 +181,50 @@ export default function NewArticlePage() {
               >
                 <span className={styles.toggleThumb} />
               </button>
+            </div>
+          </Card>
+
+          <Card className={styles.sideCard}>
+            <h3 className={styles.sideTitle}>SEO</h3>
+            <p className={styles.sideHint}>
+              Overrides the generic template for this article&apos;s page. Leave blank to use the
+              title/excerpt above.
+            </p>
+            <div className={styles.sideField}>
+              <label className={styles.sideLabel}>Meta Title</label>
+              <input
+                className={styles.sideInput}
+                placeholder="Defaults to article title"
+                value={metaTitle}
+                onChange={(e) => setMetaTitle(e.target.value)}
+              />
+            </div>
+            <div className={styles.sideField}>
+              <label className={styles.sideLabel}>Meta Description</label>
+              <input
+                className={styles.sideInput}
+                placeholder="Defaults to excerpt"
+                value={metaDescription}
+                onChange={(e) => setMetaDescription(e.target.value)}
+              />
+            </div>
+            <div className={styles.sideField}>
+              <label className={styles.sideLabel}>Keywords</label>
+              <input
+                className={styles.sideInput}
+                placeholder="comma, separated, keywords"
+                value={metaKeywords}
+                onChange={(e) => setMetaKeywords(e.target.value)}
+              />
+            </div>
+            <div className={styles.sideField}>
+              <label className={styles.sideLabel}>Share Image URL</label>
+              <input
+                className={styles.sideInput}
+                placeholder="Defaults to cover image"
+                value={ogImage}
+                onChange={(e) => setOgImage(e.target.value)}
+              />
             </div>
           </Card>
         </aside>

@@ -13,6 +13,7 @@ from app.models.broker_placement import BrokerPlacement
 from app.models.ad_banner import AdBanner
 from app.models.mt5_account import MT5Account
 from app.models.wallet_transaction import WalletTransaction
+from app.models.seo_meta import SeoMeta, SeoSettings
 
 __all__ = [
     "User",
@@ -30,4 +31,6 @@ __all__ = [
     "AdBanner",
     "MT5Account",
     "WalletTransaction",
+    "SeoMeta",
+    "SeoSettings",
 ]
