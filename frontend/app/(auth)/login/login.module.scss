@@ -12,6 +12,11 @@
   }
 }
 
+.wrapperSingle {
+  grid-template-columns: 1fr;
+  max-width: 420px;
+}
+
 /* ── Left: Login card ── */
 .loginCard {
   background: #161616;

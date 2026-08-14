@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
 from app.schemas.broker_placement import is_valid_placement_region
 
@@ -8,6 +8,7 @@ from app.schemas.broker_placement import is_valid_placement_region
 # same way the admin "Ad Placements" page's route dropdown is keyed.
 PAGE_BANNER_SLOTS = {
     "homepage": {"demo_banner", "prime_banner"},
+    "signin": {"featured_broker"},
 }
 
 STATUSES = {"active", "inactive"}
@@ -30,6 +31,8 @@ class AdBannerUpsert(BaseModel):
     logo_src: Optional[str] = None
     link_url: Optional[str] = None
     cta_label: Optional[str] = None
+    features: List[str] = []
+    disclaimer: Optional[str] = None
     dismissible: bool = False
     status: str = "active"
 

@@ -10,12 +10,24 @@ interface BrokerOption {
   name: string;
 }
 
-const PAGES: { value: AdPlacementPage; label: string; description: string }[] = [
+const PAGES: {
+  value: AdPlacementPage;
+  label: string;
+  description: string;
+  hasBrokerSections: boolean;
+}[] = [
   {
     value: "homepage",
     label: "Homepage",
     description:
       "Featured Brokers, Sponsored Brokers, Featured Partners, More Partner Brokers, and the standalone sponsored banner ads.",
+    hasBrokerSections: true,
+  },
+  {
+    value: "signin",
+    label: "Sign In",
+    description: "The featured broker card shown next to the sign-in form and login modal.",
+    hasBrokerSections: false,
   },
 ];
 
@@ -62,12 +74,8 @@ export default function AdsPlacementsAdminPage() {
 
       <p className={styles.pageDescription}>{activePage.description}</p>
 
-      {page === "homepage" && (
-        <>
-          <BrokerSectionPlacements brokers={brokers} />
-          <AdBanners page="homepage" />
-        </>
-      )}
+      {activePage.hasBrokerSections && <BrokerSectionPlacements brokers={brokers} />}
+      <AdBanners page={page} />
     </div>
   );
 }

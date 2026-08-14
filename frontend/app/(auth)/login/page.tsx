@@ -1,7 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { publicApi, type AdBannerContent } from "@/helpers/api";
 import styles from "./login.module.scss";
 
 function LogoIcon() {
@@ -52,6 +53,14 @@ export default function UserLoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [banner, setBanner] = useState<AdBannerContent | null>(null);
+
+  useEffect(() => {
+    publicApi
+      .adBanners("signin")
+      .then((banners) => setBanner(banners.featured_broker ?? null))
+      .catch(() => setBanner(null));
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -76,7 +85,7 @@ export default function UserLoginPage() {
   }
 
   return (
-    <div className={styles.wrapper}>
+    <div className={`${styles.wrapper} ${!banner ? styles.wrapperSingle : ""}`}>
       {/* ── Left: Login form ── */}
       <div className={styles.loginCard}>
         <div className={styles.logoRow}>
@@ -134,56 +143,59 @@ export default function UserLoginPage() {
       </div>
 
       {/* ── Right: Featured broker ── */}
-      <div className={styles.brokerCard}>
-        <div className={styles.brokerCardTop}>
-          <span className={styles.featuredLabel}>FEATURED BROKER</span>
-          <span className={styles.sponsoredLabel}>SPONSORED</span>
-        </div>
-
-        <div className={styles.brokerHeader}>
-          <div className={styles.brokerLogo}>
-            <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
-              <polyline
-                points="4,22 10,14 16,18 24,8"
-                stroke="white"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+      {banner && (
+        <div className={styles.brokerCard}>
+          <div className={styles.brokerCardTop}>
+            <span className={styles.featuredLabel}>FEATURED BROKER</span>
+            <span className={styles.sponsoredLabel}>{banner.badge_text}</span>
           </div>
-          <div>
-            <div className={styles.brokerName}>Apex Markets</div>
-            <div className={styles.brokerTagline}>
-              Pro-grade execution. Up to 85% rebates.
+
+          <div className={styles.brokerHeader}>
+            <div className={styles.brokerLogo}>
+              {banner.logo_src ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={banner.logo_src}
+                  alt=""
+                  style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }}
+                />
+              ) : (
+                <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
+                  <polyline
+                    points="4,22 10,14 16,18 24,8"
+                    stroke="white"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+            </div>
+            <div>
+              <div className={styles.brokerName}>{banner.sponsor_name}</div>
+              <div className={styles.brokerTagline}>{banner.description}</div>
             </div>
           </div>
-        </div>
 
-        <ul className={styles.featureList}>
-          <li>
-            <ShieldIcon />
-            <span>FCA · ASIC regulated</span>
-          </li>
-          <li>
-            <StarIcon />
-            <span>0.0 pip spreads</span>
-          </li>
-          <li>
-            <StarIcon />
-            <span>$50 welcome bonus</span>
-          </li>
-        </ul>
+          {banner.features.length > 0 && (
+            <ul className={styles.featureList}>
+              {banner.features.map((feature, i) => (
+                <li key={feature}>
+                  {i === 0 ? <ShieldIcon /> : <StarIcon />}
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
+          )}
 
-        <div className={styles.brokerCta}>
-          <a href="#" className={styles.openAccountBtn}>
-            Open account ↗
-          </a>
-          <p className={styles.disclaimer}>
-            Promoted placement. Trading involves risk.
-          </p>
+          <div className={styles.brokerCta}>
+            <a href={banner.link_url || "#"} className={styles.openAccountBtn}>
+              {banner.cta_label || "Open account"} ↗
+            </a>
+            {banner.disclaimer && <p className={styles.disclaimer}>{banner.disclaimer}</p>}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useLoginModal } from "@/contexts/LoginModalContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { publicApi, type AdBannerContent } from "@/helpers/api";
 import styles from "./LoginModal.module.scss";
 
 function LogoIcon() {
@@ -22,6 +23,32 @@ function LogoIcon() {
   );
 }
 
+function ShieldIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 20 20" fill="none">
+      <path
+        d="M10 2L3 5v5c0 4.5 3 8.5 7 9.5 4-1 7-5 7-9.5V5L10 2z"
+        stroke="#f97316"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function StarIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 20 20" fill="none">
+      <path
+        d="M10 2l2.4 5.2 5.6.8-4 3.9.9 5.6L10 15l-4.9 2.5.9-5.6-4-3.9 5.6-.8L10 2z"
+        stroke="#f97316"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export default function LoginModal() {
   const { isOpen, closeLoginModal } = useLoginModal();
   const { login } = useAuth();
@@ -30,6 +57,15 @@ export default function LoginModal() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [banner, setBanner] = useState<AdBannerContent | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    publicApi
+      .adBanners("signin")
+      .then((banners) => setBanner(banners.featured_broker ?? null))
+      .catch(() => setBanner(null));
+  }, [isOpen]);
 
   // lock body scroll while open
   useEffect(() => {
@@ -67,7 +103,10 @@ export default function LoginModal() {
 
   return (
     <div className={styles.overlay} onClick={closeLoginModal}>
-      <div className={styles.wrapper} onClick={(e) => e.stopPropagation()}>
+      <div
+        className={`${styles.wrapper} ${!banner ? styles.wrapperSingle : ""}`}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* ── Left: login form ── */}
         <div className={styles.loginCard}>
           <button
@@ -138,77 +177,59 @@ export default function LoginModal() {
         </div>
 
         {/* ── Right: featured broker ── */}
-        <div className={styles.brokerCard}>
-          <div className={styles.brokerCardTop}>
-            <span className={styles.featuredLabel}>FEATURED BROKER</span>
-            <span className={styles.sponsoredLabel}>SPONSORED</span>
-          </div>
-
-          <div className={styles.brokerHeader}>
-            <div className={styles.brokerLogo}>
-              <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
-                <polyline
-                  points="4,22 10,14 16,18 24,8"
-                  stroke="white"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+        {banner && (
+          <div className={styles.brokerCard}>
+            <div className={styles.brokerCardTop}>
+              <span className={styles.featuredLabel}>FEATURED BROKER</span>
+              <span className={styles.sponsoredLabel}>{banner.badge_text}</span>
             </div>
-            <div>
-              <div className={styles.brokerName}>Apex Markets</div>
-              <div className={styles.brokerTagline}>
-                Pro-grade execution. Up to 85% rebates.
+
+            <div className={styles.brokerHeader}>
+              <div className={styles.brokerLogo}>
+                {banner.logo_src ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={banner.logo_src}
+                    alt=""
+                    style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }}
+                  />
+                ) : (
+                  <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
+                    <polyline
+                      points="4,22 10,14 16,18 24,8"
+                      stroke="white"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                )}
+              </div>
+              <div>
+                <div className={styles.brokerName}>{banner.sponsor_name}</div>
+                <div className={styles.brokerTagline}>{banner.description}</div>
               </div>
             </div>
-          </div>
 
-          <ul className={styles.featureList}>
-            <li>
-              <svg width="15" height="15" viewBox="0 0 20 20" fill="none">
-                <path
-                  d="M10 2L3 5v5c0 4.5 3 8.5 7 9.5 4-1 7-5 7-9.5V5L10 2z"
-                  stroke="#f97316"
-                  strokeWidth="1.5"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              <span>FCA · ASIC regulated</span>
-            </li>
-            <li>
-              <svg width="15" height="15" viewBox="0 0 20 20" fill="none">
-                <path
-                  d="M10 2l2.4 5.2 5.6.8-4 3.9.9 5.6L10 15l-4.9 2.5.9-5.6-4-3.9 5.6-.8L10 2z"
-                  stroke="#f97316"
-                  strokeWidth="1.5"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              <span>0.0 pip spreads</span>
-            </li>
-            <li>
-              <svg width="15" height="15" viewBox="0 0 20 20" fill="none">
-                <path
-                  d="M10 2l2.4 5.2 5.6.8-4 3.9.9 5.6L10 15l-4.9 2.5.9-5.6-4-3.9 5.6-.8L10 2z"
-                  stroke="#f97316"
-                  strokeWidth="1.5"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              <span>$50 welcome bonus</span>
-            </li>
-          </ul>
+            {banner.features.length > 0 && (
+              <ul className={styles.featureList}>
+                {banner.features.map((feature, i) => (
+                  <li key={feature}>
+                    {i === 0 ? <ShieldIcon /> : <StarIcon />}
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
 
-          <div className={styles.brokerCta}>
-            <a href="#" className={styles.openAccountBtn}>
-              Open account ↗
-            </a>
-            <p className={styles.disclaimer}>
-              Promoted placement. Trading involves risk.
-            </p>
+            <div className={styles.brokerCta}>
+              <a href={banner.link_url || "#"} className={styles.openAccountBtn}>
+                {banner.cta_label || "Open account"} ↗
+              </a>
+              {banner.disclaimer && <p className={styles.disclaimer}>{banner.disclaimer}</p>}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

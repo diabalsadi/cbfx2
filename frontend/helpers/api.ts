@@ -203,7 +203,7 @@ export interface BrokerPlacement {
 // Routes with configurable ad placements. Add a key here (and on the backend's
 // PAGE_BANNER_SLOTS / broker-placement SECTIONS) when another page gets its own
 // ad blocks.
-export type AdPlacementPage = "homepage";
+export type AdPlacementPage = "homepage" | "signin";
 
 export interface AdBannerContent {
   sponsor_name: string;
@@ -212,6 +212,11 @@ export interface AdBannerContent {
   logo_src: string | null;
   link_url: string | null;
   cta_label: string | null;
+  // Short feature-bullet strings, e.g. ["FCA · ASIC regulated", "0.0 pip
+  // spreads"] — used by richer banner slots like the sign-in featured broker
+  // card. Empty for slots that don't use bullets.
+  features: string[];
+  disclaimer: string | null;
   dismissible: boolean;
 }
 
@@ -289,6 +294,8 @@ export const forumApi = {
 
 export const publicApi = {
   homepage: () => api.get<HomepageData>('/public/homepage'),
+  adBanners: (page: AdPlacementPage) =>
+    api.get<Record<string, AdBannerContent>>(`/public/ad-banners/${page}`),
 };
 
 export const brokerPlacementsApi = {

@@ -36,6 +36,11 @@
   }
 }
 
+.wrapperSingle {
+  grid-template-columns: 1fr;
+  max-width: 400px;
+}
+
 @keyframes slideUp {
   from {
     transform: translateY(24px);

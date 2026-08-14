@@ -17,6 +17,7 @@ const PAGE_BANNER_SLOTS: Record<AdPlacementPage, { key: string; label: string }[
     { key: "demo_banner", label: "Demo Sponsored Banner" },
     { key: "prime_banner", label: "PrimeTrade Sponsored Banner" },
   ],
+  signin: [{ key: "featured_broker", label: "Featured Broker (Sign In)" }],
 };
 
 type ScopeMode = "default" | "region" | "country";
@@ -28,6 +29,8 @@ const EMPTY_FORM: AdBannerUpsert = {
   logo_src: null,
   link_url: null,
   cta_label: null,
+  features: [],
+  disclaimer: null,
   dismissible: false,
   status: "active",
 };
@@ -40,6 +43,8 @@ function toForm(b: AdBanner): AdBannerUpsert {
     logo_src: b.logo_src,
     link_url: b.link_url,
     cta_label: b.cta_label,
+    features: b.features,
+    disclaimer: b.disclaimer,
     dismissible: b.dismissible,
     status: b.status,
   };
@@ -148,9 +153,13 @@ export default function AdBanners({ page }: { page: AdPlacementPage }) {
       alert("Sponsor name is required");
       return;
     }
+    const payload: AdBannerUpsert = {
+      ...form,
+      features: form.features.map((f) => f.trim()).filter(Boolean),
+    };
     setSaving((prev) => ({ ...prev, [key]: true }));
     try {
-      const saved = await adBannersApi.set(page, slot, scopeValue, form);
+      const saved = await adBannersApi.set(page, slot, scopeValue, payload);
       setBySlotRegion((prev) => ({
         ...prev,
         [slot]: { ...(prev[slot] ?? {}), [scopeValue]: saved },
@@ -375,6 +384,29 @@ export default function AdBanners({ page }: { page: AdPlacementPage }) {
                   value={form.logo_src ?? ""}
                   onChange={(e) => updateForm(slot, currentScope, { logo_src: e.target.value || null })}
                   placeholder="https://example.com/logo.png"
+                />
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.fieldLabel}>Features (one per line)</label>
+                <textarea
+                  className={styles.textarea}
+                  value={form.features.join("\n")}
+                  onChange={(e) =>
+                    updateForm(slot, currentScope, { features: e.target.value.split("\n") })
+                  }
+                  placeholder={"FCA · ASIC regulated\n0.0 pip spreads\n$50 welcome bonus"}
+                  rows={3}
+                />
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.fieldLabel}>Disclaimer</label>
+                <input
+                  className={styles.input}
+                  value={form.disclaimer ?? ""}
+                  onChange={(e) => updateForm(slot, currentScope, { disclaimer: e.target.value || null })}
+                  placeholder="Promoted placement. Trading involves risk."
                 />
               </div>
 

@@ -118,6 +118,58 @@ def list_brokers(request: Request, db: Session = Depends(get_db)):
     ]
 
 
+def _banner_content(b: AdBanner) -> dict:
+    return {
+        "sponsor_name": b.sponsor_name,
+        "description": b.description,
+        "badge_text": b.badge_text,
+        "logo_src": b.logo_src,
+        "link_url": b.link_url,
+        "cta_label": b.cta_label,
+        "features": b.features or [],
+        "disclaimer": b.disclaimer,
+        "dismissible": b.dismissible,
+    }
+
+
+def _resolve_ad_banners(
+    db: Session, page: str, country_code: Optional[str], region: Optional[str]
+) -> dict:
+    """Active banner ad content for `page`, resolved per slot to the
+    visitor's most specific match: a country override, then a region
+    override, then the slot's "default" content. A slot is omitted entirely
+    if no admin has configured active content for it."""
+    banners = (
+        db.query(AdBanner)
+        .filter(AdBanner.page == page, AdBanner.status == "active")
+        .all()
+    )
+
+    banners_by_slot: dict = {}
+    for b in banners:
+        banners_by_slot.setdefault(b.slot, {})[b.region] = b
+
+    resolved = {}
+    for slot, region_map in banners_by_slot.items():
+        chosen = region_map.get(country_code) if country_code else None
+        if not chosen and region:
+            chosen = region_map.get(region)
+        if not chosen:
+            chosen = region_map.get("default")
+        if chosen:
+            resolved[slot] = _banner_content(chosen)
+    return resolved
+
+
+@router.get("/ad-banners/{page}")
+def get_ad_banners(page: str, request: Request, db: Session = Depends(get_db)):
+    """Public — resolves active banner ad content for any ad-placement page
+    (e.g. "signin"), scoped to the visitor's detected region/country. Pages
+    with no configured banners return an empty object."""
+    country_code, region = detect_region(extract_client_ip(request))
+    return _resolve_ad_banners(db, page, country_code, region)
+
+
 @router.get("/homepage")
 def homepage_aggregate(request: Request, db: Session = Depends(get_db)):
     """
@@ -252,39 +304,7 @@ def homepage_aggregate(request: Request, db: Session = Depends(get_db)):
             "is_pinned": th.is_pinned, "created_at": th.created_at.isoformat(),
         }
 
-    banners = (
-        db.query(AdBanner)
-        .filter(AdBanner.page == "homepage", AdBanner.status == "active")
-        .all()
-    )
-
-    def banner(b):
-        return {
-            "sponsor_name": b.sponsor_name,
-            "description": b.description,
-            "badge_text": b.badge_text,
-            "logo_src": b.logo_src,
-            "link_url": b.link_url,
-            "cta_label": b.cta_label,
-            "dismissible": b.dismissible,
-        }
-
-    # Same targeting rule as broker_sections: a banner slot can have
-    # region/country-scoped content, resolved most-specific-first for the
-    # visitor (country override > region override > default).
-    banners_by_slot: dict = {}
-    for b in banners:
-        banners_by_slot.setdefault(b.slot, {})[b.region] = b
-
-    ad_banners = {}
-    for slot, region_map in banners_by_slot.items():
-        chosen = region_map.get(country_code) if country_code else None
-        if not chosen and region:
-            chosen = region_map.get(region)
-        if not chosen:
-            chosen = region_map.get("default")
-        if chosen:
-            ad_banners[slot] = banner(chosen)
+    ad_banners = _resolve_ad_banners(db, "homepage", country_code, region)
 
     return {
         "market_prices": [mp(m) for m in market_prices],

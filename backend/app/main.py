@@ -75,6 +75,8 @@ with engine.begin() as connection:
         END $$;
         """
     ))
+    connection.execute(text("ALTER TABLE ad_banners ADD COLUMN IF NOT EXISTS features JSON DEFAULT '[]'::json"))
+    connection.execute(text("ALTER TABLE ad_banners ADD COLUMN IF NOT EXISTS disclaimer VARCHAR"))
 
 app = FastAPI(title="CBFX API", version="1.0.0")
 

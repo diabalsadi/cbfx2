@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Boolean, DateTime, UniqueConstraint
+from sqlalchemy import Column, String, Boolean, DateTime, JSON, UniqueConstraint
 from sqlalchemy.sql import func
 from app.database import Base
 import uuid
@@ -26,6 +26,11 @@ class AdBanner(Base):
     logo_src = Column(String, nullable=True)
     link_url = Column(String, nullable=True)
     cta_label = Column(String, nullable=True)
+    # JSON list of short feature-bullet strings, e.g. ["FCA · ASIC regulated",
+    # "0.0 pip spreads"] — used by richer banner slots like the sign-in
+    # featured broker card. Empty for slots that don't use bullets.
+    features = Column(JSON, nullable=False, default=list)
+    disclaimer = Column(String, nullable=True)
     dismissible = Column(Boolean, nullable=False, default=False)
     status = Column(String, nullable=False, default="active")  # active | inactive
     created_at = Column(DateTime(timezone=True), server_default=func.now())
