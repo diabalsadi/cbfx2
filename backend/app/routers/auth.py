@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import user as models
+from app.models.broker import Broker
+from app.models.mt5_account import MT5Account
 from app.schemas import user as user_schemas
 from app.schemas.user import ADMIN_ROLES
 from app.schemas import auth as auth_schemas
@@ -26,28 +28,67 @@ router = APIRouter(
 @router.post(
     "/register", response_model=user_schemas.User, status_code=status.HTTP_201_CREATED
 )
-def register(user: user_schemas.UserCreate, request: Request, db: Session = Depends(get_db)):
-    """Register a new user."""
-    db_user = db.query(models.User).filter(models.User.email == user.email).first()
-    if db_user:
+def register(payload: auth_schemas.RegisterRequest, request: Request, db: Session = Depends(get_db)):
+    """Register a new site user and link one or more MT5 accounts in one
+    step — a user can have several accounts, even with the same broker.
+    Always creates role="user" — admin-portal roles are only granted
+    afterward by an existing super_admin via PATCH /users/{email}/role."""
+    if db.query(models.User).filter(models.User.email == payload.email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
+
+    first_name = payload.first_name.strip()
+    last_name = payload.last_name.strip()
+    if not first_name or not last_name:
+        raise HTTPException(status_code=400, detail="First and last name are required")
+
+    # Validate and normalize every requested MT5 account before writing
+    # anything, so a bad entry anywhere in the list fails the whole request.
+    seen_pairs = set()
+    normalized_accounts = []
+    for account in payload.accounts:
+        mt5_number = account.mt5_number.strip()
+        if not mt5_number:
+            raise HTTPException(status_code=400, detail="MT5 account number is required")
+
+        broker = (
+            db.query(Broker)
+            .filter(Broker.id == account.broker_id, Broker.status == "active")
+            .first()
+        )
+        if not broker:
+            raise HTTPException(status_code=400, detail="Invalid broker selected")
+
+        pair = (broker.id, mt5_number)
+        if pair in seen_pairs:
+            raise HTTPException(status_code=400, detail="Duplicate MT5 account in request")
+        seen_pairs.add(pair)
+
+        existing_mt5 = (
+            db.query(MT5Account)
+            .filter(MT5Account.broker_id == broker.id, MT5Account.mt5_number == mt5_number)
+            .first()
+        )
+        if existing_mt5:
+            raise HTTPException(status_code=400, detail="This MT5 account is already linked")
+
+        normalized_accounts.append((broker.id, mt5_number))
 
     country_code, region = detect_region(extract_client_ip(request))
 
-    hashed_password = get_password_hash(user.password)
     db_user = models.User(
-        email=user.email,
-        name=user.name,
-        # Public self-registration always creates a plain site user —
-        # admin-portal roles are only granted by an existing super_admin via
-        # PATCH /users/{email}/role. Any `role` submitted in the request body
-        # is ignored so a caller can't self-provision admin access.
+        email=payload.email,
+        name=f"{first_name} {last_name}",
         role="user",
         region=region,
         country_code=country_code,
-        hashed_password=hashed_password,
+        hashed_password=get_password_hash(payload.password),
     )
     db.add(db_user)
+    db.flush()  # assign the user before the MT5 accounts reference it
+
+    for broker_id, mt5_number in normalized_accounts:
+        db.add(MT5Account(user_email=db_user.email, broker_id=broker_id, mt5_number=mt5_number))
+
     db.commit()
     db.refresh(db_user)
     return db_user

@@ -1,5 +1,6 @@
 import os
 import sys
+from datetime import datetime, timedelta, timezone
 
 # Ensure we can import app modules
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -16,6 +17,8 @@ from app.models.forum_reply import ForumReply
 from app.models.client import Client
 from app.models.campaign import Campaign
 from app.models.broker import Broker
+from app.models.mt5_account import MT5Account
+from app.models.wallet_transaction import WalletTransaction
 import bcrypt
 
 
@@ -584,6 +587,120 @@ def seed_brokers(db):
             print(f"  . Broker exists: {b['name']}")
 
 
+# ── MT5 Accounts / Cashback Wallets ───────────────────────────────────────────
+
+def seed_mt5_accounts(db):
+    # Demonstrates a user with more than one MT5 account on the same broker
+    # (user@cbfx.com has two IC Markets accounts), plus a second user with
+    # accounts spread across different brokers.
+    accounts = [
+        {"user_email": "user@cbfx.com", "broker_name": "IC Markets", "mt5_number": "50219384", "balance": 128.40, "lifetime_earned": 512.90},
+        {"user_email": "user@cbfx.com", "broker_name": "IC Markets", "mt5_number": "50298213", "balance": 76.90, "lifetime_earned": 156.00},
+        {"user_email": "user@cbfx.com", "broker_name": "XM Global", "mt5_number": "88213765", "balance": 54.10, "lifetime_earned": 289.20},
+        {"user_email": "diab.alsadi@cbfx.com", "broker_name": "Exness", "mt5_number": "77128456", "balance": 301.40, "lifetime_earned": 1204.60},
+        {"user_email": "diab.alsadi@cbfx.com", "broker_name": "Pepperstone", "mt5_number": "91345612", "balance": 42.00, "lifetime_earned": 198.50},
+    ]
+    for a in accounts:
+        broker = db.query(Broker).filter(Broker.name == a["broker_name"]).first()
+        if not broker:
+            print(f"  ! Broker not found, skipping: {a['broker_name']}")
+            continue
+        exists = (
+            db.query(MT5Account)
+            .filter(MT5Account.broker_id == broker.id, MT5Account.mt5_number == a["mt5_number"])
+            .first()
+        )
+        if exists:
+            print(f"  . MT5Account exists: {a['broker_name']} #{a['mt5_number']}")
+            continue
+        db.add(
+            MT5Account(
+                user_email=a["user_email"],
+                broker_id=broker.id,
+                mt5_number=a["mt5_number"],
+                balance=a["balance"],
+                lifetime_earned=a["lifetime_earned"],
+            )
+        )
+        print(f"  + MT5Account: {a['user_email']} -> {a['broker_name']} #{a['mt5_number']}")
+
+
+# ── Wallet Transactions (money in / money out history) ────────────────────────
+
+def seed_wallet_transactions(db):
+    now = datetime.now(timezone.utc)
+
+    def days_ago(n):
+        return now - timedelta(days=n)
+
+    # (broker_name, mt5_number) -> list of {type, amount, description, days_ago}
+    transactions_by_account = {
+        ("IC Markets", "50219384"): [
+            {"type": "credit", "amount": 104.30, "description": "Cashback rebate", "days_ago": 40},
+            {"type": "debit", "amount": 60.00, "description": "Withdrawal to bank account", "days_ago": 24},
+            {"type": "credit", "amount": 38.90, "description": "Cashback rebate", "days_ago": 24},
+            {"type": "credit", "amount": 45.20, "description": "Cashback rebate", "days_ago": 10},
+        ],
+        ("IC Markets", "50298213"): [
+            {"type": "credit", "amount": 30.00, "description": "Cashback rebate", "days_ago": 35},
+            {"type": "credit", "amount": 76.90, "description": "Cashback rebate", "days_ago": 12},
+        ],
+        ("XM Global", "88213765"): [
+            {"type": "credit", "amount": 25.00, "description": "Cashback rebate", "days_ago": 20},
+            {"type": "debit", "amount": 25.00, "description": "Withdrawal to Skrill", "days_ago": 8},
+            {"type": "credit", "amount": 54.10, "description": "Cashback rebate", "days_ago": 3},
+        ],
+        ("Exness", "77128456"): [
+            {"type": "credit", "amount": 101.40, "description": "Cashback rebate", "days_ago": 60},
+            {"type": "credit", "amount": 200.00, "description": "Cashback rebate", "days_ago": 45},
+            {"type": "debit", "amount": 150.00, "description": "Withdrawal to bank account", "days_ago": 15},
+            {"type": "credit", "amount": 301.40, "description": "Cashback rebate", "days_ago": 3},
+        ],
+        ("Pepperstone", "91345612"): [
+            {"type": "credit", "amount": 42.00, "description": "Cashback rebate", "days_ago": 6},
+        ],
+    }
+
+    for (broker_name, mt5_number), txs in transactions_by_account.items():
+        broker = db.query(Broker).filter(Broker.name == broker_name).first()
+        if not broker:
+            print(f"  ! Broker not found, skipping: {broker_name}")
+            continue
+        account = (
+            db.query(MT5Account)
+            .filter(MT5Account.broker_id == broker.id, MT5Account.mt5_number == mt5_number)
+            .first()
+        )
+        if not account:
+            print(f"  ! MT5Account not found, skipping: {broker_name} #{mt5_number}")
+            continue
+
+        for tx in txs:
+            exists = (
+                db.query(WalletTransaction)
+                .filter(
+                    WalletTransaction.mt5_account_id == account.id,
+                    WalletTransaction.type == tx["type"],
+                    WalletTransaction.amount == tx["amount"],
+                    WalletTransaction.description == tx["description"],
+                )
+                .first()
+            )
+            if exists:
+                print(f"  . Transaction exists: {broker_name} #{mt5_number} {tx['type']} {tx['amount']}")
+                continue
+            db.add(
+                WalletTransaction(
+                    mt5_account_id=account.id,
+                    type=tx["type"],
+                    amount=tx["amount"],
+                    description=tx["description"],
+                    created_at=days_ago(tx["days_ago"]),
+                )
+            )
+            print(f"  + Transaction: {broker_name} #{mt5_number} {tx['type']} ${tx['amount']}")
+
+
 # -- Main ---------------------------------------------------------------------
 
 if __name__ == "__main__":
@@ -597,6 +714,8 @@ if __name__ == "__main__":
     import app.models.client         # noqa
     import app.models.campaign       # noqa
     import app.models.broker         # noqa
+    import app.models.mt5_account    # noqa
+    import app.models.wallet_transaction  # noqa
 
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
@@ -645,6 +764,14 @@ if __name__ == "__main__":
 
         print("\n-- Brokers ---------------------------")
         seed_brokers(db)
+        db.flush()
+
+        print("\n-- MT5 Accounts -----------------------")
+        seed_mt5_accounts(db)
+        db.flush()
+
+        print("\n-- Wallet Transactions -----------------")
+        seed_wallet_transactions(db)
         db.flush()
 
         db.commit()

@@ -1,4 +1,3 @@
-/* ── Two-panel wrapper ── */
 .wrapper {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -8,17 +7,17 @@
 
   @media (max-width: 720px) {
     grid-template-columns: 1fr;
-    max-width: 420px;
+    max-width: 460px;
   }
 }
 
 .wrapperSingle {
   grid-template-columns: 1fr;
-  max-width: 420px;
+  max-width: 460px;
 }
 
-/* ── Left: Login card ── */
-.loginCard {
+.card {
+  width: 100%;
   background: #161616;
   border: 1px solid #2a2a2a;
   border-radius: 18px;
@@ -60,14 +59,20 @@
   font-size: 14px;
   color: #888;
   margin: 0 0 20px;
+  text-align: center;
 }
 
-/* Form */
 .form {
   width: 100%;
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
 }
 
 .field {
@@ -83,7 +88,13 @@
   color: #ccc;
 }
 
-.input {
+.hint {
+  font-size: 12px;
+  color: #666;
+}
+
+.input,
+.select {
   width: 100%;
   padding: 12px 14px;
   background: #0f0f0f;
@@ -96,6 +107,7 @@
     border-color 0.15s,
     box-shadow 0.15s;
   box-sizing: border-box;
+  font-family: inherit;
 
   &::placeholder {
     color: #555;
@@ -104,6 +116,79 @@
   &:focus {
     border-color: #f97316;
     box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.12);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.select option {
+  background: #161616;
+}
+
+.accountsLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: #ccc;
+}
+
+.accountRow {
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.accountRowHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.accountRowLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.removeAccountBtn {
+  background: none;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  border-radius: 6px;
+  color: #f87171;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 9px;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover {
+    background: rgba(248, 113, 113, 0.1);
+  }
+}
+
+.addAccountBtn {
+  background: none;
+  border: 1px dashed #2e2e2e;
+  border-radius: 10px;
+  color: #ccc;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+
+  &:hover {
+    border-color: #f97316;
+    color: #f97316;
   }
 }
 
@@ -118,7 +203,7 @@
   text-align: center;
 }
 
-.signInBtn {
+.submitBtn {
   width: 100%;
   padding: 13px;
   background: #f97316;
@@ -162,5 +247,3 @@
     text-decoration: underline;
   }
 }
-
-/* ── Right: Featured broker panel — see components/FeaturedBrokerPanel ── */

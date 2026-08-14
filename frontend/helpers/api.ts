@@ -80,6 +80,55 @@ export interface UserSelfUpdate {
   new_password?: string;
 }
 
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  first_name: string;
+  last_name: string;
+  // At least one — a user can have several MT5 accounts, even with the same
+  // broker, so registration links all of them in one request.
+  accounts: { broker_id: string; mt5_number: string }[];
+}
+
+// A broker as returned by the public, geo-filtered listing — only active
+// brokers whose coverage includes the visitor's detected region/country.
+export interface PublicBroker {
+  id: string;
+  name: string;
+  img_src: string | null;
+  coverage_type: 'region' | 'country';
+  geo_coverage: string[];
+  cashback_rate: number;
+  status: string;
+}
+
+// One linked MT5 account and its cashback wallet. A user can have several —
+// including more than one with the same broker.
+export interface MT5Account {
+  id: string;
+  broker_id: string;
+  broker_name: string;
+  broker_img_src: string | null;
+  mt5_number: string;
+  balance: number;
+  lifetime_earned: number;
+  created_at: string;
+}
+
+// One wallet history entry — a credit (money in, e.g. a cashback rebate) or
+// a debit (money out, e.g. a withdrawal) against one of the user's MT5
+// account wallets.
+export interface WalletTransaction {
+  id: string;
+  mt5_account_id: string;
+  broker_name: string;
+  mt5_number: string;
+  type: 'credit' | 'debit';
+  amount: number;
+  description: string;
+  created_at: string;
+}
+
 export interface MarketPrice {
   id: string;
   symbol: string;
@@ -316,11 +365,25 @@ export const publicApi = {
   homepage: () => api.get<HomepageData>('/public/homepage'),
   adBanners: (page: AdPlacementPage) =>
     api.get<Record<string, AdBannerContent>>(`/public/ad-banners/${page}`),
+  // Active brokers whose coverage includes the visitor's IP-detected
+  // region/country — used to populate the register page's broker picker.
+  brokers: () => api.get<PublicBroker[]>('/public/brokers'),
 };
 
 export const usersApi = {
   me: () => api.get<UserProfile>('/users/me'),
   updateMe: (payload: UserSelfUpdate) => api.patch<UserProfile>('/users/me', payload),
+};
+
+export const authApi = {
+  register: (payload: RegisterRequest) => api.post<UserProfile>('/auth/register', payload),
+};
+
+export const mt5AccountsApi = {
+  listMine: () => api.get<MT5Account[]>('/mt5-accounts/me'),
+  create: (payload: { broker_id: string; mt5_number: string }) =>
+    api.post<MT5Account>('/mt5-accounts/', payload),
+  listTransactions: () => api.get<WalletTransaction[]>('/mt5-accounts/me/transactions'),
 };
 
 export const brokerPlacementsApi = {

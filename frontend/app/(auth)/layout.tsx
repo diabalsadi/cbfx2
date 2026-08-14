@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = { title: "CBFX — Sign in" };
 
@@ -18,6 +19,23 @@ export default function AuthLayout({
         padding: "24px",
       }}
     >
+      <Link
+        href="/"
+        style={{
+          position: "fixed",
+          top: "20px",
+          left: "24px",
+          display: "flex",
+          alignItems: "center",
+          gap: "6px",
+          fontSize: "13px",
+          fontWeight: 500,
+          color: "#999",
+          textDecoration: "none",
+        }}
+      >
+        ← Back to home
+      </Link>
       {children}
     </div>
   );

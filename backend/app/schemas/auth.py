@@ -1,5 +1,7 @@
-from pydantic import BaseModel, EmailStr
-from typing import Literal, Optional
+from pydantic import BaseModel, EmailStr, Field
+from typing import List, Literal, Optional
+
+from app.schemas.mt5_account import MT5AccountCreate
 
 
 class LoginRequest(BaseModel):
@@ -11,6 +13,19 @@ class LoginRequest(BaseModel):
     # public site). A login only succeeds if the account's role actually
     # belongs to that portal; see auth.login().
     portal: Literal["admin", "user"]
+
+
+class RegisterRequest(BaseModel):
+    """Public self-registration — always creates a plain site user (role is
+    never accepted from the client) with one or more initial MT5 accounts
+    linked, since a user can have several accounts (even with the same
+    broker)."""
+
+    email: EmailStr
+    password: str
+    first_name: str
+    last_name: str
+    accounts: List[MT5AccountCreate] = Field(min_length=1)
 
 
 class Token(BaseModel):

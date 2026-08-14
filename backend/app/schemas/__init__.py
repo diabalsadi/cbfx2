@@ -1,4 +1,12 @@
-from app.schemas.user import User, UserCreate, UserBase
-from app.schemas.auth import LoginRequest, Token, TokenData
+from app.schemas.user import User, UserBase, UserSelfUpdate
+from app.schemas.auth import LoginRequest, RegisterRequest, Token, TokenData
 
-__all__ = ["User", "UserCreate", "UserBase", "LoginRequest", "Token", "TokenData"]
+__all__ = [
+    "User",
+    "UserBase",
+    "UserSelfUpdate",
+    "LoginRequest",
+    "RegisterRequest",
+    "Token",
+    "TokenData",
+]
