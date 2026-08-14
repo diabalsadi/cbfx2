@@ -16,12 +16,20 @@ interface User {
   region: string | null;
 }
 
+// Which portal a login is for. The backend only accepts admin-role accounts
+// (super_admin/editor/broker) on "admin" and plain site users on "user" —
+// the two never work interchangeably, even with a correct password.
+export type Portal = "admin" | "user";
+
 interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, portal: Portal) => Promise<void>;
   logout: () => void;
+  // Re-fetches the current user (e.g. after editing profile info) so the
+  // rest of the app picks up the change without a full reload.
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -79,11 +87,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .catch(() => {});
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, portal: Portal) => {
     const res = await fetch("/api/proxy/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, portal }),
     });
     if (!res.ok) {
       const err = await res.json();
@@ -102,8 +110,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
+  const refreshUser = async () => {
+    const stored = localStorage.getItem("cbfx_token");
+    if (stored) await fetchMe(stored);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

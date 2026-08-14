@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 import { publicApi, type AdBannerContent } from "@/helpers/api";
 import styles from "./login.module.scss";
 
@@ -49,6 +50,7 @@ function StarIcon() {
 
 export default function UserLoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -67,15 +69,7 @@ export default function UserLoginPage() {
     setError("");
     setLoading(true);
     try {
-      const res = await fetch("/api/proxy/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || "Login failed");
-      // Store token and redirect to home
-      localStorage.setItem("user_token", data.access_token);
+      await login(email, password, "user");
       router.push("/");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Login failed");

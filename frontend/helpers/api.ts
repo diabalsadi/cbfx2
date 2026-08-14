@@ -60,6 +60,26 @@ export const api = {
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
+export interface UserProfile {
+  id: string;
+  email: string;
+  name: string | null;
+  role: string;
+  region: string | null;
+  country_code: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Fields any signed-in user (any role) may change about themselves. Email is
+// deliberately not part of this shape — it's the account's identity and the
+// backend never accepts it here.
+export interface UserSelfUpdate {
+  name?: string;
+  current_password?: string;
+  new_password?: string;
+}
+
 export interface MarketPrice {
   id: string;
   symbol: string;
@@ -296,6 +316,11 @@ export const publicApi = {
   homepage: () => api.get<HomepageData>('/public/homepage'),
   adBanners: (page: AdPlacementPage) =>
     api.get<Record<string, AdBannerContent>>(`/public/ad-banners/${page}`),
+};
+
+export const usersApi = {
+  me: () => api.get<UserProfile>('/users/me'),
+  updateMe: (payload: UserSelfUpdate) => api.patch<UserProfile>('/users/me', payload),
 };
 
 export const brokerPlacementsApi = {

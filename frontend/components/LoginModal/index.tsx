@@ -91,7 +91,7 @@ export default function LoginModal() {
     setError("");
     setLoading(true);
     try {
-      await login(email, password);
+      await login(email, password, "user");
       closeLoginModal();
       router.push("/");
     } catch (err: unknown) {

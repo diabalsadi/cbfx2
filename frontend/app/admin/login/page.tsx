@@ -2,6 +2,7 @@
 import { useState, FormEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { isAdminRole } from "@/helpers/roles";
 import styles from "./Login.module.scss";
 
 export default function LoginPage() {
@@ -12,20 +13,26 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Only skip the form if the existing session is actually an admin-portal
+  // account — a signed-in site user shares the same token/session but must
+  // still log in here with separate admin credentials, not be bounced to
+  // /admin (which would just redirect back, looping).
+  const isAdmin = !!user && isAdminRole(user.role);
+
   useEffect(() => {
-    if (user) {
+    if (isAdmin) {
       router.replace("/admin");
     }
-  }, [user, router]);
+  }, [isAdmin, router]);
 
-  if (user) return null;
+  if (isAdmin) return null;
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
-      await login(email, password);
+      await login(email, password, "admin");
       router.replace("/admin");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Login failed");

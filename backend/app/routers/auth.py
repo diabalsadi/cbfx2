@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import user as models
 from app.schemas import user as user_schemas
+from app.schemas.user import ADMIN_ROLES
 from app.schemas import auth as auth_schemas
 from app.utils.auth import (
     get_password_hash,
@@ -37,7 +38,11 @@ def register(user: user_schemas.UserCreate, request: Request, db: Session = Depe
     db_user = models.User(
         email=user.email,
         name=user.name,
-        role=user.role,
+        # Public self-registration always creates a plain site user —
+        # admin-portal roles are only granted by an existing super_admin via
+        # PATCH /users/{email}/role. Any `role` submitted in the request body
+        # is ignored so a caller can't self-provision admin access.
+        role="user",
         region=region,
         country_code=country_code,
         hashed_password=hashed_password,
@@ -50,7 +55,11 @@ def register(user: user_schemas.UserCreate, request: Request, db: Session = Depe
 
 @router.post("/login", response_model=auth_schemas.Token)
 def login(login_data: auth_schemas.LoginRequest, db: Session = Depends(get_db)):
-    """Login and receive a JWT access token."""
+    """Login and receive a JWT access token. `portal` scopes which accounts
+    may authenticate here: admin-portal roles (super_admin/editor/broker) can
+    only sign in with portal="admin", and plain site users only with
+    portal="user" — a valid password for the wrong portal is rejected, so
+    admin and site credentials never work interchangeably."""
     user = db.query(models.User).filter(models.User.email == login_data.email).first()
 
     if not user or not verify_password(login_data.password, user.hashed_password):
@@ -58,6 +67,18 @@ def login(login_data: auth_schemas.LoginRequest, db: Session = Depends(get_db)):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    is_admin_account = user.role in ADMIN_ROLES
+    if login_data.portal == "admin" and not is_admin_account:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This account isn't authorized for the admin portal",
+        )
+    if login_data.portal == "user" and is_admin_account:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin accounts must sign in through the admin portal",
         )
 
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)

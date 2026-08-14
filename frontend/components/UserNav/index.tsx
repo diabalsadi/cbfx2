@@ -89,9 +89,14 @@ export default function UserNav() {
               {theme === "dark" ? "☀︎" : "☽"}
             </button>
             {user ? (
-              <button className={styles.signIn} onClick={logout}>
-                Sign out
-              </button>
+              <>
+                <Link href="/account" className={styles.signIn}>
+                  Account
+                </Link>
+                <button className={styles.signIn} onClick={logout}>
+                  Sign out
+                </button>
+              </>
             ) : (
               <>
                 <button className={styles.signIn} onClick={openLoginModal}>
@@ -119,15 +124,24 @@ export default function UserNav() {
             </Link>
           ))}
           {user ? (
-            <button
-              className={styles.mobileSignIn}
-              onClick={() => {
-                setMobileOpen(false);
-                logout();
-              }}
-            >
-              Sign out
-            </button>
+            <>
+              <Link
+                href="/account"
+                className={cx({ [styles.active]: isActive("/account") })}
+                onClick={() => setMobileOpen(false)}
+              >
+                Account
+              </Link>
+              <button
+                className={styles.mobileSignIn}
+                onClick={() => {
+                  setMobileOpen(false);
+                  logout();
+                }}
+              >
+                Sign out
+              </button>
+            </>
           ) : (
             <button
               className={styles.mobileSignIn}

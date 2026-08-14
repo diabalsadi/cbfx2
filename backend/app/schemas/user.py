@@ -4,6 +4,12 @@ from datetime import datetime
 import uuid
 from pydantic import Field
 
+# Roles that belong to the admin portal (/admin/*). Everything else ("user",
+# the default role for public self-registration) belongs to the site portal.
+# Used both to gate admin-only role assignment (users router) and to keep
+# login scoped to the right portal (auth router).
+ADMIN_ROLES = {"super_admin", "editor", "broker"}
+
 
 class UserBase(BaseModel):
     email: EmailStr
@@ -25,3 +31,13 @@ class User(UserBase):
 
     class Config:
         from_attributes = True
+
+
+class UserSelfUpdate(BaseModel):
+    """Fields a signed-in user (any role) may change about themselves.
+    Deliberately excludes email (the account's primary key / identity) and
+    role (admin-managed via the separate /users/{email}/role endpoint)."""
+
+    name: Optional[str] = None
+    current_password: Optional[str] = None
+    new_password: Optional[str] = Field(default=None, min_length=8)

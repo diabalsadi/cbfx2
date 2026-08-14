@@ -62,6 +62,12 @@ const navItems = [
     icon: "▣",
     roles: ["super_admin", "broker"],
   },
+  {
+    label: "Account",
+    href: "/admin/account",
+    icon: "◍",
+    roles: ["super_admin", "editor", "broker"],
+  },
 ];
 
 const Layout = ({ children, className }: ILayoutProps) => {

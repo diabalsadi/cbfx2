@@ -5,12 +5,12 @@ from pydantic import BaseModel
 
 from app.database import get_db
 from app.models.user import User
-from app.schemas.user import User as UserSchema
-from app.utils.auth import get_current_user
+from app.schemas.user import User as UserSchema, UserSelfUpdate, ADMIN_ROLES
+from app.utils.auth import get_current_user, get_password_hash, verify_password
 
 router = APIRouter(prefix="/users", tags=["users"])
 
-VALID_ROLES = {"super_admin", "editor", "broker"}
+VALID_ROLES = ADMIN_ROLES
 
 
 def require_super_admin(current_user: User = Depends(get_current_user)):
@@ -33,6 +33,32 @@ def list_users(
 
 @router.get("/me", response_model=UserSchema)
 def get_me(current_user: User = Depends(get_current_user)):
+    return current_user
+
+
+@router.patch("/me", response_model=UserSchema)
+def update_me(
+    payload: UserSelfUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Self-service profile update for any signed-in user (any role). Email
+    is intentionally not accepted here — it's the account's primary key, so
+    it can never be changed via this endpoint."""
+    if payload.name is not None:
+        if not payload.name.strip():
+            raise HTTPException(status_code=400, detail="Name cannot be empty")
+        current_user.name = payload.name.strip()
+
+    if payload.new_password is not None:
+        if not payload.current_password or not verify_password(
+            payload.current_password, current_user.hashed_password
+        ):
+            raise HTTPException(status_code=400, detail="Current password is incorrect")
+        current_user.hashed_password = get_password_hash(payload.new_password)
+
+    db.commit()
+    db.refresh(current_user)
     return current_user
 
 

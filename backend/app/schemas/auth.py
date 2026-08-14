@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Literal, Optional
 
 
 class LoginRequest(BaseModel):
@@ -7,6 +7,10 @@ class LoginRequest(BaseModel):
 
     email: EmailStr
     password: str
+    # Which portal this login is for — "admin" (/admin/*) or "user" (the
+    # public site). A login only succeeds if the account's role actually
+    # belongs to that portal; see auth.login().
+    portal: Literal["admin", "user"]
 
 
 class Token(BaseModel):
