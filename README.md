@@ -119,3 +119,39 @@ docker compose exec -T backend python seed.py
 ```
 
 The frontend will be available at **http://localhost:3000**
+
+## Mobile (iOS & Android)
+
+The mobile apps are a [Capacitor](https://capacitorjs.com) shell around the deployed frontend — `frontend/capacitor.config.ts` points `server.url` at `https://cbfx2.vercel.app/`, so the native app loads the live site directly. There's no local static build to run; you're just launching the native shell.
+
+### Prerequisites
+- **Android**: [Android Studio](https://developer.android.com/studio) (includes the Android SDK)
+- **iOS**: a Mac with [Xcode](https://apps.apple.com/app/xcode/id497799835) and [CocoaPods](https://cocoapods.org) (`sudo gem install cocoapods`) — not possible on Windows/Linux
+
+### Android
+```bash
+cd frontend
+
+# Opens the native project in Android Studio
+npx cap open android
+```
+Then press **Run ▶** in Android Studio to launch on an emulator or a connected device.
+
+### iOS (macOS only)
+```bash
+cd frontend
+
+# First time only — installs CocoaPods dependencies
+cd ios/App && pod install && cd ../..
+
+# Opens the native project in Xcode
+npx cap open ios
+```
+Then select a simulator or a signed device and press **Run ▶** in Xcode.
+
+### After changing native config or plugins
+If you edit `capacitor.config.ts` or add/update a Capacitor plugin, re-sync before opening the IDE again:
+```bash
+cd frontend
+npx cap sync
+```

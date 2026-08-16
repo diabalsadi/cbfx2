@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -6,6 +6,14 @@ import "../styles/reset.scss";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { getSeoSettings } from "@/helpers/seo";
+import CapacitorNativeBridge from "@/components/CapacitorNativeBridge";
+
+// viewport-fit=cover lets the app draw edge-to-edge on notched devices so the
+// env(safe-area-inset-*) values used in globals.css resolve to real insets
+// instead of 0 — only takes effect inside the Capacitor native shell.
+export const viewport: Viewport = {
+  viewportFit: "cover",
+};
 
 const inter = Inter({
   variable: "--font-inter",
@@ -65,6 +73,7 @@ export default function RootLayout({
             })();
           `}
         </Script>
+        <CapacitorNativeBridge />
         <ThemeProvider>
           <AuthProvider>{children}</AuthProvider>
         </ThemeProvider>
