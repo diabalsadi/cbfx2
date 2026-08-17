@@ -26,6 +26,9 @@ async function handler(req: NextRequest, { params }: { params: Promise<{ path: s
   const auth = req.headers.get('authorization');
   if (auth) headers['Authorization'] = auth;
 
+  const visitorId = req.headers.get('x-visitor-id');
+  if (visitorId) headers['X-Visitor-Id'] = visitorId;
+
   const forwardedFor = req.headers.get('x-forwarded-for');
   if (forwardedFor) headers['X-Forwarded-For'] = forwardedFor;
   const realIp = req.headers.get('x-real-ip');

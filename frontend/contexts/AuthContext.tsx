@@ -8,6 +8,7 @@ import {
   ReactNode,
 } from "react";
 import { withDebugIp } from "@/helpers/debugIp";
+import { getVisitorId } from "@/helpers/visitorId";
 
 interface User {
   email: string;
@@ -76,7 +77,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const stored = localStorage.getItem("cbfx_token");
     fetch(withDebugIp("/api/proxy/geo/detect"), {
-      headers: stored ? { Authorization: `Bearer ${stored}` } : {},
+      headers: {
+        ...(stored ? { Authorization: `Bearer ${stored}` } : {}),
+        "X-Visitor-Id": getVisitorId(),
+      },
     })
       .then((res) => (res.ok ? res.json() : null))
       .then((data: { region: string | null } | null) => {

@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Request
@@ -25,7 +26,10 @@ def detect_visitor_region(
     logs a Visit for the admin overview's visitors-by-country chart — this
     fires once per app mount site-wide, so it doubles as a lightweight
     visitor ping. Admin-portal staff are excluded so checking the dashboard
-    doesn't inflate the visitor count."""
+    doesn't inflate the visitor count. At most one Visit per visitor per
+    calendar day (keyed by account email when signed in, otherwise the
+    anonymous X-Visitor-Id header) so a page refresh doesn't count as a new
+    visitor."""
     ip = extract_client_ip(request)
     country_code, region = detect_region(ip)
 
@@ -40,8 +44,27 @@ def detect_visitor_region(
 
     is_staff_visit = current_user is not None and current_user.role in ADMIN_ROLES
     if not is_staff_visit:
-        db.add(Visit(country_code=country_code, region=region))
-        changed = True
+        if current_user is not None:
+            visitor_key = f"user:{current_user.email}"
+        else:
+            visitor_id = request.headers.get("X-Visitor-Id")
+            visitor_key = f"anon:{visitor_id}" if visitor_id else None
+
+        already_visited_today = False
+        if visitor_key:
+            today_start = datetime.now(timezone.utc).replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
+            already_visited_today = (
+                db.query(Visit)
+                .filter(Visit.visitor_key == visitor_key, Visit.created_at >= today_start)
+                .first()
+                is not None
+            )
+
+        if not already_visited_today:
+            db.add(Visit(country_code=country_code, region=region, visitor_key=visitor_key))
+            changed = True
 
     if changed:
         db.commit()

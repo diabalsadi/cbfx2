@@ -117,6 +117,7 @@ with engine.begin() as connection:
         END $$;
         """
     ))
+    connection.execute(text("ALTER TABLE visits ADD COLUMN IF NOT EXISTS visitor_key VARCHAR"))
 
 app = FastAPI(title="CBFX API", version="1.0.0")
 
