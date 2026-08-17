@@ -17,6 +17,8 @@ class UserBase(BaseModel):
     role: Optional[str] = "user"
     region: Optional[str] = None
     country_code: Optional[str] = None
+    referral_code: Optional[str] = None
+    referred_by: Optional[str] = None
 
 
 class User(UserBase):
@@ -37,3 +39,21 @@ class UserSelfUpdate(BaseModel):
     name: Optional[str] = None
     current_password: Optional[str] = None
     new_password: Optional[str] = Field(default=None, min_length=8)
+
+
+class AdminUserCreate(BaseModel):
+    """Used by super_admin to create a user directly (e.g. a client account),
+    bypassing the public /auth/register flow and its MT5-account requirement."""
+
+    email: EmailStr
+    name: str
+    password: str = Field(min_length=8)
+    role: str = "client"
+    referral_code: Optional[str] = None
+
+
+class AdminUserUpdate(BaseModel):
+    """Fields a super_admin may edit on any user record."""
+
+    name: Optional[str] = None
+    referral_code: Optional[str] = None

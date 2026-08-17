@@ -90,6 +90,11 @@ export default function UserNav() {
             </button>
             {user ? (
               <>
+                {user.role === "client" && (
+                  <Link href="/referrals" className={styles.signIn}>
+                    Referrals
+                  </Link>
+                )}
                 <Link href="/account" className={styles.signIn}>
                   Account
                 </Link>
@@ -125,6 +130,15 @@ export default function UserNav() {
           ))}
           {user ? (
             <>
+              {user.role === "client" && (
+                <Link
+                  href="/referrals"
+                  className={cx({ [styles.active]: isActive("/referrals") })}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  Referrals
+                </Link>
+              )}
               <Link
                 href="/account"
                 className={cx({ [styles.active]: isActive("/account") })}

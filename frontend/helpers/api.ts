@@ -68,6 +68,8 @@ export interface UserProfile {
   role: string;
   region: string | null;
   country_code: string | null;
+  referral_code: string | null;
+  referred_by: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -89,6 +91,9 @@ export interface RegisterRequest {
   // At least one — a user can have several MT5 accounts, even with the same
   // broker, so registration links all of them in one request.
   accounts: { broker_id: string; mt5_number: string }[];
+  // Optional referral code from a client's referral link (?ref=CODE).
+  // Unknown/invalid codes are ignored server-side rather than rejected.
+  referral_code?: string;
 }
 
 // A broker as returned by the public, geo-filtered listing — only active
@@ -384,6 +389,64 @@ export const usersApi = {
 
 export const authApi = {
   register: (payload: RegisterRequest) => api.post<UserProfile>('/auth/register', payload),
+};
+
+// ── Referral clients (admin-managed User accounts with role "client") ──────────
+
+export interface AdminUserCreate {
+  email: string;
+  name: string;
+  password: string;
+  role?: string;
+  referral_code?: string;
+}
+
+export interface AdminUserUpdate {
+  name?: string;
+  referral_code?: string;
+}
+
+export const adminUsersApi = {
+  list: (role?: string) => api.get<UserProfile[]>(`/users/${role ? `?role=${encodeURIComponent(role)}` : ''}`),
+  create: (payload: AdminUserCreate) => api.post<UserProfile>('/users/', payload),
+  update: (email: string, payload: AdminUserUpdate) =>
+    api.patch<UserProfile>(`/users/${encodeURIComponent(email)}`, payload),
+  delete: (email: string) => api.delete<void>(`/users/${encodeURIComponent(email)}`),
+};
+
+// ── Referrals ────────────────────────────────────────────────────────────────
+
+export interface ReferralInfo {
+  referral_code: string | null;
+}
+
+export interface ReferralBucket {
+  label: string;
+  count: number;
+}
+
+export interface ReferralStats {
+  total: number;
+  by_country: Record<string, number>;
+  weekly: ReferralBucket[];
+  monthly: ReferralBucket[];
+}
+
+export interface ClientReferralSummary {
+  client_email: string;
+  client_name: string | null;
+  referral_code: string | null;
+  total: number;
+}
+
+export interface AdminReferralStats extends ReferralStats {
+  by_client: ClientReferralSummary[];
+}
+
+export const referralsApi = {
+  me: () => api.get<ReferralInfo>('/referrals/me'),
+  myStats: () => api.get<ReferralStats>('/referrals/me/stats'),
+  adminStats: () => api.get<AdminReferralStats>('/referrals/admin/stats'),
 };
 
 export const mt5AccountsApi = {

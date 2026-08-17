@@ -2,7 +2,7 @@
 import { useState, FormEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { isAdminRole } from "@/helpers/roles";
+import { canAccessAdminPortal } from "@/helpers/roles";
 import styles from "./Login.module.scss";
 
 export default function LoginPage() {
@@ -17,7 +17,7 @@ export default function LoginPage() {
   // account — a signed-in site user shares the same token/session but must
   // still log in here with separate admin credentials, not be bounced to
   // /admin (which would just redirect back, looping).
-  const isAdmin = !!user && isAdminRole(user.role);
+  const isAdmin = !!user && canAccessAdminPortal(user.role);
 
   useEffect(() => {
     if (isAdmin) {

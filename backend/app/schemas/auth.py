@@ -26,6 +26,9 @@ class RegisterRequest(BaseModel):
     first_name: str
     last_name: str
     accounts: List[MT5AccountCreate] = Field(min_length=1)
+    # Optional referral code from a client's referral link. Unknown/invalid
+    # codes are ignored rather than rejected, so a bad code never blocks signup.
+    referral_code: Optional[str] = None
 
 
 class Token(BaseModel):

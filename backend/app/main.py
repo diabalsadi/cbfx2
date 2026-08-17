@@ -8,6 +8,7 @@ from app.routers import auth
 from app.routers import articles, clients, campaigns, users, public
 from app.routers import market_prices, copy_traders, plays, analysis, forum
 from app.routers import brokers, geo, broker_placements, ad_banners, mt5_accounts, seo_meta
+from app.routers import referrals
 
 # Import all models so SQLAlchemy creates their tables
 import app.models.user
@@ -101,6 +102,20 @@ with engine.begin() as connection:
         """
     ))
     connection.execute(text("ALTER TABLE seo_settings ADD COLUMN IF NOT EXISTS default_keywords VARCHAR"))
+    connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code VARCHAR"))
+    connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by VARCHAR"))
+    connection.execute(text(
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint WHERE conname = 'uq_users_referral_code'
+            ) THEN
+                ALTER TABLE users ADD CONSTRAINT uq_users_referral_code UNIQUE (referral_code);
+            END IF;
+        END $$;
+        """
+    ))
 
 app = FastAPI(title="CBFX API", version="1.0.0")
 
@@ -129,6 +144,7 @@ app.include_router(broker_placements.router)
 app.include_router(ad_banners.router)
 app.include_router(mt5_accounts.router)
 app.include_router(seo_meta.router)
+app.include_router(referrals.router)
 
 
 @app.get("/")

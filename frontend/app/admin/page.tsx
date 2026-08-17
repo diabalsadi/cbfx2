@@ -13,6 +13,8 @@ export default function AdminRootPage() {
         router.replace("/admin/articles");
       } else if (user.role === "broker" || user.role === "super_admin") {
         router.replace("/admin/overview");
+      } else if (user.role === "client") {
+        router.replace("/admin/referrals");
       } else {
         // Fallback for an unknown role
         router.replace("/admin/overview");

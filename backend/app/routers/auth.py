@@ -75,12 +75,23 @@ def register(payload: auth_schemas.RegisterRequest, request: Request, db: Sessio
 
     country_code, region = detect_region(extract_client_ip(request))
 
+    referred_by = None
+    if payload.referral_code:
+        referrer = (
+            db.query(models.User)
+            .filter(models.User.referral_code == payload.referral_code)
+            .first()
+        )
+        if referrer:
+            referred_by = referrer.email
+
     db_user = models.User(
         email=payload.email,
         name=f"{first_name} {last_name}",
         role="user",
         region=region,
         country_code=country_code,
+        referred_by=referred_by,
         hashed_password=get_password_hash(payload.password),
     )
     db.add(db_user)
@@ -111,7 +122,11 @@ def login(login_data: auth_schemas.LoginRequest, db: Session = Depends(get_db)):
         )
 
     is_admin_account = user.role in ADMIN_ROLES
-    if login_data.portal == "admin" and not is_admin_account:
+    # "client" accounts are admin-managed but not admin staff — they may sign
+    # in on either portal: the admin login (landing on their own referral
+    # view) or the public site login (the /referrals dashboard).
+    can_use_admin_portal = is_admin_account or user.role == "client"
+    if login_data.portal == "admin" and not can_use_admin_portal:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="This account isn't authorized for the admin portal",

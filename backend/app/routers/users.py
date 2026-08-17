@@ -1,16 +1,28 @@
+import secrets
+import string
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel
 
 from app.database import get_db
 from app.models.user import User
-from app.schemas.user import User as UserSchema, UserSelfUpdate, ADMIN_ROLES
+from app.schemas.user import (
+    User as UserSchema,
+    UserSelfUpdate,
+    AdminUserCreate,
+    AdminUserUpdate,
+    ADMIN_ROLES,
+)
 from app.utils.auth import get_current_user, get_password_hash, verify_password
 
 router = APIRouter(prefix="/users", tags=["users"])
 
-VALID_ROLES = ADMIN_ROLES
+# Roles assignable via PATCH /{email}/role. Includes "client" alongside the
+# admin-portal roles since client accounts are also admin-managed, even
+# though "client" itself stays on the site portal (not in ADMIN_ROLES).
+VALID_ROLES = ADMIN_ROLES | {"client"}
 
 
 def require_super_admin(current_user: User = Depends(get_current_user)):
@@ -23,12 +35,85 @@ class RoleUpdate(BaseModel):
     role: str
 
 
+def _generate_referral_code(db: Session) -> str:
+    alphabet = string.ascii_uppercase + string.digits
+    while True:
+        code = "".join(secrets.choice(alphabet) for _ in range(8))
+        if not db.query(User).filter(User.referral_code == code).first():
+            return code
+
+
 @router.get("/", response_model=List[UserSchema])
 def list_users(
+    role: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_super_admin),
 ):
-    return db.query(User).all()
+    query = db.query(User)
+    if role:
+        query = query.filter(User.role == role)
+    return query.all()
+
+
+@router.post("/", response_model=UserSchema, status_code=status.HTTP_201_CREATED)
+def create_user(
+    payload: AdminUserCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_super_admin),
+):
+    """Admin-created account (e.g. a client), bypassing the public
+    /auth/register flow and its MT5-account requirement."""
+    if db.query(User).filter(User.email == payload.email).first():
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    referral_code = payload.referral_code
+    if referral_code:
+        if db.query(User).filter(User.referral_code == referral_code).first():
+            raise HTTPException(status_code=400, detail="Referral code already in use")
+    elif payload.role == "client":
+        referral_code = _generate_referral_code(db)
+
+    user = User(
+        email=payload.email,
+        name=payload.name,
+        role=payload.role,
+        referral_code=referral_code,
+        hashed_password=get_password_hash(payload.password),
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@router.patch("/{email}", response_model=UserSchema)
+def update_user(
+    email: str,
+    payload: AdminUserUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_super_admin),
+):
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if payload.name is not None:
+        if not payload.name.strip():
+            raise HTTPException(status_code=400, detail="Name cannot be empty")
+        user.name = payload.name.strip()
+
+    if payload.referral_code is not None:
+        code = payload.referral_code.strip()
+        if not code:
+            raise HTTPException(status_code=400, detail="Referral code cannot be empty")
+        existing = db.query(User).filter(User.referral_code == code).first()
+        if existing and existing.email != user.email:
+            raise HTTPException(status_code=400, detail="Referral code already in use")
+        user.referral_code = code
+
+    db.commit()
+    db.refresh(user)
+    return user
 
 
 @router.get("/me", response_model=UserSchema)

@@ -2,7 +2,7 @@
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { isAdminRole } from "@/helpers/roles";
+import { canAccessAdminPortal } from "@/helpers/roles";
 import AdminLayout from "@/components/Layout";
 
 export default function AdminLayoutWrapper({
@@ -18,7 +18,7 @@ export default function AdminLayoutWrapper({
   // A signed-in site user (role "user") still has `user` truthy here — the
   // token/session is shared across both portals — so admin pages must also
   // check the role, not just that someone is logged in.
-  const isAuthorized = !!user && isAdminRole(user.role);
+  const isAuthorized = !!user && canAccessAdminPortal(user.role);
 
   useEffect(() => {
     if (!loading && !isAuthorized && !isLoginPage) {

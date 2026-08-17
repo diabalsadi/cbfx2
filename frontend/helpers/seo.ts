@@ -23,7 +23,8 @@ export type SeoRoute =
   | "markets_symbol"
   | "news"
   | "news_detail"
-  | "plays";
+  | "plays"
+  | "referrals";
 
 export interface SeoMetaData {
   route: string;

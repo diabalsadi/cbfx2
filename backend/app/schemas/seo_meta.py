@@ -23,6 +23,7 @@ SEO_ROUTES = {
     "news",
     "news_detail",
     "plays",
+    "referrals",
 }
 
 # Routes that support a per-item override on top of their generic template,

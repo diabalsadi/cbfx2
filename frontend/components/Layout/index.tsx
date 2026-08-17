@@ -16,6 +16,7 @@ const roleLabels: Record<string, string> = {
   super_admin: "Super Admin",
   editor: "Editor",
   broker: "Broker",
+  client: "Client",
 };
 
 const navItems = [
@@ -39,10 +40,10 @@ const navItems = [
     roles: ["super_admin", "broker"],
   },
   {
-    label: "Clients",
-    href: "/admin/clients",
-    icon: "◫",
-    roles: ["super_admin", "broker"],
+    label: "Referral Clients",
+    href: "/admin/referral-clients",
+    icon: "⇄",
+    roles: ["super_admin"],
   },
   {
     label: "Brokers",
@@ -67,6 +68,12 @@ const navItems = [
     href: "/admin/reports",
     icon: "▣",
     roles: ["super_admin", "broker"],
+  },
+  {
+    label: "Referrals",
+    href: "/admin/referrals",
+    icon: "⇄",
+    roles: ["client"],
   },
   {
     label: "Account",

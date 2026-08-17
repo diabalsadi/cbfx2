@@ -132,8 +132,8 @@ export default function OverviewPage() {
                   <span>◉</span>
                   <span>New Campaign</span>
                 </Link>
-                <Link href="/admin/clients" className={styles.actionBtn}>
-                  <span>◫</span>
+                <Link href="/admin/referral-clients" className={styles.actionBtn}>
+                  <span>⇄</span>
                   <span>Add Client</span>
                 </Link>
                 <Link href="/admin/reports" className={styles.actionBtn}>

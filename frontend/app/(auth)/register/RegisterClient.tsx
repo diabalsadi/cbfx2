@@ -48,6 +48,7 @@ export default function RegisterPage() {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [referralCode, setReferralCode] = useState("");
   const [accounts, setAccounts] = useState<AccountDraft[]>([newAccountDraft()]);
 
   const [error, setError] = useState("");
@@ -64,6 +65,16 @@ export default function RegisterPage() {
       })
       .catch(() => setBrokers([]))
       .finally(() => setBrokersLoading(false));
+  }, []);
+
+  // Pre-fill the referral code from a client's shareable link
+  // (?referral=CODE, with ?ref=CODE also accepted). Read directly from
+  // window rather than useSearchParams() so this page doesn't need a
+  // Suspense boundary just for this optional field.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get("referral") || params.get("ref");
+    if (ref) setReferralCode(ref);
   }, []);
 
   const updateAccount = (key: string, patch: Partial<AccountDraft>) => {
@@ -106,6 +117,7 @@ export default function RegisterPage() {
         first_name: firstName,
         last_name: lastName,
         accounts: accounts.map((a) => ({ broker_id: a.brokerId, mt5_number: a.mt5Number.trim() })),
+        referral_code: referralCode.trim() || undefined,
       });
       await login(email, password, "user");
       router.push("/");
@@ -185,6 +197,19 @@ export default function RegisterPage() {
               required
               minLength={8}
               autoComplete="new-password"
+            />
+          </div>
+
+          <div className={styles.field}>
+            <label className={styles.label} htmlFor="referralCode">
+              Referral Code <span className={styles.hint}>(optional)</span>
+            </label>
+            <input
+              id="referralCode"
+              className={styles.input}
+              placeholder="e.g. A1B2C3D4"
+              value={referralCode}
+              onChange={(e) => setReferralCode(e.target.value)}
             />
           </div>
 
