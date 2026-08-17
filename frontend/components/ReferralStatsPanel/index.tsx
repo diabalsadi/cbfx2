@@ -2,6 +2,8 @@
 import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import type { ReferralStats } from "@/helpers/api";
+import { chartSx } from "@/helpers/chartTheme";
+import ChartThemeProvider from "@/components/ChartThemeProvider";
 import styles from "./ReferralStatsPanel.module.scss";
 
 const PieChart = dynamic(() => import("@mui/x-charts/PieChart").then((m) => m.PieChart), {
@@ -12,19 +14,6 @@ const BarChart = dynamic(() => import("@mui/x-charts/BarChart").then((m) => m.Ba
 });
 
 type Range = "weekly" | "monthly";
-
-// @mui/x-charts renders its own default (light) text/line colors since this
-// app themes via a `data-theme` attribute + CSS variables rather than a MUI
-// ThemeProvider — without this override, axis and legend text stay dark and
-// disappear against the dark-mode background.
-const chartSx = {
-  "& .MuiChartsAxis-tickLabel": { fill: "var(--text-secondary)" },
-  "& .MuiChartsAxis-line": { stroke: "var(--border)" },
-  "& .MuiChartsAxis-tick": { stroke: "var(--border)" },
-  "& .MuiChartsGrid-line": { stroke: "var(--border-subtle)" },
-  "& .MuiChartsLegend-series text": { fill: "var(--text-secondary) !important" },
-  "& .MuiChartsLegend-label": { color: "var(--text-secondary)" },
-};
 
 interface ReferralStatsPanelProps {
   referralCode: string | null;
@@ -114,20 +103,24 @@ export default function ReferralStatsPanel({ referralCode, stats, loading, error
           </div>
         </div>
         {!loading && buckets && (
-          <BarChart
-            xAxis={[{ scaleType: "band", data: buckets.map((b) => b.label) }]}
-            series={[{ data: buckets.map((b) => b.count), color: "#D9641E" }]}
-            height={260}
-            grid={{ horizontal: true }}
-            sx={chartSx}
-          />
+          <ChartThemeProvider>
+            <BarChart
+              xAxis={[{ scaleType: "band", data: buckets.map((b) => b.label) }]}
+              series={[{ data: buckets.map((b) => b.count), color: "#D9641E" }]}
+              height={260}
+              grid={{ horizontal: true }}
+              sx={chartSx}
+            />
+          </ChartThemeProvider>
         )}
       </div>
 
       <div className={styles.card}>
         <h2 className={styles.cardTitle}>By Country</h2>
         {!loading && countryData.length > 0 ? (
-          <PieChart series={[{ data: countryData, innerRadius: 40 }]} height={260} sx={chartSx} />
+          <ChartThemeProvider>
+            <PieChart series={[{ data: countryData, innerRadius: 40 }]} height={260} sx={chartSx} />
+          </ChartThemeProvider>
         ) : (
           !loading && <p className={styles.hint}>No referred signups yet.</p>
         )}

@@ -29,10 +29,11 @@ router = APIRouter(
     "/register", response_model=user_schemas.User, status_code=status.HTTP_201_CREATED
 )
 def register(payload: auth_schemas.RegisterRequest, request: Request, db: Session = Depends(get_db)):
-    """Register a new site user and link one or more MT5 accounts in one
-    step — a user can have several accounts, even with the same broker.
-    Always creates role="user" — admin-portal roles are only granted
-    afterward by an existing super_admin via PATCH /users/{email}/role."""
+    """Register a new site user, optionally linking one or more MT5 accounts
+    in the same step — a user can have several accounts, even with the same
+    broker, but none are required to sign up. Always creates role="user" —
+    admin-portal roles are only granted afterward by an existing super_admin
+    via PATCH /users/{email}/role."""
     if db.query(models.User).filter(models.User.email == payload.email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
 

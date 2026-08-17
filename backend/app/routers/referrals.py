@@ -1,5 +1,4 @@
 from collections import Counter
-from datetime import date, datetime, timedelta, timezone
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -14,13 +13,11 @@ from app.schemas.referral import (
     ReferralStats,
 )
 from app.utils.auth import get_current_user
+from app.utils.time_buckets import bucket_counts
 
 router = APIRouter(prefix="/referrals", tags=["referrals"])
 
 ADMIN_STATS_ROLES = {"super_admin", "broker"}
-
-WEEKS_BACK = 12
-MONTHS_BACK = 12
 
 
 def require_roles(roles: set):
@@ -31,52 +28,18 @@ def require_roles(roles: set):
     return checker
 
 
-def _week_start(dt: datetime) -> date:
-    d = dt.date() if isinstance(dt, datetime) else dt
-    return d - timedelta(days=d.weekday())
-
-
-def _month_start(dt: datetime) -> date:
-    d = dt.date() if isinstance(dt, datetime) else dt
-    return d.replace(day=1)
-
-
-def _months_before(base: date, n: int) -> date:
-    total = base.year * 12 + (base.month - 1) - n
-    year, month = divmod(total, 12)
-    return date(year, month + 1, 1)
-
-
 def _build_stats(users: List[User]) -> dict:
-    now = datetime.now(timezone.utc)
-
     by_country: Counter = Counter()
     for u in users:
         by_country[u.country_code or "unknown"] += 1
 
-    current_week = _week_start(now)
-    week_starts = [current_week - timedelta(weeks=i) for i in range(WEEKS_BACK - 1, -1, -1)]
-    week_counts = {ws: 0 for ws in week_starts}
-
-    current_month = _month_start(now)
-    month_starts = [_months_before(current_month, i) for i in range(MONTHS_BACK - 1, -1, -1)]
-    month_counts = {ms: 0 for ms in month_starts}
-
-    for u in users:
-        if u.created_at is None:
-            continue
-        ws = _week_start(u.created_at)
-        if ws in week_counts:
-            week_counts[ws] += 1
-        ms = _month_start(u.created_at)
-        if ms in month_counts:
-            month_counts[ms] += 1
+    timestamps = [u.created_at for u in users]
 
     return {
         "total": len(users),
         "by_country": dict(by_country),
-        "weekly": [{"label": ws.isoformat(), "count": week_counts[ws]} for ws in week_starts],
-        "monthly": [{"label": ms.strftime("%Y-%m"), "count": month_counts[ms]} for ms in month_starts],
+        "weekly": bucket_counts(timestamps, "week"),
+        "monthly": bucket_counts(timestamps, "month"),
     }
 
 

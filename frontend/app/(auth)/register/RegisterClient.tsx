@@ -49,7 +49,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [referralCode, setReferralCode] = useState("");
-  const [accounts, setAccounts] = useState<AccountDraft[]>([newAccountDraft()]);
+  const [accounts, setAccounts] = useState<AccountDraft[]>([]);
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -86,7 +86,7 @@ export default function RegisterPage() {
   };
 
   const removeAccount = (key: string) => {
-    setAccounts((prev) => (prev.length > 1 ? prev.filter((a) => a.key !== key) : prev));
+    setAccounts((prev) => prev.filter((a) => a.key !== key));
   };
 
   async function handleSubmit(e: React.FormEvent) {
@@ -135,7 +135,7 @@ export default function RegisterPage() {
           <LogoIcon />
         </div>
         <h1 className={styles.title}>CBFX</h1>
-        <p className={styles.subtitle}>Create your account and link your MT5 account(s)</p>
+        <p className={styles.subtitle}>Create your account — optionally link an MT5 account</p>
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.formRow}>
@@ -214,21 +214,27 @@ export default function RegisterPage() {
           </div>
 
           <div className={styles.field}>
-            <span className={styles.accountsLabel}>Broker Accounts</span>
+            <span className={styles.accountsLabel}>
+              Broker Accounts <span className={styles.hint}>(optional)</span>
+            </span>
+            {accounts.length === 0 && (
+              <span className={styles.hint}>
+                Add one if you already have an MT5 account with a partner broker — you can also link
+                one later from your account.
+              </span>
+            )}
 
             {accounts.map((a, i) => (
               <div key={a.key} className={styles.accountRow}>
                 <div className={styles.accountRowHeader}>
                   <span className={styles.accountRowLabel}>Account {i + 1}</span>
-                  {accounts.length > 1 && (
-                    <button
-                      type="button"
-                      className={styles.removeAccountBtn}
-                      onClick={() => removeAccount(a.key)}
-                    >
-                      Remove
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    className={styles.removeAccountBtn}
+                    onClick={() => removeAccount(a.key)}
+                  >
+                    Remove
+                  </button>
                 </div>
 
                 <div className={styles.field}>
@@ -275,11 +281,13 @@ export default function RegisterPage() {
             ))}
 
             <button type="button" className={styles.addAccountBtn} onClick={addAccount}>
-              + Add another broker account
+              {accounts.length === 0 ? "+ Add a broker account" : "+ Add another broker account"}
             </button>
-            <span className={styles.hint}>
-              You can have more than one MT5 account, even with the same broker.
-            </span>
+            {accounts.length > 0 && (
+              <span className={styles.hint}>
+                You can have more than one MT5 account, even with the same broker.
+              </span>
+            )}
           </div>
 
           {error && <p className={styles.errorMsg}>{error}</p>}

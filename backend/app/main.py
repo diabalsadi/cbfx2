@@ -8,7 +8,7 @@ from app.routers import auth
 from app.routers import articles, clients, campaigns, users, public
 from app.routers import market_prices, copy_traders, plays, analysis, forum
 from app.routers import brokers, geo, broker_placements, ad_banners, mt5_accounts, seo_meta
-from app.routers import referrals
+from app.routers import referrals, visits
 
 # Import all models so SQLAlchemy creates their tables
 import app.models.user
@@ -27,6 +27,7 @@ import app.models.ad_banner
 import app.models.mt5_account
 import app.models.wallet_transaction
 import app.models.seo_meta
+import app.models.visit
 
 Base.metadata.create_all(bind=engine)
 
@@ -145,6 +146,7 @@ app.include_router(ad_banners.router)
 app.include_router(mt5_accounts.router)
 app.include_router(seo_meta.router)
 app.include_router(referrals.router)
+app.include_router(visits.router)
 
 
 @app.get("/")

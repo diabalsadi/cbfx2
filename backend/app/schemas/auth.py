@@ -17,15 +17,15 @@ class LoginRequest(BaseModel):
 
 class RegisterRequest(BaseModel):
     """Public self-registration — always creates a plain site user (role is
-    never accepted from the client) with one or more initial MT5 accounts
-    linked, since a user can have several accounts (even with the same
-    broker)."""
+    never accepted from the client). Linking an MT5 account isn't required;
+    accounts may be empty, and a user can add more than one later
+    (even with the same broker)."""
 
     email: EmailStr
     password: str
     first_name: str
     last_name: str
-    accounts: List[MT5AccountCreate] = Field(min_length=1)
+    accounts: List[MT5AccountCreate] = Field(default_factory=list)
     # Optional referral code from a client's referral link. Unknown/invalid
     # codes are ignored rather than rejected, so a bad code never blocks signup.
     referral_code: Optional[str] = None

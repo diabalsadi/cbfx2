@@ -449,6 +449,27 @@ export const referralsApi = {
   adminStats: () => api.get<AdminReferralStats>('/referrals/admin/stats'),
 };
 
+// ── Site visitors ────────────────────────────────────────────────────────────
+
+export interface VisitBucket {
+  label: string;
+  count: number;
+}
+
+export interface VisitStats {
+  total: number;
+  by_country: Record<string, number>;
+  daily: VisitBucket[];
+  weekly: VisitBucket[];
+  monthly: VisitBucket[];
+  yearly: VisitBucket[];
+}
+
+export const visitsApi = {
+  stats: (country?: string) =>
+    api.get<VisitStats>(`/visits/stats${country ? `?country=${encodeURIComponent(country)}` : ''}`),
+};
+
 export const mt5AccountsApi = {
   listMine: () => api.get<MT5Account[]>('/mt5-accounts/me'),
   create: (payload: { broker_id: string; mt5_number: string }) =>
