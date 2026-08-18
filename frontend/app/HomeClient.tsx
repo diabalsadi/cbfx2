@@ -72,6 +72,18 @@ export default function HomePage() {
     data?.ad_banners?.prime_banner && !dismissedBanners.has("prime_banner")
       ? data.ad_banners.prime_banner
       : null;
+  const heroTopBanner =
+    data?.ad_banners?.hero_top_banner && !dismissedBanners.has("hero_top_banner")
+      ? data.ad_banners.hero_top_banner
+      : null;
+  const sidebarLeftBanner =
+    data?.ad_banners?.sidebar_left_banner && !dismissedBanners.has("sidebar_left_banner")
+      ? data.ad_banners.sidebar_left_banner
+      : null;
+  const sidebarRightBanner =
+    data?.ad_banners?.sidebar_right_banner && !dismissedBanners.has("sidebar_right_banner")
+      ? data.ad_banners.sidebar_right_banner
+      : null;
 
   /* ── derived data (falls back to empty arrays while loading) ── */
 
@@ -120,7 +132,115 @@ export default function HomePage() {
   return (
     <LoginModalProvider>
       <UserNav />
+
+      {/* ══════════════════════════════
+          Sticky sidebar ads (desktop only)
+         ══════════════════════════════ */}
+      {sidebarLeftBanner && (
+        <div className={`${styles.stickySidebarAd} ${styles.stickySidebarLeft}`}>
+          {sidebarLeftBanner.dismissible && (
+            <button
+              className={styles.stickySidebarDismiss}
+              onClick={() => dismissBanner("sidebar_left_banner")}
+              aria-label="Dismiss"
+            >
+              ✕
+            </button>
+          )}
+          <span className={styles.sponsoredChip}>{sidebarLeftBanner.badge_text}</span>
+          {sidebarLeftBanner.logo_src && (
+            <a
+              href={sidebarLeftBanner.link_url || "#"}
+              target="_blank"
+              rel="noopener noreferrer sponsored"
+              className={styles.stickySidebarImageLink}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={sidebarLeftBanner.logo_src} alt={sidebarLeftBanner.sponsor_name} className={styles.stickySidebarImage} />
+            </a>
+          )}
+          <div className={styles.stickySidebarLabel}>{sidebarLeftBanner.sponsor_name}</div>
+        </div>
+      )}
+      {sidebarRightBanner && (
+        <div className={`${styles.stickySidebarAd} ${styles.stickySidebarRight}`}>
+          {sidebarRightBanner.dismissible && (
+            <button
+              className={styles.stickySidebarDismiss}
+              onClick={() => dismissBanner("sidebar_right_banner")}
+              aria-label="Dismiss"
+            >
+              ✕
+            </button>
+          )}
+          <span className={styles.sponsoredChip}>{sidebarRightBanner.badge_text}</span>
+          {sidebarRightBanner.logo_src && (
+            <a
+              href={sidebarRightBanner.link_url || "#"}
+              target="_blank"
+              rel="noopener noreferrer sponsored"
+              className={styles.stickySidebarImageLink}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={sidebarRightBanner.logo_src} alt={sidebarRightBanner.sponsor_name} className={styles.stickySidebarImage} />
+            </a>
+          )}
+          <div className={styles.stickySidebarLabel}>{sidebarRightBanner.sponsor_name}</div>
+        </div>
+      )}
+
       <div className={userStyles.main}>
+      {/* ══════════════════════════════
+          Hero top banner
+         ══════════════════════════════ */}
+      {heroTopBanner && (
+        <div className={styles.heroTopBanner}>
+          <div className={styles.demoBannerLeft}>
+            <span className={styles.sponsoredChip}>{heroTopBanner.badge_text}</span>
+            <div className={styles.demoBrokerLogo}>
+              {heroTopBanner.logo_src ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={heroTopBanner.logo_src}
+                  alt=""
+                  style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }}
+                />
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                  <polyline
+                    points="2,14 7,8 11,11 18,4"
+                    stroke="white"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+            </div>
+            <div>
+              <div className={styles.demoBrokerName}>{heroTopBanner.sponsor_name}</div>
+              <div className={styles.demoBrokerDesc}>{heroTopBanner.description}</div>
+            </div>
+          </div>
+          <div className={styles.heroTopActions}>
+            {heroTopBanner.link_url && (
+              <a href={heroTopBanner.link_url} className={styles.primeLearnMore}>
+                {heroTopBanner.cta_label || "Learn more"} ↗
+              </a>
+            )}
+            {heroTopBanner.dismissible && (
+              <button
+                className={styles.demoDismiss}
+                onClick={() => dismissBanner("hero_top_banner")}
+                aria-label="Dismiss"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ══════════════════════════════
           Hero card
          ══════════════════════════════ */}

@@ -16,6 +16,9 @@ const PAGE_BANNER_SLOTS: Record<AdPlacementPage, { key: string; label: string }[
   homepage: [
     { key: "demo_banner", label: "Demo Sponsored Banner" },
     { key: "prime_banner", label: "PrimeTrade Sponsored Banner" },
+    { key: "hero_top_banner", label: "Hero Top Banner (above hero section)" },
+    { key: "sidebar_left_banner", label: "Sticky Sidebar Banner (left, desktop only)" },
+    { key: "sidebar_right_banner", label: "Sticky Sidebar Banner (right, desktop only)" },
   ],
   signin: [{ key: "featured_broker", label: "Featured Broker (Sign In)" }],
 };

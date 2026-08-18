@@ -7,7 +7,13 @@ from app.schemas.broker_placement import is_valid_placement_region
 # Ad-placement routes and the banner-ad slots available on each. Keyed the
 # same way the admin "Ad Placements" page's route dropdown is keyed.
 PAGE_BANNER_SLOTS = {
-    "homepage": {"demo_banner", "prime_banner"},
+    "homepage": {
+        "demo_banner",
+        "prime_banner",
+        "hero_top_banner",
+        "sidebar_left_banner",
+        "sidebar_right_banner",
+    },
     "signin": {"featured_broker"},
 }
 
