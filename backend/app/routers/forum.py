@@ -12,7 +12,6 @@ from fastapi import (
     status,
 )
 from fastapi.responses import FileResponse
-from sqlalchemy import func
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
@@ -23,38 +22,41 @@ from app.schemas.forum import (
     ForumThread,
     ForumThreadCreate,
     ForumThreadUpdate,
+    ForumThreadPinUpdate,
     ForumThreadDetail,
     ForumReply,
     ForumReplyCreate,
 )
+from app.schemas.user import ADMIN_ROLES
 from app.utils.auth import get_current_user
+from app.utils.forum_stats import get_reply_count_lookup
 from app.models.user import User
 
 router = APIRouter(prefix="/forum", tags=["forum"])
 UPLOAD_ROOT = Path(__file__).resolve().parent.parent / "uploads" / "forum"
 UPLOAD_ROOT.mkdir(parents=True, exist_ok=True)
 
-
-def _get_reply_count_lookup(db: Session, thread_ids: List[str]) -> dict[str, int]:
-    if not thread_ids:
-        return {}
-    counts = (
-        db.query(
-            ForumReplyModel.thread_id,
-            func.count(ForumReplyModel.id).label("reply_count"),
-        )
-        .filter(ForumReplyModel.thread_id.in_(thread_ids))
-        .group_by(ForumReplyModel.thread_id)
-        .all()
-    )
-    return {thread_id: count for thread_id, count in counts}
+# Extension is derived from this allowlist (never from the client-supplied
+# filename) so an upload can't be stored/served as .html/.svg/etc. and have
+# its attacker-chosen content executed when served back same-origin.
+ALLOWED_IMAGE_TYPES = {
+    "image/png": ".png",
+    "image/jpeg": ".jpg",
+    "image/webp": ".webp",
+    "image/gif": ".gif",
+}
 
 
 def _save_uploaded_image(upload: Optional[UploadFile]) -> Optional[str]:
     if upload is None or upload.filename is None:
         return None
 
-    suffix = Path(upload.filename).suffix.lower() or ".bin"
+    suffix = ALLOWED_IMAGE_TYPES.get((upload.content_type or "").lower())
+    if suffix is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Unsupported image type. Allowed: PNG, JPEG, WEBP, GIF.",
+        )
     filename = f"{uuid.uuid4().hex}{suffix}"
     destination = UPLOAD_ROOT / filename
     contents = upload.file.read()
@@ -68,7 +70,20 @@ def get_uploaded_image(filename: str):
     path = UPLOAD_ROOT / safe_name
     if not path.exists() or not path.is_file():
         raise HTTPException(status_code=404, detail="Image not found")
-    return FileResponse(path)
+    # media_type is pinned to the fixed allowlist above (never inferred from
+    # the filename) and nosniff blocks the browser from second-guessing it —
+    # together these keep an uploaded file from ever being executed as
+    # HTML/SVG/script when opened directly, same-origin as the JWT in
+    # localStorage.
+    media_type = next(
+        (mt for mt, ext in ALLOWED_IMAGE_TYPES.items() if safe_name.endswith(ext)),
+        "application/octet-stream",
+    )
+    return FileResponse(
+        path,
+        media_type=media_type,
+        headers={"X-Content-Type-Options": "nosniff"},
+    )
 
 
 # ── Threads ────────────────────────────────────────────────────────────────────
@@ -94,7 +109,7 @@ def list_threads(
         .limit(limit)
         .all()
     )
-    counts = _get_reply_count_lookup(db, [thread.id for thread in threads])
+    counts = get_reply_count_lookup(db, [thread.id for thread in threads])
     for thread in threads:
         thread.reply_count = counts.get(thread.id, 0)
     return threads
@@ -155,10 +170,30 @@ def update_thread(
     thread = db.query(ForumThreadModel).filter(ForumThreadModel.id == thread_id).first()
     if not thread:
         raise HTTPException(status_code=404, detail="Thread not found")
-    if thread.author_email != current_user.email and current_user.role != "admin":
+    if thread.author_email != current_user.email and current_user.role not in ADMIN_ROLES:
         raise HTTPException(status_code=403, detail="Not authorised")
     for field, value in data.model_dump(exclude_unset=True).items():
         setattr(thread, field, value)
+    db.commit()
+    db.refresh(thread)
+    return thread
+
+
+@router.patch("/threads/{thread_id}/pin", response_model=ForumThread)
+def pin_thread(
+    thread_id: str,
+    data: ForumThreadPinUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Admin-only — pinning is moderation, not something a thread's own
+    author may set on themselves (see ForumThreadUpdate)."""
+    if current_user.role not in ADMIN_ROLES:
+        raise HTTPException(status_code=403, detail="Not authorised")
+    thread = db.query(ForumThreadModel).filter(ForumThreadModel.id == thread_id).first()
+    if not thread:
+        raise HTTPException(status_code=404, detail="Thread not found")
+    thread.is_pinned = data.is_pinned
     db.commit()
     db.refresh(thread)
     return thread
@@ -174,7 +209,7 @@ def delete_thread(
     thread = db.query(ForumThreadModel).filter(ForumThreadModel.id == thread_id).first()
     if not thread:
         raise HTTPException(status_code=404, detail="Thread not found")
-    if thread.author_email != current_user.email and current_user.role != "admin":
+    if thread.author_email != current_user.email and current_user.role not in ADMIN_ROLES:
         raise HTTPException(status_code=403, detail="Not authorised")
     # Replies cascade-delete via FK ondelete=CASCADE
     db.delete(thread)
@@ -230,7 +265,7 @@ def delete_reply(
     reply = db.query(ForumReplyModel).filter(ForumReplyModel.id == reply_id).first()
     if not reply:
         raise HTTPException(status_code=404, detail="Reply not found")
-    if reply.author_email != current_user.email and current_user.role != "admin":
+    if reply.author_email != current_user.email and current_user.role not in ADMIN_ROLES:
         raise HTTPException(status_code=403, detail="Not authorised")
     thread = (
         db.query(ForumThreadModel)

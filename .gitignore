@@ -8,3 +8,9 @@ node_modules
 # Docker
 postgres_data/
 .local
+.claude
+CLAUDE.md
+AGENT.md
+AGENTS.md
+plan.md
+cbfx-backend-env

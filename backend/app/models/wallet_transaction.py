@@ -8,7 +8,7 @@ class WalletTransaction(Base):
     __tablename__ = "wallet_transactions"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    mt5_account_id = Column(String, ForeignKey("mt5_accounts.id", ondelete="CASCADE"), nullable=False)
+    mt5_account_id = Column(String, ForeignKey("mt5_accounts.id", ondelete="CASCADE"), nullable=False, index=True)
     # "credit" (money in — a cashback rebate) or "debit" (money out — a withdrawal).
     type = Column(String, nullable=False)
     amount = Column(Float, nullable=False)  # always positive; `type` gives direction

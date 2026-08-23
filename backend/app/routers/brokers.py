@@ -26,7 +26,12 @@ def list_brokers(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_roles(ALLOWED_ROLES)),
 ):
-    return db.query(Broker).order_by(Broker.created_at.desc()).all()
+    q = db.query(Broker)
+    if current_user.role != "super_admin":
+        # A "broker"-role account only manages its own listing(s) — not
+        # every broker in the system.
+        q = q.filter(Broker.owner_email == current_user.email)
+    return q.order_by(Broker.created_at.desc()).all()
 
 
 @router.get("/{broker_id}", response_model=BrokerSchema)
@@ -38,6 +43,8 @@ def get_broker(
     broker = db.query(Broker).filter(Broker.id == broker_id).first()
     if not broker:
         raise HTTPException(status_code=404, detail="Broker not found")
+    if current_user.role != "super_admin" and broker.owner_email != current_user.email:
+        raise HTTPException(status_code=403, detail="Not authorised")
     return broker
 
 
@@ -45,7 +52,10 @@ def get_broker(
 def create_broker(
     payload: BrokerCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles(ALLOWED_ROLES)),
+    # Onboarding a whole new broker listing (and deciding who, if anyone,
+    # manages it) is an admin action — a "broker" account manages an
+    # existing listing it owns, it doesn't create new ones.
+    current_user: User = Depends(require_roles({"super_admin"})),
 ):
     broker = Broker(**payload.model_dump())
     db.add(broker)
@@ -64,7 +74,14 @@ def update_broker(
     broker = db.query(Broker).filter(Broker.id == broker_id).first()
     if not broker:
         raise HTTPException(status_code=404, detail="Broker not found")
-    for field, value in payload.model_dump(exclude_unset=True).items():
+    if current_user.role != "super_admin" and broker.owner_email != current_user.email:
+        raise HTTPException(status_code=403, detail="Not authorised")
+
+    updates = payload.model_dump(exclude_unset=True)
+    if current_user.role != "super_admin":
+        # Only a super_admin may reassign who owns a broker listing.
+        updates.pop("owner_email", None)
+    for field, value in updates.items():
         setattr(broker, field, value)
     db.commit()
     db.refresh(broker)

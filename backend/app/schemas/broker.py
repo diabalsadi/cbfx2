@@ -44,7 +44,10 @@ class BrokerBase(BaseModel):
 
 
 class BrokerCreate(BrokerBase):
-    pass
+    # Who (if anyone) may manage this listing via the "broker" role once
+    # created — only settable by the super_admin who is the only caller
+    # allowed to create brokers in the first place.
+    owner_email: Optional[str] = None
 
 
 class BrokerUpdate(BaseModel):
@@ -55,6 +58,10 @@ class BrokerUpdate(BaseModel):
     cashback_rate: Optional[float] = None
     referral_id: Optional[str] = None
     status: Optional[str] = None
+    # Only a super_admin caller's value for this field is honored — see
+    # update_broker(); present here so the same schema/endpoint can be used
+    # by both roles without a super_admin-only duplicate.
+    owner_email: Optional[str] = None
 
     @model_validator(mode="after")
     def _check_geo_coverage(self):
@@ -70,6 +77,7 @@ class BrokerUpdate(BaseModel):
 
 class Broker(BrokerBase):
     id: str
+    owner_email: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 

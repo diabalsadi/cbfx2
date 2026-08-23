@@ -18,6 +18,8 @@ from app.models.forum_reply import ForumReply
 from app.models.forum_thread import ForumThread
 from app.schemas.article import Article as ArticleSchema
 from app.utils.geo import detect_region, extract_client_ip
+from app.utils.forum_stats import get_reply_count_lookup
+from app.utils.cache import public_cache, PUBLIC_CACHE_TTL_SECONDS
 
 router = APIRouter(prefix="/public", tags=["public"])
 
@@ -25,57 +27,81 @@ router = APIRouter(prefix="/public", tags=["public"])
 @router.get("/articles", response_model=List[ArticleSchema])
 def list_published_articles(db: Session = Depends(get_db)):
     """Public — returns only published news articles."""
-    return (
-        db.query(Article)
-        .filter(Article.is_published == True, Article.article_type == "news")
-        .order_by(Article.created_at.desc())
-        .all()
-    )
+
+    def compute():
+        rows = (
+            db.query(Article)
+            .filter(Article.is_published == True, Article.article_type == "news")
+            .order_by(Article.created_at.desc())
+            .all()
+        )
+        # Validate to plain Pydantic models before caching — the ORM rows
+        # are bound to this request's db session, which closes once the
+        # request ends, so a later cache hit must never hand back the raw
+        # ORM objects.
+        return [ArticleSchema.model_validate(a) for a in rows]
+
+    return public_cache.get_or_set("public:articles:news", PUBLIC_CACHE_TTL_SECONDS, compute)
 
 
 @router.get("/articles/{article_id}", response_model=ArticleSchema)
 def get_published_article(article_id: str, db: Session = Depends(get_db)):
     """Public — returns one published news article."""
-    article = (
-        db.query(Article)
-        .filter(
-            Article.id == article_id,
-            Article.is_published == True,
-            Article.article_type == "news",
+
+    def compute():
+        article = (
+            db.query(Article)
+            .filter(
+                Article.id == article_id,
+                Article.is_published == True,
+                Article.article_type == "news",
+            )
+            .first()
         )
-        .first()
-    )
-    if not article:
+        return ArticleSchema.model_validate(article) if article else None
+
+    result = public_cache.get_or_set(f"public:articles:news:{article_id}", PUBLIC_CACHE_TTL_SECONDS, compute)
+    if not result:
         raise HTTPException(status_code=404, detail="Article not found")
-    return article
+    return result
 
 
 @router.get("/analysis", response_model=List[ArticleSchema])
 def list_published_analysis(db: Session = Depends(get_db)):
     """Public — returns only published articles with article_type='analysis'."""
-    return (
-        db.query(Article)
-        .filter(Article.is_published == True, Article.article_type == "analysis")
-        .order_by(Article.created_at.desc())
-        .all()
-    )
+
+    def compute():
+        rows = (
+            db.query(Article)
+            .filter(Article.is_published == True, Article.article_type == "analysis")
+            .order_by(Article.created_at.desc())
+            .all()
+        )
+        return [ArticleSchema.model_validate(a) for a in rows]
+
+    return public_cache.get_or_set("public:articles:analysis", PUBLIC_CACHE_TTL_SECONDS, compute)
 
 
 @router.get("/analysis/{article_id}", response_model=ArticleSchema)
 def get_published_analysis(article_id: str, db: Session = Depends(get_db)):
     """Public — returns one published analysis article."""
-    article = (
-        db.query(Article)
-        .filter(
-            Article.id == article_id,
-            Article.is_published == True,
-            Article.article_type == "analysis",
+
+    def compute():
+        article = (
+            db.query(Article)
+            .filter(
+                Article.id == article_id,
+                Article.is_published == True,
+                Article.article_type == "analysis",
+            )
+            .first()
         )
-        .first()
-    )
-    if not article:
+        return ArticleSchema.model_validate(article) if article else None
+
+    result = public_cache.get_or_set(f"public:articles:analysis:{article_id}", PUBLIC_CACHE_TTL_SECONDS, compute)
+    if not result:
         raise HTTPException(status_code=404, detail="Article not found")
-    return article
+    return result
 
 
 def _covers_visitor(broker: Broker, country_code: Optional[str], region: Optional[str]) -> bool:
@@ -99,25 +125,28 @@ def list_brokers(request: Request, db: Session = Depends(get_db)):
     detected region/country (via best-effort IP geolocation)."""
     country_code, region = detect_region(extract_client_ip(request))
 
-    brokers = (
-        db.query(Broker)
-        .filter(Broker.status == "active")
-        .order_by(Broker.created_at.desc())
-        .all()
-    )
-    return [
-        {
-            "id": b.id,
-            "name": b.name,
-            "img_src": b.img_src,
-            "coverage_type": b.coverage_type,
-            "geo_coverage": b.geo_coverage,
-            "cashback_rate": b.cashback_rate,
-            "status": b.status,
-        }
-        for b in brokers
-        if _visible_to_visitor(b, country_code, region)
-    ]
+    def compute():
+        brokers = (
+            db.query(Broker)
+            .filter(Broker.status == "active")
+            .order_by(Broker.created_at.desc())
+            .all()
+        )
+        return [
+            {
+                "id": b.id,
+                "name": b.name,
+                "img_src": b.img_src,
+                "coverage_type": b.coverage_type,
+                "geo_coverage": b.geo_coverage,
+                "cashback_rate": b.cashback_rate,
+                "status": b.status,
+            }
+            for b in brokers
+            if _visible_to_visitor(b, country_code, region)
+        ]
+
+    return public_cache.get_or_set(f"public:brokers:{country_code}:{region}", PUBLIC_CACHE_TTL_SECONDS, compute)
 
 
 @router.get("/seo/settings")
@@ -126,30 +155,33 @@ def get_public_seo_settings(db: Session = Depends(get_db)):
     share fallbacks), fetched once by the root layout's generateMetadata()
     and merged into every page. Missing settings return an all-null object
     rather than 404, same reasoning as get_seo_meta below."""
-    settings = db.query(SeoSettings).filter(SeoSettings.id == "global").first()
-    if not settings:
+    def compute():
+        settings = db.query(SeoSettings).filter(SeoSettings.id == "global").first()
+        if not settings:
+            return {
+                "google_site_verification": None,
+                "bing_site_verification": None,
+                "pinterest_site_verification": None,
+                "facebook_domain_verification": None,
+                "twitter_site": None,
+                "default_share_title": None,
+                "default_share_description": None,
+                "default_share_image": None,
+                "default_keywords": None,
+            }
         return {
-            "google_site_verification": None,
-            "bing_site_verification": None,
-            "pinterest_site_verification": None,
-            "facebook_domain_verification": None,
-            "twitter_site": None,
-            "default_share_title": None,
-            "default_share_description": None,
-            "default_share_image": None,
-            "default_keywords": None,
+            "google_site_verification": settings.google_site_verification,
+            "bing_site_verification": settings.bing_site_verification,
+            "pinterest_site_verification": settings.pinterest_site_verification,
+            "facebook_domain_verification": settings.facebook_domain_verification,
+            "twitter_site": settings.twitter_site,
+            "default_share_title": settings.default_share_title,
+            "default_share_description": settings.default_share_description,
+            "default_share_image": settings.default_share_image,
+            "default_keywords": settings.default_keywords,
         }
-    return {
-        "google_site_verification": settings.google_site_verification,
-        "bing_site_verification": settings.bing_site_verification,
-        "pinterest_site_verification": settings.pinterest_site_verification,
-        "facebook_domain_verification": settings.facebook_domain_verification,
-        "twitter_site": settings.twitter_site,
-        "default_share_title": settings.default_share_title,
-        "default_share_description": settings.default_share_description,
-        "default_share_image": settings.default_share_image,
-        "default_keywords": settings.default_keywords,
-    }
+
+    return public_cache.get_or_set("public:seo:settings", PUBLIC_CACHE_TTL_SECONDS, compute)
 
 
 # Declared ahead so "settings" above is never mistaken for a route key by
@@ -165,25 +197,28 @@ def get_seo_meta(route: str, sub_key: Optional[str] = None, db: Session = Depend
         return None
     sub_key = (sub_key or "").strip()
 
-    seo = None
-    if sub_key:
-        seo = db.query(SeoMeta).filter(SeoMeta.route == route, SeoMeta.sub_key == sub_key).first()
-    if not seo:
-        seo = db.query(SeoMeta).filter(SeoMeta.route == route, SeoMeta.sub_key == "").first()
-    if not seo:
-        return None
-    return {
-        "route": seo.route,
-        "title": seo.title,
-        "description": seo.description,
-        "keywords": seo.keywords,
-        "og_title": seo.og_title,
-        "og_description": seo.og_description,
-        "og_image": seo.og_image,
-        "twitter_card": seo.twitter_card,
-        "canonical_path": seo.canonical_path,
-        "robots": seo.robots,
-    }
+    def compute():
+        seo = None
+        if sub_key:
+            seo = db.query(SeoMeta).filter(SeoMeta.route == route, SeoMeta.sub_key == sub_key).first()
+        if not seo:
+            seo = db.query(SeoMeta).filter(SeoMeta.route == route, SeoMeta.sub_key == "").first()
+        if not seo:
+            return None
+        return {
+            "route": seo.route,
+            "title": seo.title,
+            "description": seo.description,
+            "keywords": seo.keywords,
+            "og_title": seo.og_title,
+            "og_description": seo.og_description,
+            "og_image": seo.og_image,
+            "twitter_card": seo.twitter_card,
+            "canonical_path": seo.canonical_path,
+            "robots": seo.robots,
+        }
+
+    return public_cache.get_or_set(f"public:seo:{route}:{sub_key}", PUBLIC_CACHE_TTL_SECONDS, compute)
 
 
 def _banner_content(b: AdBanner) -> dict:
@@ -235,20 +270,19 @@ def get_ad_banners(page: str, request: Request, db: Session = Depends(get_db)):
     (e.g. "signin"), scoped to the visitor's detected region/country. Pages
     with no configured banners return an empty object."""
     country_code, region = detect_region(extract_client_ip(request))
-    return _resolve_ad_banners(db, page, country_code, region)
+    return public_cache.get_or_set(
+        f"public:ad-banners:{page}:{country_code}:{region}",
+        PUBLIC_CACHE_TTL_SECONDS,
+        lambda: _resolve_ad_banners(db, page, country_code, region),
+    )
 
 
-@router.get("/homepage")
-def homepage_aggregate(request: Request, db: Session = Depends(get_db)):
-    """
-    Public — single call that returns all data needed to render the homepage:
-    market prices, top copy traders, latest news, open plays, latest analysis,
-    and recent forum threads. Broker placement slots (featured/sponsored/partners)
-    are filtered to brokers covering the visitor's detected region/country.
-    Banner ad slots (e.g. demo_banner, prime_banner) are included only when an
-    admin has configured active content for them in the Ad Placements CMS.
-    """
-    country_code, region = detect_region(extract_client_ip(request))
+def _compute_homepage(db: Session, country_code: Optional[str], region: Optional[str]) -> dict:
+    """Builds the homepage payload: market prices, top copy traders, latest
+    news, open plays, latest analysis, and recent forum threads. Broker
+    placement slots (featured/sponsored/partners) are filtered to brokers
+    covering the visitor's region/country. Banner ad slots are included
+    only when an admin has configured active content for them."""
     market_prices = db.query(MarketPrice).order_by(MarketPrice.symbol).all()
 
     top_traders = (
@@ -288,8 +322,9 @@ def homepage_aggregate(request: Request, db: Session = Depends(get_db)):
         .limit(5)
         .all()
     )
+    reply_counts = get_reply_count_lookup(db, [thread.id for thread in recent_threads])
     for thread in recent_threads:
-        thread.reply_count = db.query(ForumReply).filter(ForumReply.thread_id == thread.id).count()
+        thread.reply_count = reply_counts.get(thread.id, 0)
 
     placements = (
         db.query(BrokerPlacement)
@@ -384,3 +419,17 @@ def homepage_aggregate(request: Request, db: Session = Depends(get_db)):
         "broker_sections": broker_sections,
         "ad_banners": ad_banners,
     }
+
+
+@router.get("/homepage")
+def homepage_aggregate(request: Request, db: Session = Depends(get_db)):
+    """Public — single call that returns all data needed to render the
+    homepage. See _compute_homepage() for what it contains; cached briefly
+    per (country_code, region) since it's identical for every anonymous
+    visitor in the same location."""
+    country_code, region = detect_region(extract_client_ip(request))
+    return public_cache.get_or_set(
+        f"public:homepage:{country_code}:{region}",
+        PUBLIC_CACHE_TTL_SECONDS,
+        lambda: _compute_homepage(db, country_code, region),
+    )

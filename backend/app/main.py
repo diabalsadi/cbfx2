@@ -8,10 +8,11 @@ from app.routers import auth
 from app.routers import articles, clients, campaigns, users, public
 from app.routers import market_prices, copy_traders, plays, analysis, forum
 from app.routers import brokers, geo, broker_placements, ad_banners, mt5_accounts, seo_meta
-from app.routers import referrals, visits
+from app.routers import referrals, visits, notifications
 
 # Import all models so SQLAlchemy creates their tables
 import app.models.user
+import app.models.pending_registration
 import app.models.article
 import app.models.client
 import app.models.campaign
@@ -28,6 +29,7 @@ import app.models.mt5_account
 import app.models.wallet_transaction
 import app.models.seo_meta
 import app.models.visit
+import app.models.notification
 
 Base.metadata.create_all(bind=engine)
 
@@ -118,6 +120,36 @@ with engine.begin() as connection:
         """
     ))
     connection.execute(text("ALTER TABLE visits ADD COLUMN IF NOT EXISTS visitor_key VARCHAR"))
+    connection.execute(text("ALTER TABLE pending_registrations ADD COLUMN IF NOT EXISTS token_hash VARCHAR"))
+    connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS owner_email VARCHAR"))
+
+    # Indexes on FK/filter columns that predate their model's index=True —
+    # create_all() only applies index=True to brand-new tables, so existing
+    # deployments need these added explicitly. Named to match SQLAlchemy's
+    # own ix_<table>_<column> convention so a fresh database's create_all()
+    # created index and this statement never conflict.
+    for _table, _column in [
+        ("articles", "author_email"),
+        ("articles", "is_published"),
+        ("articles", "article_type"),
+        ("analysis", "author_email"),
+        ("forum_threads", "author_email"),
+        ("forum_replies", "thread_id"),
+        ("forum_replies", "author_email"),
+        ("brokers", "owner_email"),
+        ("campaigns", "client_id"),
+        ("campaigns", "status"),
+        ("campaigns", "created_by"),
+        ("broker_placements", "broker_id"),
+        ("mt5_accounts", "user_email"),
+        ("mt5_accounts", "broker_id"),
+        ("wallet_transactions", "mt5_account_id"),
+        ("plays", "status"),
+        ("plays", "author_email"),
+        ("users", "referred_by"),
+        ("copy_traders", "is_active"),
+    ]:
+        connection.execute(text(f"CREATE INDEX IF NOT EXISTS ix_{_table}_{_column} ON {_table} ({_column})"))
 
 app = FastAPI(title="CBFX API", version="1.0.0")
 
@@ -148,6 +180,7 @@ app.include_router(mt5_accounts.router)
 app.include_router(seo_meta.router)
 app.include_router(referrals.router)
 app.include_router(visits.router)
+app.include_router(notifications.router)
 
 
 @app.get("/")

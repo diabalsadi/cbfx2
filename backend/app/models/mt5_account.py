@@ -14,8 +14,8 @@ class MT5Account(Base):
     )
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_email = Column(String, ForeignKey("users.email", ondelete="CASCADE"), nullable=False)
-    broker_id = Column(String, ForeignKey("brokers.id", ondelete="CASCADE"), nullable=False)
+    user_email = Column(String, ForeignKey("users.email", ondelete="CASCADE"), nullable=False, index=True)
+    broker_id = Column(String, ForeignKey("brokers.id", ondelete="CASCADE"), nullable=False, index=True)
     mt5_number = Column(String, nullable=False)
     # This account's cashback wallet — balance is currently withdrawable,
     # lifetime_earned is the running total ever credited (>= balance).

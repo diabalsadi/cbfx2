@@ -16,10 +16,16 @@ class ForumThreadCreate(ForumThreadBase):
 
 
 class ForumThreadUpdate(BaseModel):
+    """Fields a thread's own author (or an admin) may edit. is_pinned is
+    deliberately excluded — it's moderation-only, see ForumThreadPinUpdate."""
+
     title: Optional[str] = None
     body: Optional[str] = None
     category: Optional[str] = None
-    is_pinned: Optional[bool] = None
+
+
+class ForumThreadPinUpdate(BaseModel):
+    is_pinned: bool
 
 
 class ForumThread(ForumThreadBase):

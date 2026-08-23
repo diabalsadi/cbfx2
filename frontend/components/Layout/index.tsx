@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useState, useCallback, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
+import NotificationBell from "@/components/NotificationBell";
 import style from "./Layout.module.scss";
 import cx from "classnames";
 
@@ -205,6 +206,7 @@ const Layout = ({ children, className }: ILayoutProps) => {
             <h1 className={style.pageTitle}>{getTitle()}</h1>
           </div>
           <div className={style.topbarRight}>
+            {role === "super_admin" && <NotificationBell />}
             <button
               className={style.themeToggle}
               onClick={toggleTheme}

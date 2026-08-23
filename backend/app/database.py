@@ -25,6 +25,13 @@ if is_postgres:
     if DATABASE_URL.startswith("postgres://"):
         DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
     engine_kwargs["connect_args"] = {"sslmode": "require"}
+    # pool_size/max_overflow are QueuePool-only kwargs — SQLite (local dev)
+    # uses SingletonThreadPool and rejects them outright, so these only
+    # apply on the Postgres path. Values match SQLAlchemy's own defaults;
+    # pinned explicitly (env-overridable) so they're a deliberate, easy-to-
+    # find knob rather than an implicit default someone has to look up.
+    engine_kwargs["pool_size"] = int(os.getenv("DB_POOL_SIZE", "5"))
+    engine_kwargs["max_overflow"] = int(os.getenv("DB_MAX_OVERFLOW", "10"))
 
 # Create SQLAlchemy engine
 engine = create_engine(DATABASE_URL, **engine_kwargs)

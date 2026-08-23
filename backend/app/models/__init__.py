@@ -1,4 +1,5 @@
 from app.models.user import User
+from app.models.pending_registration import PendingRegistration
 from app.models.article import Article
 from app.models.client import Client
 from app.models.campaign import Campaign
@@ -14,9 +15,11 @@ from app.models.ad_banner import AdBanner
 from app.models.mt5_account import MT5Account
 from app.models.wallet_transaction import WalletTransaction
 from app.models.seo_meta import SeoMeta, SeoSettings
+from app.models.notification import Notification
 
 __all__ = [
     "User",
+    "PendingRegistration",
     "Article",
     "Client",
     "Campaign",
@@ -33,4 +36,5 @@ __all__ = [
     "WalletTransaction",
     "SeoMeta",
     "SeoSettings",
+    "Notification",
 ]

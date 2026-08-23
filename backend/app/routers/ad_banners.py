@@ -50,7 +50,9 @@ def set_banner(
     region: str,
     payload: AdBannerUpsert,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles(ALLOWED_ROLES)),
+    # Sitewide ad-slot curation, not scoped to "my own broker" — admin-only,
+    # same reasoning as broker_placements.py.
+    current_user: User = Depends(require_roles({"super_admin"})),
 ):
     """Create or update the banner ad content for this page+slot+region.
     `region` is "default" for the fallback content, a coverage region code
@@ -93,7 +95,7 @@ def clear_banner(
     slot: str,
     region: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles(ALLOWED_ROLES)),
+    current_user: User = Depends(require_roles({"super_admin"})),
 ):
     """Remove the banner ad content for this page+slot+region. Idempotent."""
     banner = (

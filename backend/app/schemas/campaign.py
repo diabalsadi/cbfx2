@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Literal, Optional
 from datetime import datetime
 
 
@@ -41,3 +41,10 @@ class Campaign(CampaignBase):
 
     class Config:
         from_attributes = True
+
+
+class CampaignReviewDecision(BaseModel):
+    """super_admin-only decision on a broker-launched campaign — the only
+    way a campaign's status can ever become "active" or "declined"."""
+
+    decision: Literal["confirm", "decline"]

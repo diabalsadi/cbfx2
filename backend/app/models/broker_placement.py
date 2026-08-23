@@ -21,6 +21,6 @@ class BrokerPlacement(Base):
     # order the same section differently per region.
     region = Column(String, nullable=False, default="default")
     position = Column(Integer, nullable=False)  # 1-indexed slot number within the section+region
-    broker_id = Column(String, ForeignKey("brokers.id", ondelete="CASCADE"), nullable=False)
+    broker_id = Column(String, ForeignKey("brokers.id", ondelete="CASCADE"), nullable=False, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

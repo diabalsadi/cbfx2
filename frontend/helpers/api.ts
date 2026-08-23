@@ -94,6 +94,10 @@ export interface RegisterRequest {
   // Optional referral code from a client's referral link (?ref=CODE).
   // Unknown/invalid codes are ignored server-side rather than rejected.
   referral_code?: string;
+  // Required only to replace an email's still-unexpired pending
+  // registration (e.g. resubmitting after "Go back" to fix a typo) — the
+  // registration_token an earlier register() call for this email returned.
+  registration_token?: string;
 }
 
 // A broker as returned by the public, geo-filtered listing — only active
@@ -387,8 +391,32 @@ export const usersApi = {
   updateMe: (payload: UserSelfUpdate) => api.patch<UserProfile>('/users/me', payload),
 };
 
+// Returned by resendOtp() — the account isn't created yet, only a
+// verification code was emailed.
+export interface OtpSentResponse {
+  message: string;
+  email: string;
+  expires_in: number; // seconds until the emailed code stops working
+}
+
+// Returned by register(). registration_token is a one-time secret for this
+// signup attempt, handed back only here (never emailed) — required by
+// verifyOtp() and by a later register() call for the same email if it needs
+// correcting before verification completes.
+export interface RegisterInitiatedResponse extends OtpSentResponse {
+  registration_token: string;
+}
+
+export interface AuthToken {
+  access_token: string;
+  token_type: string;
+}
+
 export const authApi = {
-  register: (payload: RegisterRequest) => api.post<UserProfile>('/auth/register', payload),
+  register: (payload: RegisterRequest) => api.post<RegisterInitiatedResponse>('/auth/register', payload),
+  verifyOtp: (payload: { email: string; code: string; registration_token: string }) =>
+    api.post<AuthToken>('/auth/verify-otp', payload),
+  resendOtp: (payload: { email: string }) => api.post<OtpSentResponse>('/auth/resend-otp', payload),
 };
 
 // ── Referral clients (admin-managed User accounts with role "client") ──────────
@@ -543,4 +571,91 @@ export const adBannersApi = {
     api.put<AdBanner>(`/ad-banners/${page}/${slot}/${region}`, data),
   clear: (page: AdPlacementPage, slot: string, region: BrokerPlacementRegion) =>
     api.delete<void>(`/ad-banners/${page}/${slot}/${region}`),
+};
+
+// ── Ad Campaigns ─────────────────────────────────────────────────────────────
+
+// draft: super_admin-authored, not yet launched. pending_review: a broker
+// launched it, awaiting a super_admin decision. active: approved and live.
+// declined: rejected by a super_admin. paused/completed: post-approval
+// lifecycle, admin-managed.
+export type CampaignStatus = "draft" | "pending_review" | "active" | "declined" | "paused" | "completed";
+
+export interface Campaign {
+  id: string;
+  name: string;
+  client_id: string | null;
+  budget: number;
+  impressions: number;
+  clicks: number;
+  spend: number;
+  status: CampaignStatus;
+  start_date: string | null;
+  end_date: string | null;
+  image_url: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CampaignCreate {
+  name: string;
+  client_id?: string;
+  budget?: number;
+  start_date?: string;
+  end_date?: string;
+  image_url?: string;
+}
+
+export interface CampaignUpdate {
+  name?: string;
+  client_id?: string;
+  budget?: number;
+  start_date?: string;
+  end_date?: string;
+  image_url?: string;
+}
+
+export interface CampaignStats {
+  total_campaigns: number;
+  active_campaigns: number;
+  total_budget: number;
+  total_impressions: number;
+  total_clicks: number;
+  total_spend: number;
+  ctr: number;
+}
+
+export const campaignsApi = {
+  // Scoped server-side: super_admin sees every campaign, a broker only
+  // sees campaigns they created.
+  list: () => api.get<Campaign[]>('/campaigns/'),
+  get: (id: string) => api.get<Campaign>(`/campaigns/${id}`),
+  stats: () => api.get<CampaignStats>('/campaigns/stats'),
+  create: (payload: CampaignCreate) => api.post<Campaign>('/campaigns/', payload),
+  update: (id: string, payload: CampaignUpdate) => api.put<Campaign>(`/campaigns/${id}`, payload),
+  review: (id: string, decision: "confirm" | "decline") =>
+    api.post<Campaign>(`/campaigns/${id}/review`, { decision }),
+  delete: (id: string) => api.delete<void>(`/campaigns/${id}`),
+};
+
+// ── Notifications ────────────────────────────────────────────────────────────
+
+export interface NotificationItem {
+  id: string;
+  type: string;
+  title: string;
+  body: string | null;
+  related_type: string | null;
+  related_id: string | null;
+  is_read: boolean;
+  created_at: string;
+}
+
+export const notificationsApi = {
+  listMine: (unreadOnly?: boolean) =>
+    api.get<NotificationItem[]>(`/notifications/me${unreadOnly ? '?unread_only=true' : ''}`),
+  unreadCount: () => api.get<{ count: number }>('/notifications/me/unread-count'),
+  markRead: (id: string) => api.patch<NotificationItem>(`/notifications/${id}/read`, {}),
+  markAllRead: () => api.patch<{ message: string }>('/notifications/me/read-all', {}),
 };

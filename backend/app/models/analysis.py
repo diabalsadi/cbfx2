@@ -13,7 +13,7 @@ class Analysis(Base):
     # "Bullish" | "Bearish" | "Neutral"
     bias = Column(String, nullable=False)
     summary = Column(Text, nullable=True)
-    author_email = Column(String, ForeignKey("users.email"), nullable=False)
+    author_email = Column(String, ForeignKey("users.email"), nullable=False, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()

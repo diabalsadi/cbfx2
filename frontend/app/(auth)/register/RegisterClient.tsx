@@ -36,9 +36,50 @@ function newAccountDraft(defaultBrokerId = ""): AccountDraft {
   return { key: `acct-${nextKey}`, brokerId: defaultBrokerId, mt5Number: "" };
 }
 
+const OTP_LENGTH = 6;
+const RESEND_COOLDOWN_MS = 60_000;
+
+function formatCountdown(ms: number): string {
+  const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+// Survives a page refresh while the OTP screen is up — sessionStorage
+// (not localStorage) so it naturally clears once the tab/browser closes
+// rather than resurrecting a stale signup attempt days later. Only the
+// email + timers are kept; the account isn't created until verify-otp, and
+// the password never needs to leave state again for that call.
+const PENDING_OTP_KEY = "cbfx_pending_otp";
+
+interface PendingOtpState {
+  email: string;
+  codeExpiresAt: number;
+  resendReadyAt: number;
+  registrationToken: string;
+}
+
+function savePendingOtp(state: PendingOtpState) {
+  sessionStorage.setItem(PENDING_OTP_KEY, JSON.stringify(state));
+}
+
+function loadPendingOtp(): PendingOtpState | null {
+  try {
+    const raw = sessionStorage.getItem(PENDING_OTP_KEY);
+    return raw ? (JSON.parse(raw) as PendingOtpState) : null;
+  } catch {
+    return null;
+  }
+}
+
+function clearPendingOtp() {
+  sessionStorage.removeItem(PENDING_OTP_KEY);
+}
+
 export default function RegisterPage() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { loginWithToken } = useAuth();
   const banner = useSigninBanner();
 
   const [brokers, setBrokers] = useState<PublicBroker[]>([]);
@@ -53,6 +94,45 @@ export default function RegisterPage() {
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Once register() emails an OTP, the form is replaced by a verification
+  // step — the account isn't actually created until the code is confirmed.
+  const [step, setStep] = useState<"form" | "otp">("form");
+  const [otp, setOtp] = useState("");
+  const [otpError, setOtpError] = useState("");
+  const [verifying, setVerifying] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [codeExpiresAt, setCodeExpiresAt] = useState<number | null>(null);
+  const [resendReadyAt, setResendReadyAt] = useState<number | null>(null);
+  // Proves to the backend this browser is the one that started the current
+  // signup attempt — required to verify, and to resubmit register() for the
+  // same email (e.g. after "Go back") without it being rejected as a
+  // possible hijack of someone else's in-progress signup.
+  const [registrationToken, setRegistrationToken] = useState("");
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (step !== "otp") return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [step]);
+
+  const codeExpired = codeExpiresAt !== null && now >= codeExpiresAt;
+  const resendReady = resendReadyAt === null || now >= resendReadyAt;
+
+  // Resume the OTP screen after a refresh instead of dropping back to the
+  // (now-empty) signup form — the backend's pending registration is still
+  // there waiting either way.
+  useEffect(() => {
+    const pending = loadPendingOtp();
+    if (pending) {
+      setEmail(pending.email);
+      setCodeExpiresAt(pending.codeExpiresAt);
+      setResendReadyAt(pending.resendReadyAt);
+      setRegistrationToken(pending.registrationToken);
+      setStep("otp");
+    }
+  }, []);
 
   useEffect(() => {
     publicApi
@@ -111,20 +191,75 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      await authApi.register({
+      const res = await authApi.register({
         email,
         password,
         first_name: firstName,
         last_name: lastName,
         accounts: accounts.map((a) => ({ broker_id: a.brokerId, mt5_number: a.mt5Number.trim() })),
         referral_code: referralCode.trim() || undefined,
+        // Only matters if this email already has an unexpired pending
+        // registration (e.g. we're resubmitting after "Go back") — for a
+        // fresh email the backend just ignores it.
+        registration_token: registrationToken || undefined,
       });
-      await login(email, password, "user");
-      router.push("/");
+      setOtp("");
+      setOtpError("");
+      const expiresAt = Date.now() + res.expires_in * 1000;
+      const readyAt = Date.now() + RESEND_COOLDOWN_MS;
+      setCodeExpiresAt(expiresAt);
+      setResendReadyAt(readyAt);
+      setRegistrationToken(res.registration_token);
+      savePendingOtp({
+        email,
+        codeExpiresAt: expiresAt,
+        resendReadyAt: readyAt,
+        registrationToken: res.registration_token,
+      });
+      setStep("otp");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Registration failed");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleVerifyOtp(e: React.FormEvent) {
+    e.preventDefault();
+    setOtpError("");
+    setVerifying(true);
+    try {
+      const token = await authApi.verifyOtp({
+        email,
+        code: otp.trim(),
+        registration_token: registrationToken,
+      });
+      clearPendingOtp();
+      await loginWithToken(token.access_token);
+      router.push("/");
+    } catch (err: unknown) {
+      setOtpError(err instanceof Error ? err.message : "Verification failed");
+    } finally {
+      setVerifying(false);
+    }
+  }
+
+  async function handleResendOtp() {
+    setOtpError("");
+    setResending(true);
+    try {
+      const res = await authApi.resendOtp({ email });
+      setOtp("");
+      const expiresAt = Date.now() + res.expires_in * 1000;
+      const readyAt = Date.now() + RESEND_COOLDOWN_MS;
+      setCodeExpiresAt(expiresAt);
+      setResendReadyAt(readyAt);
+      // resend-otp doesn't rotate the registration token, only the code.
+      savePendingOtp({ email, codeExpiresAt: expiresAt, resendReadyAt: readyAt, registrationToken });
+    } catch (err: unknown) {
+      setOtpError(err instanceof Error ? err.message : "Couldn't resend code");
+    } finally {
+      setResending(false);
     }
   }
 
@@ -135,6 +270,83 @@ export default function RegisterPage() {
           <LogoIcon />
         </div>
         <h1 className={styles.title}>CBFX</h1>
+
+        {step === "otp" ? (
+          <>
+            <p className={styles.subtitle}>
+              We emailed a 6-digit code to <strong>{email}</strong>. Enter it below to finish
+              creating your account.
+            </p>
+
+            <form onSubmit={handleVerifyOtp} className={styles.form}>
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="otp">
+                  Verification code
+                </label>
+                <input
+                  id="otp"
+                  className={`${styles.input} ${styles.otpInput}`}
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, OTP_LENGTH))}
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={OTP_LENGTH}
+                  placeholder="000000"
+                  required
+                />
+                <span className={styles.hint}>
+                  {codeExpired
+                    ? "Code expired — request a new one below."
+                    : `Expires in ${formatCountdown((codeExpiresAt ?? now) - now)}`}
+                </span>
+              </div>
+
+              {otpError && <p className={styles.errorMsg}>{otpError}</p>}
+
+              <button
+                className={styles.submitBtn}
+                type="submit"
+                disabled={verifying || otp.length !== OTP_LENGTH || codeExpired}
+              >
+                {verifying ? "Verifying…" : "Verify & create account"}
+              </button>
+            </form>
+
+            <div className={styles.resendRow}>
+              <button
+                type="button"
+                className={styles.resendBtn}
+                onClick={handleResendOtp}
+                disabled={resending || !resendReady}
+              >
+                {resending
+                  ? "Sending…"
+                  : resendReady
+                    ? "Resend code"
+                    : `Resend in ${formatCountdown((resendReadyAt ?? now) - now)}`}
+              </button>
+            </div>
+
+            <p className={styles.footer}>
+              Wrong email?{" "}
+              <button
+                type="button"
+                className={styles.linkBtn}
+                onClick={() => {
+                  // Deliberately keep registrationToken (and its
+                  // sessionStorage copy) around — resubmitting the form for
+                  // the same email needs it to replace this pending
+                  // registration instead of being rejected as a possible
+                  // hijack of someone else's in-progress signup.
+                  setStep("form");
+                }}
+              >
+                Go back
+              </button>
+            </p>
+          </>
+        ) : (
+          <>
         <p className={styles.subtitle}>Create your account — optionally link an MT5 account</p>
 
         <form onSubmit={handleSubmit} className={styles.form}>
@@ -303,6 +515,8 @@ export default function RegisterPage() {
             Sign in
           </Link>
         </p>
+          </>
+        )}
       </div>
 
       <FeaturedBrokerPanel banner={banner} />

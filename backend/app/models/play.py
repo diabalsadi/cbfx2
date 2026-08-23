@@ -16,9 +16,9 @@ class Play(Base):
     timeframe = Column(String, nullable=True)              # e.g. "4H"
     play_type = Column(String, nullable=False, default="Swing")  # "Scalp" | "Swing" | "Long-term"
     # "open" | "closed" | "cancelled"
-    status = Column(String, nullable=False, default="open")
+    status = Column(String, nullable=False, default="open", index=True)
     notes = Column(Text, nullable=True)
-    author_email = Column(String, ForeignKey("users.email"), nullable=False)
+    author_email = Column(String, ForeignKey("users.email"), nullable=False, index=True)
     opened_at = Column(DateTime(timezone=True), server_default=func.now())
     closed_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

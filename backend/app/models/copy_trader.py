@@ -22,7 +22,7 @@ class CopyTrader(Base):
     # JSON list of pair strings, e.g. ["EUR/USD", "XAU/USD"]
     pairs = Column(JSON, nullable=False, default=list)
     is_featured = Column(Boolean, default=False)
-    is_active = Column(Boolean, default=True)
+    is_active = Column(Boolean, default=True, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()

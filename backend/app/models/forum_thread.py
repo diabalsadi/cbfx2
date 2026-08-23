@@ -12,7 +12,7 @@ class ForumThread(Base):
     body = Column(Text, nullable=True)
     # "General" | "Forex" | "Crypto" | "Metals" | "Indices" | "Strategy"
     category = Column(String, nullable=False, default="General")
-    author_email = Column(String, ForeignKey("users.email"), nullable=False)
+    author_email = Column(String, ForeignKey("users.email"), nullable=False, index=True)
     reply_count = Column(Integer, nullable=False, default=0)
     image_url = Column(String, nullable=True)
     is_pinned = Column(Boolean, default=False)

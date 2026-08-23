@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Float, DateTime, JSON
+from sqlalchemy import Column, String, Float, DateTime, JSON, ForeignKey
 from sqlalchemy.sql import func
 from app.database import Base
 import uuid
@@ -9,6 +9,11 @@ class Broker(Base):
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     name = Column(String, nullable=False)
+    # The "broker"-role account (if any) allowed to manage this listing —
+    # only a super_admin may set/change this. A broker-role account with no
+    # broker owning them can't manage anything via /brokers, matching the
+    # same ownership-scoping pattern as Campaign.created_by.
+    owner_email = Column(String, ForeignKey("users.email"), nullable=True, index=True)
     img_src = Column(String, nullable=True)
     # "region" (geo_coverage holds region codes) or "country" (geo_coverage holds ISO
     # country codes) — a broker picks one mode, not a mix of both.

@@ -21,7 +21,7 @@ class User(Base):
     referral_code = Column(String, unique=True, nullable=True, index=True)
     # Email of the client user this account signed up under, resolved from
     # referral_code at registration time.
-    referred_by = Column(String, ForeignKey("users.email"), nullable=True)
+    referred_by = Column(String, ForeignKey("users.email"), nullable=True, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()

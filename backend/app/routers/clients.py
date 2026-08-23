@@ -10,7 +10,12 @@ from app.models.user import User
 
 router = APIRouter(prefix="/clients", tags=["clients"])
 
-ALLOWED_ROLES = {"super_admin", "broker"}
+# Clients hold advertiser PII (contact name/email/phone, budget) with no
+# per-broker ownership dimension to scope by, unlike Broker/Campaign — so
+# unlike those routers, "broker" isn't included here at all rather than
+# every broker account being able to see every other advertiser's contact
+# details and budget.
+ALLOWED_ROLES = {"super_admin"}
 
 
 def require_roles(roles: set):

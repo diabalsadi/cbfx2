@@ -98,6 +98,7 @@ export default function HomePage() {
   }));
 
   const PLAYS = (data?.open_plays ?? []).map((p) => ({
+    id: p.id,
     pair: p.pair,
     dir: p.direction as "LONG" | "SHORT",
     entry: p.entry_price,
@@ -105,6 +106,7 @@ export default function HomePage() {
   }));
 
   const NEWS = (data?.latest_news ?? []).map((n) => ({
+    id: n.id,
     cat:
       n.title.includes("BTC") || n.title.includes("ETH")
         ? "CRYPTO"
@@ -118,6 +120,7 @@ export default function HomePage() {
   }));
 
   const ANALYSIS = (data?.latest_analysis ?? []).map((a) => ({
+    id: a.id,
     pair: a.pair,
     tf: a.timeframe,
     bias: a.bias,
@@ -125,6 +128,7 @@ export default function HomePage() {
   }));
 
   const FORUM_THREADS = (data?.recent_threads ?? []).map((t) => ({
+    id: t.id,
     title: t.title,
     replies: t.reply_count,
   }));
@@ -636,7 +640,7 @@ export default function HomePage() {
           </div>
           <div className={styles.playsList}>
             {PLAYS.map((p) => (
-              <div key={p.pair} className={styles.playRow}>
+              <div key={p.id} className={styles.playRow}>
                 <div className={styles.playLeft}>
                   <span className={styles.playPair}>{p.pair}</span>
                   <span
@@ -687,7 +691,7 @@ export default function HomePage() {
           </div>
           <div className={styles.newsList}>
             {NEWS.map((n) => (
-              <div key={n.headline} className={styles.newsRow}>
+              <div key={n.id} className={styles.newsRow}>
                 <div className={styles.newsMeta}>
                   <span className={styles.newsCat}>{n.cat}</span>
                   <span className={styles.newsTime}>⏱ {n.time}</span>
@@ -787,7 +791,7 @@ export default function HomePage() {
           </div>
           <div className={styles.analysisList}>
             {ANALYSIS.map((a) => (
-              <div key={a.pair} className={styles.analysisRow}>
+              <div key={a.id} className={styles.analysisRow}>
                 <div>
                   <span className={styles.analysisPair}>{a.pair}</span>
                   <span className={styles.analysisTf}>{a.tf}</span>
@@ -825,7 +829,7 @@ export default function HomePage() {
           </div>
           <div className={styles.forumList}>
             {FORUM_THREADS.map((t) => (
-              <div key={t.title} className={styles.forumRow}>
+              <div key={t.id} className={styles.forumRow}>
                 <div className={styles.forumTitle}>{t.title}</div>
                 <div className={styles.forumReplies}>{t.replies} replies</div>
               </div>

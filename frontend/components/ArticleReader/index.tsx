@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import DOMPurify from "dompurify";
 import { type Article } from "@/helpers/api";
 import styles from "./ArticleReader.module.scss";
 
@@ -76,7 +77,11 @@ export default function ArticleReader({
       {article.content && (
         <div
           className={styles.content}
-          dangerouslySetInnerHTML={{ __html: article.content }}
+          // article.content is editor/super_admin-authored rich-text HTML.
+          // Sanitized here as a client-side backstop even though the
+          // writer role is already trusted, since this renders for every
+          // site visitor with no other check in between.
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content) }}
         />
       )}
     </article>

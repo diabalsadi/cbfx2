@@ -49,7 +49,10 @@ def set_placement(
     position: int,
     payload: BrokerPlacementSet,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles(ALLOWED_ROLES)),
+    # Reassigning a sitewide layout slot to any broker isn't scoped to "my
+    # own broker" the way brokers.py/campaigns.py are — it's homepage
+    # curation, admin-only.
+    current_user: User = Depends(require_roles({"super_admin"})),
 ):
     """Assign a broker to fill this section+region+slot. Upserts — replaces
     whatever broker currently occupies the slot, if any. `region` is "default"
@@ -95,7 +98,7 @@ def clear_placement(
     region: str,
     position: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles(ALLOWED_ROLES)),
+    current_user: User = Depends(require_roles({"super_admin"})),
 ):
     """Empty a slot. Idempotent — no error if the slot was already empty."""
     placement = (

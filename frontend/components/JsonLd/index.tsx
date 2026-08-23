@@ -7,7 +7,17 @@ export default function JsonLd({ data }: { data: Record<string, unknown> | Recor
   return (
     <>
       {items.map((item, i) => (
-        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(item) }} />
+        <script
+          key={i}
+          type="application/ld+json"
+          // JSON.stringify never escapes "<", so a value containing a
+          // literal "</script>" (e.g. user-generated content embedded in
+          // structured data) would otherwise close this tag early and let
+          // an attacker-controlled <script> that follows execute — this is
+          // baked into the server-rendered HTML, so the browser's HTML
+          // parser sees it before any React/DOM escaping ever applies.
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(item).replace(/</g, "\\u003c") }}
+        />
       ))}
     </>
   );

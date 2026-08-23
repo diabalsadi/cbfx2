@@ -29,6 +29,13 @@ class RegisterRequest(BaseModel):
     # Optional referral code from a client's referral link. Unknown/invalid
     # codes are ignored rather than rejected, so a bad code never blocks signup.
     referral_code: Optional[str] = None
+    # Required to replace an email's still-unexpired pending registration —
+    # must match the registration_token an earlier /auth/register call for
+    # this same email returned. Without it, a second /auth/register for an
+    # email that's still mid-verification is rejected rather than silently
+    # overwriting the pending signup's password. Not needed for a brand-new
+    # email, or once the previous pending registration has expired.
+    registration_token: Optional[str] = None
 
 
 class Token(BaseModel):
@@ -42,3 +49,32 @@ class TokenData(BaseModel):
     """Schema for token payload data."""
 
     email: Optional[str] = None
+
+
+class OtpSentResponse(BaseModel):
+    """Returned by /auth/resend-otp — the account isn't created yet, only a
+    verification code was emailed."""
+
+    message: str
+    email: EmailStr
+    expires_in: int  # seconds until the emailed code stops working
+
+
+class RegisterInitiatedResponse(OtpSentResponse):
+    """Returned by /auth/register. registration_token is the plaintext
+    secret for this signup attempt — returned here and only here (never
+    emailed) — that must be echoed back to /auth/verify-otp, and to a later
+    /auth/register call for the same email if it needs correcting before
+    that verification completes."""
+
+    registration_token: str
+
+
+class VerifyOtpRequest(BaseModel):
+    email: EmailStr
+    code: str
+    registration_token: str
+
+
+class ResendOtpRequest(BaseModel):
+    email: EmailStr

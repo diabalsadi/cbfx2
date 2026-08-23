@@ -27,6 +27,9 @@ interface AuthContextType {
   token: string | null;
   loading: boolean;
   login: (email: string, password: string, portal: Portal) => Promise<void>;
+  // Stores an already-issued JWT (e.g. from /auth/verify-otp) without
+  // re-sending credentials — used once OTP verification returns a token.
+  loginWithToken: (jwt: string) => Promise<void>;
   logout: () => void;
   // Re-fetches the current user (e.g. after editing profile info) so the
   // rest of the app picks up the change without a full reload.
@@ -91,6 +94,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .catch(() => {});
   }, []);
 
+  const loginWithToken = async (jwt: string) => {
+    localStorage.setItem("cbfx_token", jwt);
+    setToken(jwt);
+    await fetchMe(jwt);
+  };
+
   const login = async (email: string, password: string, portal: Portal) => {
     const res = await fetch("/api/proxy/auth/login", {
       method: "POST",
@@ -102,10 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error(err.detail || "Login failed");
     }
     const data = await res.json();
-    const jwt = data.access_token;
-    localStorage.setItem("cbfx_token", jwt);
-    setToken(jwt);
-    await fetchMe(jwt);
+    await loginWithToken(data.access_token);
   };
 
   const logout = () => {
@@ -120,7 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, token, loading, login, loginWithToken, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
