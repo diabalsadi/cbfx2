@@ -1,5 +1,5 @@
 "use client";
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from "react";
 import Script from "next/script";
 import { useTheme } from "@/contexts/ThemeContext";
 import styles from "./Recaptcha.module.scss";
@@ -36,7 +36,6 @@ const Recaptcha = forwardRef<RecaptchaHandle, RecaptchaProps>(function Recaptcha
   const widgetIdRef = useRef<number | null>(null);
   const themeRef = useRef(theme);
   const onChangeRef = useRef(onChange);
-  const [scriptLoaded, setScriptLoaded] = useState(false);
 
   useEffect(() => {
     onChangeRef.current = onChange;
@@ -60,9 +59,26 @@ const Recaptcha = forwardRef<RecaptchaHandle, RecaptchaProps>(function Recaptcha
     });
   }, []);
 
+  // next/script dedups <script> tags by src across the whole app — if this
+  // component unmounts and remounts (e.g. the signup form's "Go back" from
+  // the OTP step, which mounts a fresh Recaptcha instance) after the script
+  // already loaded once elsewhere, Script's onLoad never fires again for the
+  // new instance, leaving the widget permanently blank. Poll for
+  // window.grecaptcha directly instead so remounts render reliably.
   useEffect(() => {
-    if (scriptLoaded) renderWidget();
-  }, [scriptLoaded, renderWidget]);
+    if (!SITE_KEY) return;
+    if (window.grecaptcha) {
+      renderWidget();
+      return;
+    }
+    const interval = setInterval(() => {
+      if (window.grecaptcha) {
+        clearInterval(interval);
+        renderWidget();
+      }
+    }, 100);
+    return () => clearInterval(interval);
+  }, [renderWidget]);
 
   useImperativeHandle(ref, () => ({
     reset: () => {
@@ -82,11 +98,7 @@ const Recaptcha = forwardRef<RecaptchaHandle, RecaptchaProps>(function Recaptcha
 
   return (
     <>
-      <Script
-        src="https://www.google.com/recaptcha/api.js?render=explicit"
-        strategy="afterInteractive"
-        onLoad={() => setScriptLoaded(true)}
-      />
+      <Script src="https://www.google.com/recaptcha/api.js?render=explicit" strategy="afterInteractive" />
       <div ref={containerRef} className={styles.widget} />
     </>
   );

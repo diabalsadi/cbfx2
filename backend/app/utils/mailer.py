@@ -27,10 +27,19 @@ def send_email(to: str, subject: str, html_body: str) -> None:
     msg.set_content("Your email client doesn't support HTML email.")
     msg.add_alternative(html_body, subtype="html")
 
-    with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=15) as server:
-        server.starttls()
-        server.login(SMTP_USER, SMTP_PASSWORD)
-        server.send_message(msg)
+    # Port 465 is implicit TLS (the connection is SSL-wrapped from the first
+    # byte, e.g. Zoho's smtppro.zoho.com) — everything else assumes STARTTLS
+    # (a plaintext connection upgraded in-band, e.g. Gmail/Zoho's smtp.zoho.com
+    # on 587). Using the wrong one for a given port fails the handshake.
+    if SMTP_PORT == 465:
+        with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=15) as server:
+            server.login(SMTP_USER, SMTP_PASSWORD)
+            server.send_message(msg)
+    else:
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=15) as server:
+            server.starttls()
+            server.login(SMTP_USER, SMTP_PASSWORD)
+            server.send_message(msg)
 
 
 def send_otp_email(to: str, name: str, code: str) -> None:
