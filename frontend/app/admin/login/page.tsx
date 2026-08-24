@@ -1,8 +1,9 @@
 "use client";
-import { useState, FormEvent, useEffect } from "react";
+import { useState, FormEvent, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { canAccessAdminPortal } from "@/helpers/roles";
+import Recaptcha, { type RecaptchaHandle } from "@/components/Recaptcha";
 import styles from "./Login.module.scss";
 
 export default function LoginPage() {
@@ -12,6 +13,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const captchaRef = useRef<RecaptchaHandle>(null);
 
   // Only skip the form if the existing session is actually an admin-portal
   // account — a signed-in site user shares the same token/session but must
@@ -30,14 +33,19 @@ export default function LoginPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
+    if (!captchaToken) {
+      setError("Please complete the captcha");
+      return;
+    }
     setLoading(true);
     try {
-      await login(email, password, "admin");
+      await login(email, password, "admin", captchaToken);
       router.replace("/admin");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {
       setLoading(false);
+      captchaRef.current?.reset();
     }
   };
 
@@ -78,6 +86,8 @@ export default function LoginPage() {
               autoComplete="current-password"
             />
           </div>
+
+          <Recaptcha ref={captchaRef} onChange={setCaptchaToken} />
 
           {error && <p className={styles.error}>{error}</p>}
 

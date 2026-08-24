@@ -1,0 +1,15 @@
+.widget {
+  display: flex;
+  justify-content: center;
+  margin: 4px 0;
+}
+
+.missingConfig {
+  font-size: 12px;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  margin: 4px 0;
+}

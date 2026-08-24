@@ -34,12 +34,22 @@ from app.utils.otp import (
     OTP_MAX_ATTEMPTS,
 )
 from app.utils.mailer import send_otp_email
+from app.utils.recaptcha import verify_recaptcha
 
 router = APIRouter(
     prefix="/auth",
     tags=["authentication"],
     responses={404: {"description": "Not found"}},
 )
+
+
+def _require_captcha(request: Request, token: str) -> None:
+    try:
+        ok = verify_recaptcha(token, extract_client_ip(request))
+    except RuntimeError as e:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e))
+    if not ok:
+        raise HTTPException(status_code=400, detail="Captcha verification failed. Please try again.")
 
 
 def _validate_accounts(db: Session, accounts: List[MT5AccountCreate]) -> List[Tuple[str, str]]:
@@ -88,6 +98,8 @@ def register(payload: auth_schemas.RegisterRequest, request: Request, db: Sessio
     via POST /auth/verify-otp within 5 minutes to actually create the User
     row. Always ends up creating role="user" — admin-portal roles are only
     granted afterward by an existing super_admin via PATCH /users/{email}/role."""
+    _require_captcha(request, payload.captcha_token)
+
     if db.query(models.User).filter(models.User.email == payload.email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
 
@@ -304,12 +316,14 @@ def resend_otp(payload: auth_schemas.ResendOtpRequest, db: Session = Depends(get
 
 
 @router.post("/login", response_model=auth_schemas.Token)
-def login(login_data: auth_schemas.LoginRequest, db: Session = Depends(get_db)):
+def login(login_data: auth_schemas.LoginRequest, request: Request, db: Session = Depends(get_db)):
     """Login and receive a JWT access token. `portal` scopes which accounts
     may authenticate here: admin-portal roles (super_admin/editor/broker) can
     only sign in with portal="admin", and plain site users only with
     portal="user" — a valid password for the wrong portal is rejected, so
     admin and site credentials never work interchangeably."""
+    _require_captcha(request, login_data.captcha_token)
+
     user = db.query(models.User).filter(models.User.email == login_data.email).first()
 
     if not user or not verify_password(login_data.password, user.hashed_password):

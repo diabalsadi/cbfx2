@@ -1,10 +1,11 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSigninBanner } from "@/helpers/useSigninBanner";
 import FeaturedBrokerPanel from "@/components/FeaturedBrokerPanel";
+import Recaptcha, { type RecaptchaHandle } from "@/components/Recaptcha";
 import { authApi, publicApi, type PublicBroker } from "@/helpers/api";
 import styles from "./register.module.scss";
 
@@ -94,6 +95,8 @@ export default function RegisterPage() {
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const captchaRef = useRef<RecaptchaHandle>(null);
 
   // Once register() emails an OTP, the form is replaced by a verification
   // step — the account isn't actually created until the code is confirmed.
@@ -189,6 +192,11 @@ export default function RegisterPage() {
       return;
     }
 
+    if (!captchaToken) {
+      setError("Please complete the captcha");
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await authApi.register({
@@ -202,6 +210,7 @@ export default function RegisterPage() {
         // registration (e.g. we're resubmitting after "Go back") — for a
         // fresh email the backend just ignores it.
         registration_token: registrationToken || undefined,
+        captcha_token: captchaToken,
       });
       setOtp("");
       setOtpError("");
@@ -221,6 +230,7 @@ export default function RegisterPage() {
       setError(err instanceof Error ? err.message : "Registration failed");
     } finally {
       setLoading(false);
+      captchaRef.current?.reset();
     }
   }
 
@@ -501,6 +511,8 @@ export default function RegisterPage() {
               </span>
             )}
           </div>
+
+          <Recaptcha ref={captchaRef} onChange={setCaptchaToken} />
 
           {error && <p className={styles.errorMsg}>{error}</p>}
 

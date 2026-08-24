@@ -1,10 +1,11 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useLoginModal } from "@/contexts/LoginModalContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { publicApi, type AdBannerContent } from "@/helpers/api";
+import Recaptcha, { type RecaptchaHandle } from "@/components/Recaptcha";
 import styles from "./LoginModal.module.scss";
 
 function LogoIcon() {
@@ -58,6 +59,8 @@ export default function LoginModal() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [banner, setBanner] = useState<AdBannerContent | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const captchaRef = useRef<RecaptchaHandle>(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -89,15 +92,20 @@ export default function LoginModal() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    if (!captchaToken) {
+      setError("Please complete the captcha");
+      return;
+    }
     setLoading(true);
     try {
-      await login(email, password, "user");
+      await login(email, password, "user", captchaToken);
       closeLoginModal();
       router.push("/");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {
       setLoading(false);
+      captchaRef.current?.reset();
     }
   }
 
@@ -152,6 +160,8 @@ export default function LoginModal() {
                 autoComplete="current-password"
               />
             </div>
+
+            <Recaptcha ref={captchaRef} onChange={setCaptchaToken} />
 
             {error && <p className={styles.errorMsg}>{error}</p>}
 

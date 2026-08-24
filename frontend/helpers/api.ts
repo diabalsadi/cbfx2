@@ -98,6 +98,8 @@ export interface RegisterRequest {
   // registration (e.g. resubmitting after "Go back" to fix a typo) — the
   // registration_token an earlier register() call for this email returned.
   registration_token?: string;
+  // reCAPTCHA v2 response token from the widget on the signup form.
+  captcha_token: string;
 }
 
 // A broker as returned by the public, geo-filtered listing — only active

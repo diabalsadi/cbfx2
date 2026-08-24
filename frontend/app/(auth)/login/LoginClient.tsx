@@ -1,10 +1,11 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSigninBanner } from "@/helpers/useSigninBanner";
 import FeaturedBrokerPanel from "@/components/FeaturedBrokerPanel";
+import Recaptcha, { type RecaptchaHandle } from "@/components/Recaptcha";
 import styles from "./login.module.scss";
 
 function LogoIcon() {
@@ -31,18 +32,25 @@ export default function UserLoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const captchaRef = useRef<RecaptchaHandle>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    if (!captchaToken) {
+      setError("Please complete the captcha");
+      return;
+    }
     setLoading(true);
     try {
-      await login(email, password, "user");
+      await login(email, password, "user", captchaToken);
       router.push("/");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {
       setLoading(false);
+      captchaRef.current?.reset();
     }
   }
 
@@ -88,6 +96,8 @@ export default function UserLoginPage() {
               autoComplete="current-password"
             />
           </div>
+
+          <Recaptcha ref={captchaRef} onChange={setCaptchaToken} />
 
           {error && <p className={styles.errorMsg}>{error}</p>}
 

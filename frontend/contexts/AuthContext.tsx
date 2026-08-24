@@ -26,7 +26,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
-  login: (email: string, password: string, portal: Portal) => Promise<void>;
+  login: (email: string, password: string, portal: Portal, captchaToken: string) => Promise<void>;
   // Stores an already-issued JWT (e.g. from /auth/verify-otp) without
   // re-sending credentials — used once OTP verification returns a token.
   loginWithToken: (jwt: string) => Promise<void>;
@@ -100,11 +100,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await fetchMe(jwt);
   };
 
-  const login = async (email: string, password: string, portal: Portal) => {
+  const login = async (email: string, password: string, portal: Portal, captchaToken: string) => {
     const res = await fetch("/api/proxy/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, portal }),
+      body: JSON.stringify({ email, password, portal, captcha_token: captchaToken }),
     });
     if (!res.ok) {
       const err = await res.json();

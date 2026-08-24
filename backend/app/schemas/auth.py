@@ -13,6 +13,8 @@ class LoginRequest(BaseModel):
     # public site). A login only succeeds if the account's role actually
     # belongs to that portal; see auth.login().
     portal: Literal["admin", "user"]
+    # reCAPTCHA v2 response token from the widget on the login form.
+    captcha_token: str
 
 
 class RegisterRequest(BaseModel):
@@ -36,6 +38,8 @@ class RegisterRequest(BaseModel):
     # overwriting the pending signup's password. Not needed for a brand-new
     # email, or once the previous pending registration has expired.
     registration_token: Optional[str] = None
+    # reCAPTCHA v2 response token from the widget on the signup form.
+    captcha_token: str
 
 
 class Token(BaseModel):
