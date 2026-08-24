@@ -206,6 +206,9 @@ export default function ForgotPasswordClient() {
                   minLength={8}
                   autoComplete="new-password"
                 />
+                <span className={registerStyles.hint}>
+                  At least 8 characters, with uppercase, lowercase, a number, and a special character.
+                </span>
               </div>
 
               <div className={registerStyles.field}>

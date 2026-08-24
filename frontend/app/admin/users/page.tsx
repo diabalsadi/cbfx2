@@ -96,7 +96,7 @@ export default function UsersPage() {
     setCreateError("");
     setCreating(true);
     try {
-      await api.post("/auth/register", newUser);
+      await api.post("/users/", newUser);
       setShowForm(false);
       setNewUser({ name: "", email: "", password: "", role: "broker" });
       fetchUsers();
@@ -168,6 +168,7 @@ export default function UsersPage() {
                   onChange={(e) =>
                     setNewUser((v) => ({ ...v, password: e.target.value }))
                   }
+                  title="At least 8 characters, with uppercase, lowercase, a number, and a special character."
                   required
                 />
               </div>

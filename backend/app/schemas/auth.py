@@ -1,13 +1,26 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import List, Literal, Optional
 
 from app.schemas.mt5_account import MT5AccountCreate
+from app.utils.validation import sanitize_email, validate_password_strength
 
 
-class LoginRequest(BaseModel):
-    """Schema for login request."""
+class _EmailInput(BaseModel):
+    """Base for any request schema taking an email — trims/validates it
+    once here rather than repeating a field_validator on every subclass.
+    See sanitize_email() for why this doesn't lowercase."""
 
     email: EmailStr
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def _sanitize_email(cls, v):
+        return sanitize_email(v) if isinstance(v, str) else v
+
+
+class LoginRequest(_EmailInput):
+    """Schema for login request."""
+
     password: str
     # Which portal this login is for — "admin" (/admin/*) or "user" (the
     # public site). A login only succeeds if the account's role actually
@@ -17,13 +30,12 @@ class LoginRequest(BaseModel):
     captcha_token: str
 
 
-class RegisterRequest(BaseModel):
+class RegisterRequest(_EmailInput):
     """Public self-registration — always creates a plain site user (role is
     never accepted from the client). Linking an MT5 account isn't required;
     accounts may be empty, and a user can add more than one later
     (even with the same broker)."""
 
-    email: EmailStr
     password: str
     first_name: str
     last_name: str
@@ -40,6 +52,11 @@ class RegisterRequest(BaseModel):
     registration_token: Optional[str] = None
     # reCAPTCHA v2 response token from the widget on the signup form.
     captcha_token: str
+
+    @field_validator("password")
+    @classmethod
+    def _check_password_strength(cls, v):
+        return validate_password_strength(v)
 
 
 class Token(BaseModel):
@@ -74,18 +91,16 @@ class RegisterInitiatedResponse(OtpSentResponse):
     registration_token: str
 
 
-class VerifyOtpRequest(BaseModel):
-    email: EmailStr
+class VerifyOtpRequest(_EmailInput):
     code: str
     registration_token: str
 
 
-class ResendOtpRequest(BaseModel):
-    email: EmailStr
+class ResendOtpRequest(_EmailInput):
+    pass
 
 
-class ForgotPasswordRequest(BaseModel):
-    email: EmailStr
+class ForgotPasswordRequest(_EmailInput):
     # reCAPTCHA v2 response token from the widget on the forgot-password form.
     captcha_token: str
 
@@ -108,12 +123,16 @@ class ForgotPasswordResponse(BaseModel):
     reset_token: str = ""
 
 
-class ResetPasswordRequest(BaseModel):
-    email: EmailStr
+class ResetPasswordRequest(_EmailInput):
     code: str
     reset_token: str
-    new_password: str = Field(min_length=8)
+    new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def _check_password_strength(cls, v):
+        return validate_password_strength(v)
 
 
-class ResendPasswordResetOtpRequest(BaseModel):
-    email: EmailStr
+class ResendPasswordResetOtpRequest(_EmailInput):
+    pass

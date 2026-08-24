@@ -1,8 +1,10 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 from typing import Optional
 from datetime import datetime
 import uuid
 from pydantic import Field
+
+from app.utils.validation import sanitize_email, validate_password_strength
 
 # Roles that belong to the admin portal (/admin/*). Everything else ("user",
 # the default role for public self-registration) belongs to the site portal.
@@ -42,7 +44,12 @@ class UserSelfUpdate(BaseModel):
 
     name: Optional[str] = None
     current_password: Optional[str] = None
-    new_password: Optional[str] = Field(default=None, min_length=8)
+    new_password: Optional[str] = None
+
+    @field_validator("new_password")
+    @classmethod
+    def _check_password_strength(cls, v):
+        return validate_password_strength(v) if v is not None else v
 
 
 class AdminUserCreate(BaseModel):
@@ -51,9 +58,19 @@ class AdminUserCreate(BaseModel):
 
     email: EmailStr
     name: str
-    password: str = Field(min_length=8)
+    password: str
     role: str = "client"
     referral_code: Optional[str] = None
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def _sanitize_email(cls, v):
+        return sanitize_email(v) if isinstance(v, str) else v
+
+    @field_validator("password")
+    @classmethod
+    def _check_password_strength(cls, v):
+        return validate_password_strength(v)
 
 
 class AdminUserUpdate(BaseModel):

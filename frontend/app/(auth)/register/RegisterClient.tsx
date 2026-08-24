@@ -420,6 +420,9 @@ export default function RegisterPage() {
               minLength={8}
               autoComplete="new-password"
             />
+            <span className={styles.hint}>
+              At least 8 characters, with uppercase, lowercase, a number, and a special character.
+            </span>
           </div>
 
           <div className={styles.field}>

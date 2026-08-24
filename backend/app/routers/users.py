@@ -45,8 +45,15 @@ def _generate_referral_code(db: Session) -> str:
 
 
 def _generate_temp_password() -> str:
-    alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
-    return "".join(secrets.choice(alphabet) for _ in range(14))
+    """Guarantees at least one of each character class validate_password_strength
+    requires — a plain random pick over a combined alphabet could (rarely)
+    land on e.g. all-lowercase and fail that check when the recipient logs in."""
+    lower, upper, digits, special = string.ascii_lowercase, string.ascii_uppercase, string.digits, "!@#$%^&*"
+    required = [secrets.choice(lower), secrets.choice(upper), secrets.choice(digits), secrets.choice(special)]
+    alphabet = lower + upper + digits + special
+    pool = required + [secrets.choice(alphabet) for _ in range(10)]
+    secrets.SystemRandom().shuffle(pool)
+    return "".join(pool)
 
 
 @router.get("/", response_model=List[UserSchema])

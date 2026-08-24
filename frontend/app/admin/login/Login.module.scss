@@ -109,6 +109,12 @@
   }
 }
 
+.hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
 .link {
   color: var(--accent);
   text-decoration: none;
