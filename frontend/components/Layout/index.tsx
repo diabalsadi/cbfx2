@@ -65,6 +65,12 @@ const navItems = [
     roles: ["super_admin", "editor"],
   },
   {
+    label: "Media",
+    href: "/admin/media",
+    icon: "▨",
+    roles: ["super_admin", "editor"],
+  },
+  {
     label: "Reports",
     href: "/admin/reports",
     icon: "▣",

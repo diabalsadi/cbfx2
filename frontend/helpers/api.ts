@@ -652,6 +652,23 @@ export interface NotificationItem {
   created_at: string;
 }
 
+export interface MediaImage {
+  key: string;
+  url: string;
+  size: number;
+  last_modified: string;
+}
+
+export const mediaApi = {
+  list: () => api.get<MediaImage[]>('/media/images'),
+  upload: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return apiUpload<MediaImage>('/media/images', formData);
+  },
+  remove: (key: string) => apiFetch<void>(`/media/images/${key.split('/').map(encodeURIComponent).join('/')}`, { method: 'DELETE' }),
+};
+
 export const notificationsApi = {
   listMine: (unreadOnly?: boolean) =>
     api.get<NotificationItem[]>(`/notifications/me${unreadOnly ? '?unread_only=true' : ''}`),
