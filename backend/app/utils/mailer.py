@@ -72,3 +72,65 @@ def send_otp_email(to: str, name: str, code: str) -> None:
     </div>
     """
     send_email(to, f"Your {SITE_NAME} verification code", body)
+
+
+def send_password_reset_otp_email(to: str, name: str, code: str) -> None:
+    safe_name = html.escape(name) if name else "there"
+    body = f"""
+    <div style="background:#0f0f0f;padding:32px 16px;font-family:Arial,Helvetica,sans-serif;">
+      <div style="max-width:420px;margin:0 auto;background:#161616;border:1px solid #2a2a2a;
+                  border-radius:18px;padding:36px 28px;text-align:center;">
+        <div style="font-size:24px;font-weight:800;letter-spacing:0.5px;color:#ffffff;margin-bottom:24px;">
+          {SITE_NAME}
+        </div>
+        <h1 style="font-size:19px;color:#ffffff;margin:0 0 8px;">Reset your password</h1>
+        <p style="font-size:14px;color:#9a9a9a;margin:0 0 24px;line-height:1.5;">
+          Hi {safe_name}, use this code to verify it's you and set a new password.
+        </p>
+        <div style="font-size:34px;font-weight:800;letter-spacing:10px;color:{BRAND_COLOR};
+                    background:#0f0f0f;border:1px solid #2a2a2a;border-radius:12px;
+                    padding:18px 12px;margin:0 0 20px;">
+          {code}
+        </div>
+        <p style="font-size:13px;color:#777;margin:0;line-height:1.5;">
+          This code expires in {OTP_TTL_MINUTES} minutes. If you didn't request a password
+          reset, you can safely ignore this email — your password won't change.
+        </p>
+      </div>
+    </div>
+    """
+    send_email(to, f"Reset your {SITE_NAME} password", body)
+
+
+def send_new_credentials_email(to: str, name: str, temp_password: str) -> None:
+    """A super_admin regenerated this account's password (see
+    users.regenerate_password()) — the account holder never chose or saw the
+    new password themselves, so it has to be delivered somewhere, and this is
+    it. Recipient is required to set their own password on next login
+    (see User.must_change_password)."""
+    safe_name = html.escape(name) if name else "there"
+    body = f"""
+    <div style="background:#0f0f0f;padding:32px 16px;font-family:Arial,Helvetica,sans-serif;">
+      <div style="max-width:420px;margin:0 auto;background:#161616;border:1px solid #2a2a2a;
+                  border-radius:18px;padding:36px 28px;text-align:center;">
+        <div style="font-size:24px;font-weight:800;letter-spacing:0.5px;color:#ffffff;margin-bottom:24px;">
+          {SITE_NAME}
+        </div>
+        <h1 style="font-size:19px;color:#ffffff;margin:0 0 8px;">Your password was reset</h1>
+        <p style="font-size:14px;color:#9a9a9a;margin:0 0 24px;line-height:1.5;">
+          Hi {safe_name}, an administrator regenerated the password for your account
+          (<strong style="color:#ccc;">{html.escape(to)}</strong>). Use this temporary password
+          to sign in — you'll be asked to set your own right away.
+        </p>
+        <div style="font-size:24px;font-weight:800;letter-spacing:2px;color:{BRAND_COLOR};
+                    background:#0f0f0f;border:1px solid #2a2a2a;border-radius:12px;
+                    padding:18px 12px;margin:0 0 20px;word-break:break-all;">
+          {html.escape(temp_password)}
+        </div>
+        <p style="font-size:13px;color:#777;margin:0;line-height:1.5;">
+          If you didn't request this, contact an administrator immediately.
+        </p>
+      </div>
+    </div>
+    """
+    send_email(to, f"Your new {SITE_NAME} admin password", body)

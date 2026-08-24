@@ -16,6 +16,7 @@ from app.schemas.user import (
     ADMIN_ROLES,
 )
 from app.utils.auth import get_current_user, get_password_hash, verify_password
+from app.utils.mailer import send_new_credentials_email
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -41,6 +42,11 @@ def _generate_referral_code(db: Session) -> str:
         code = "".join(secrets.choice(alphabet) for _ in range(8))
         if not db.query(User).filter(User.referral_code == code).first():
             return code
+
+
+def _generate_temp_password() -> str:
+    alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
+    return "".join(secrets.choice(alphabet) for _ in range(14))
 
 
 @router.get("/", response_model=List[UserSchema])
@@ -141,6 +147,11 @@ def update_me(
         ):
             raise HTTPException(status_code=400, detail="Current password is incorrect")
         current_user.hashed_password = get_password_hash(payload.new_password)
+        # Covers both a routine self-service password change and the
+        # required change after a super_admin-regenerated temp password —
+        # this is also how /admin/change-password clears the flag, by
+        # calling this same endpoint with the temp password as current_password.
+        current_user.must_change_password = False
 
     db.commit()
     db.refresh(current_user)
@@ -165,6 +176,40 @@ def update_user_role(
         raise HTTPException(status_code=400, detail="Cannot change your own role")
 
     user.role = payload.role
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@router.post("/{email}/regenerate-password", response_model=UserSchema)
+def regenerate_password(
+    email: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_super_admin),
+):
+    """Issue a new random password for any account and email it to them —
+    the route an editor/broker's "Forgot password?" request lands on (see
+    auth.forgot_password(), which notifies super_admins instead of offering
+    self-service OTP reset to those roles). Forces a /admin/change-password
+    stop on the account's next login via must_change_password."""
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    temp_password = _generate_temp_password()
+    try:
+        # Sent before committing — if delivery fails, the account's existing
+        # password stays valid instead of silently locking them out of a
+        # password nobody received.
+        send_new_credentials_email(user.email, user.name or "", temp_password)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Couldn't send the new password email. Please try again in a moment.",
+        )
+
+    user.hashed_password = get_password_hash(temp_password)
+    user.must_change_password = True
     db.commit()
     db.refresh(user)
     return user

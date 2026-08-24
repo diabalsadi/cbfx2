@@ -212,6 +212,34 @@
   }
 }
 
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.regenerateBtn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition);
+
+  &:hover:not(:disabled) {
+    background: var(--bg-secondary);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
 .deleteBtn {
   background: none;
   border: 1px solid rgba(239, 68, 68, 0.3);
@@ -221,6 +249,7 @@
   font-weight: 600;
   padding: 5px 10px;
   cursor: pointer;
+  white-space: nowrap;
   transition: all var(--transition);
 
   &:hover {

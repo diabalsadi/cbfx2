@@ -82,9 +82,14 @@ export default function UserLoginPage() {
           </div>
 
           <div className={styles.field}>
-            <label className={styles.label} htmlFor="password">
-              Password
-            </label>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <label className={styles.label} htmlFor="password">
+                Password
+              </label>
+              <Link href="/forgot-password" className={styles.link} style={{ fontSize: "12px" }}>
+                Forgot password?
+              </Link>
+            </div>
             <input
               id="password"
               type="password"

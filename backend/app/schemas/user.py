@@ -19,6 +19,10 @@ class UserBase(BaseModel):
     country_code: Optional[str] = None
     referral_code: Optional[str] = None
     referred_by: Optional[str] = None
+    # True right after a super_admin regenerates this account's password —
+    # the admin portal forces a /admin/change-password stop before anything
+    # else until it's cleared (see users.update_me()).
+    must_change_password: bool = False
 
 
 class User(UserBase):

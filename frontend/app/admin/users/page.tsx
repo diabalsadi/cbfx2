@@ -73,6 +73,24 @@ export default function UsersPage() {
     }
   };
 
+  const handleRegeneratePassword = async (email: string) => {
+    if (
+      !confirm(
+        `Regenerate the password for ${email}? A new temporary password will be emailed to them, and their current password will stop working immediately.`,
+      )
+    )
+      return;
+    setUpdating(email);
+    try {
+      await api.post(`/users/${encodeURIComponent(email)}/regenerate-password`, {});
+      alert(`New password emailed to ${email}.`);
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : "Failed to regenerate password");
+    } finally {
+      setUpdating(null);
+    }
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setCreateError("");
@@ -241,7 +259,14 @@ export default function UsersPage() {
                         year: "numeric",
                       })}
                     </td>
-                    <td>
+                    <td className={styles.actions}>
+                      <button
+                        className={styles.regenerateBtn}
+                        onClick={() => handleRegeneratePassword(u.email)}
+                        disabled={updating === u.email}
+                      >
+                        Regenerate Password
+                      </button>
                       <button
                         className={styles.deleteBtn}
                         onClick={() => handleDelete(u.email)}

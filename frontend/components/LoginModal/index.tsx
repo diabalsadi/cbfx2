@@ -146,9 +146,14 @@ export default function LoginModal() {
               />
             </div>
             <div className={styles.field}>
-              <label className={styles.label} htmlFor="modal-password">
-                Password
-              </label>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <label className={styles.label} htmlFor="modal-password">
+                  Password
+                </label>
+                <Link href="/forgot-password" className={styles.link} style={{ fontSize: "12px" }} onClick={closeLoginModal}>
+                  Forgot password?
+                </Link>
+              </div>
               <input
                 id="modal-password"
                 type="password"

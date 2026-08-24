@@ -70,6 +70,7 @@ export interface UserProfile {
   country_code: string | null;
   referral_code: string | null;
   referred_by: string | null;
+  must_change_password: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -414,11 +415,30 @@ export interface AuthToken {
   token_type: string;
 }
 
+// Returned by forgotPassword(). "otp" means a code was emailed — proceed to
+// resetPassword() using reset_token. "notified" means this account's role
+// doesn't get self-service reset (editor/broker/etc.) — a super_admin was
+// notified to regenerate its password instead, expires_in/reset_token are
+// unused (0 / "").
+export interface ForgotPasswordResponse {
+  flow: "otp" | "notified";
+  message: string;
+  email: string;
+  expires_in: number;
+  reset_token: string;
+}
+
 export const authApi = {
   register: (payload: RegisterRequest) => api.post<RegisterInitiatedResponse>('/auth/register', payload),
   verifyOtp: (payload: { email: string; code: string; registration_token: string }) =>
     api.post<AuthToken>('/auth/verify-otp', payload),
   resendOtp: (payload: { email: string }) => api.post<OtpSentResponse>('/auth/resend-otp', payload),
+  forgotPassword: (payload: { email: string; captcha_token: string }) =>
+    api.post<ForgotPasswordResponse>('/auth/forgot-password', payload),
+  resetPassword: (payload: { email: string; code: string; reset_token: string; new_password: string }) =>
+    api.post<AuthToken>('/auth/reset-password', payload),
+  resendPasswordResetOtp: (payload: { email: string }) =>
+    api.post<OtpSentResponse>('/auth/resend-password-reset-otp', payload),
 };
 
 // ── Referral clients (admin-managed User accounts with role "client") ──────────

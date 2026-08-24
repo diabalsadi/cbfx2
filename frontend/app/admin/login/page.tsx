@@ -1,5 +1,6 @@
 "use client";
 import { useState, FormEvent, useEffect, useRef } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { canAccessAdminPortal } from "@/helpers/roles";
@@ -75,7 +76,12 @@ export default function LoginPage() {
           </div>
 
           <div className={styles.field}>
-            <label className={styles.label}>Password</label>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <label className={styles.label}>Password</label>
+              <Link href="/forgot-password" className={styles.link}>
+                Forgot password?
+              </Link>
+            </div>
             <input
               className={styles.input}
               type="password"

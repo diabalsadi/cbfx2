@@ -13,6 +13,7 @@ from app.routers import referrals, visits, notifications, media
 # Import all models so SQLAlchemy creates their tables
 import app.models.user
 import app.models.pending_registration
+import app.models.password_reset
 import app.models.article
 import app.models.client
 import app.models.campaign
@@ -122,6 +123,7 @@ with engine.begin() as connection:
     connection.execute(text("ALTER TABLE visits ADD COLUMN IF NOT EXISTS visitor_key VARCHAR"))
     connection.execute(text("ALTER TABLE pending_registrations ADD COLUMN IF NOT EXISTS token_hash VARCHAR"))
     connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS owner_email VARCHAR"))
+    connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT FALSE"))
 
     # Indexes on FK/filter columns that predate their model's index=True —
     # create_all() only applies index=True to brand-new tables, so existing

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, ForeignKey
+from sqlalchemy import Column, String, DateTime, ForeignKey, Boolean
 from sqlalchemy.sql import func
 from app.database import Base
 
@@ -22,6 +22,11 @@ class User(Base):
     # Email of the client user this account signed up under, resolved from
     # referral_code at registration time.
     referred_by = Column(String, ForeignKey("users.email"), nullable=True, index=True)
+    # Set when a super_admin regenerates this account's password (see
+    # POST /users/{email}/regenerate-password) — forces the admin/layout.tsx
+    # gate to route the next login to /admin/change-password before anything
+    # else, instead of trusting the emailed temp password indefinitely.
+    must_change_password = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()

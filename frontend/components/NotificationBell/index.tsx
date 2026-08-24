@@ -20,6 +20,7 @@ function relativeTime(iso: string): string {
 
 function targetHref(item: NotificationItem): string | null {
   if (item.related_type === "campaign") return "/admin/ads-campaigns";
+  if (item.related_type === "user") return "/admin/users";
   return null;
 }
 

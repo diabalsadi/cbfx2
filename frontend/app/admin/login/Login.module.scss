@@ -109,6 +109,17 @@
   }
 }
 
+.link {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 12px;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
 .error {
   background: rgba(239, 68, 68, 0.08);
   border: 1px solid rgba(239, 68, 68, 0.2);

@@ -15,6 +15,7 @@ interface User {
   name: string | null;
   role: string;
   region: string | null;
+  must_change_password: boolean;
 }
 
 // Which portal a login is for. The backend only accepts admin-role accounts

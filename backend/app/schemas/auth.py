@@ -82,3 +82,38 @@ class VerifyOtpRequest(BaseModel):
 
 class ResendOtpRequest(BaseModel):
     email: EmailStr
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+    # reCAPTCHA v2 response token from the widget on the forgot-password form.
+    captcha_token: str
+
+
+class ForgotPasswordResponse(BaseModel):
+    """Returned by /auth/forgot-password. `flow` tells the client which
+    screen to show next: "otp" for a self-service account (role "user",
+    "client", or "super_admin") — proceed to the OTP + new-password screen
+    using reset_token — or "notified" for any other admin-portal role, where
+    no OTP was issued; a super_admin was notified to regenerate the password
+    instead (see auth.forgot_password())."""
+
+    flow: Literal["otp", "notified"]
+    message: str
+    email: EmailStr
+    expires_in: int = 0  # seconds until the emailed code stops working; 0 for "notified"
+    # Plaintext secret for this reset attempt, empty for "notified". Mirrors
+    # RegisterInitiatedResponse.registration_token — returned only here
+    # (never emailed), and must be echoed back to /auth/reset-password.
+    reset_token: str = ""
+
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    code: str
+    reset_token: str
+    new_password: str = Field(min_length=8)
+
+
+class ResendPasswordResetOtpRequest(BaseModel):
+    email: EmailStr
