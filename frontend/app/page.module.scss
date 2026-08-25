@@ -511,9 +511,10 @@
 }
 
 /* ═══════════════════════════════
-   Hero top banner
+   Sticky top sponsor banner — pinned below the navbar so it stays
+   visible while the visitor scrolls through Hero and beyond.
    ═══════════════════════════════ */
-.heroTopBanner {
+.stickyTopBanner {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -524,6 +525,9 @@
   margin-top: 20px;
   margin-bottom: 20px;
   gap: 12px;
+  position: sticky;
+  top: 58px; // navbar height
+  z-index: 30;
 
   @media (max-width: 600px) {
     flex-direction: column;
@@ -539,12 +543,47 @@
 }
 
 /* ═══════════════════════════════
+   Inline sponsor banners (before Cashback / Copy Trading / Signals)
+   — share the same box layout as .demoBanner below.
+   ═══════════════════════════════ */
+.adBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #18130d;
+  border: 1px solid #2e2010;
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  gap: 12px;
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* ═══════════════════════════════
    Sticky sidebar ads (desktop only) — pinned to the viewport edges
    outside the centered 1200px content column. Hidden below the
    min-width breakpoint (where there isn't enough side gutter to fit
    them without overlapping the main content) — a resize across that
    breakpoint shows/removes them automatically, no JS needed.
+
+   Geometry is centralized in these variables so the sidebar-ad box,
+   its edge offset, and the content gutter that clears it (below) can
+   never drift out of sync with one another.
    ═══════════════════════════════ */
+$sidebar-ad-width: 160px;
+$sidebar-ad-edge-gap: 24px; // distance from the viewport edge to the ad box
+$sidebar-ad-content-gap: 16px; // breathing room between the ad box and content
+$required-clearance: $sidebar-ad-edge-gap + $sidebar-ad-width + $sidebar-ad-content-gap; // 200px from viewport edge to where content should start
+// .main (user.module.scss) already keeps content this far from the viewport
+// edge on its own: its own horizontal padding, plus — once the viewport is
+// wider than its 1200px max-width — the auto-margin that centers it.
+$main-padding: 24px;
+$main-max-width: 1200px;
+
 .stickySidebarAd {
   display: none;
   flex-direction: column;
@@ -557,7 +596,7 @@
   margin-top: auto;
   margin-bottom: auto;
   height: calc((100vh - 58px) * 0.9); // 90% of the space below the navbar
-  width: 160px;
+  width: $sidebar-ad-width;
   padding: 12px;
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -567,16 +606,37 @@
 }
 
 .stickySidebarLeft {
-  left: 24px;
+  left: $sidebar-ad-edge-gap;
 }
 
 .stickySidebarRight {
-  right: 24px;
+  right: $sidebar-ad-edge-gap;
 }
 
-@media (min-width: 1600px) {
+@media (min-width: 786px) {
   .stickySidebarAd {
     display: flex;
+  }
+}
+
+/* Narrows the main content column whenever a sticky sidebar ad is showing,
+   so it never sits under the fixed-position ad box. Applied conditionally
+   in HomeClient.tsx — only when a sidebar banner is active.
+
+   Only adds as much extra padding as .main isn't already providing on its
+   own: on screens wider than $main-max-width, .main's own centering margin
+   grows and gradually covers the required clearance by itself, so this
+   tapers to 0 instead of stacking on top and over-narrowing the page. */
+.sideAdGutter {
+  @media (min-width: 786px) {
+    padding: 0
+      max(
+        0px,
+        calc(
+          #{$required-clearance} - #{$main-padding} -
+            max(0px, calc((100vw - #{$main-max-width}) / 2))
+        )
+      );
   }
 }
 
@@ -942,60 +1002,6 @@
 /* ═══════════════════════════════
    PrimeTrade banner
    ═══════════════════════════════ */
-.primeBanner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #18130d;
-  border: 1px solid #2e2010;
-  border-radius: 14px;
-  padding: 18px 22px;
-  margin-bottom: 24px;
-  gap: 16px;
-
-  @media (max-width: 600px) {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}
-
-.primeBannerLeft {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  min-width: 0;
-}
-
-.primeLogo {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: #2a5f2a;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.primeChips {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
-}
-
-.primeName {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 2px;
-}
-
-.primeDesc {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
 .primeLearnMore {
   font-size: 13px;
   font-weight: 600;
@@ -1168,72 +1174,3 @@
   color: var(--text-secondary);
 }
 
-/* ═══════════════════════════════
-   Sponsored Brokers
-   ═══════════════════════════════ */
-.sponsoredLabel {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: var(--text-muted);
-
-  svg {
-    color: var(--accent);
-    flex-shrink: 0;
-  }
-}
-
-.sponsoredGrid {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 10px;
-
-  @media (max-width: 900px) {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  @media (max-width: 500px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-.sponsoredCard {
-  aspect-ratio: 1;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition:
-    border-color 0.15s,
-    box-shadow 0.15s;
-  cursor: pointer;
-  overflow: hidden;
-
-  &:hover {
-    border-color: var(--accent);
-    box-shadow: 0 4px 16px rgba(249, 115, 22, 0.1);
-  }
-}
-
-.sponsoredLogo {
-  width: 56%;
-  aspect-ratio: 1;
-  border-radius: 12px;
-  background: var(--broker-bg, #f3f4f6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  span {
-    font-size: 15px;
-    font-weight: 800;
-    color: var(--broker-color, #6b7280);
-    letter-spacing: -0.5px;
-  }
-}

@@ -17,9 +17,6 @@ interface SlotRow {
 
 const SECTIONS: { key: BrokerSectionKey; label: string }[] = [
   { key: "featured", label: "Featured Brokers" },
-  { key: "sponsored", label: "Sponsored Brokers" },
-  { key: "partners", label: "Featured Partners" },
-  { key: "more_partners", label: "More Partner Brokers" },
 ];
 
 type ScopeMode = "default" | "region" | "country";
@@ -33,37 +30,22 @@ type SlotsBySection = Record<BrokerSectionKey, Partial<Record<BrokerPlacementReg
 
 const EMPTY_SLOTS: SlotsBySection = {
   featured: {},
-  sponsored: {},
-  partners: {},
-  more_partners: {},
 };
 
 const EMPTY_SCOPE: Record<BrokerSectionKey, BrokerPlacementRegion> = {
   featured: "default",
-  sponsored: "default",
-  partners: "default",
-  more_partners: "default",
 };
 
 const EMPTY_MODE: Record<BrokerSectionKey, ScopeMode> = {
   featured: "default",
-  sponsored: "default",
-  partners: "default",
-  more_partners: "default",
 };
 
 const EMPTY_COUNTRY_FILTER: Record<BrokerSectionKey, string> = {
   featured: "all",
-  sponsored: "all",
-  partners: "all",
-  more_partners: "all",
 };
 
 const EMPTY_SEARCH: Record<BrokerSectionKey, string> = {
   featured: "",
-  sponsored: "",
-  partners: "",
-  more_partners: "",
 };
 
 export default function BrokerSectionPlacements({
@@ -85,9 +67,6 @@ export default function BrokerSectionPlacements({
       .then((placements) => {
         const grouped: SlotsBySection = {
           featured: {},
-          sponsored: {},
-          partners: {},
-          more_partners: {},
         };
         for (const p of placements) {
           const bySection = grouped[p.section];

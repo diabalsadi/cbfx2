@@ -9,7 +9,7 @@ import { SingleTickerWidget } from "@/components/TradingViewWidgets";
 import { getSymbolByDisplayName, symbolHref } from "@/helpers/tradingviewSymbols";
 import styles from "./page.module.scss";
 import userStyles from "./(user)/user.module.scss";
-import { publicApi, type HomepageData } from "@/helpers/api";
+import { publicApi, type HomepageData, type AdBannerContent } from "@/helpers/api";
 
 /* ── static (non-API) data ── */
 const FEATURED_COLORS = ["#f97316", "#7c3aed", "#0891b2", "#16a34a"];
@@ -18,24 +18,6 @@ const FEATURED_COLORS = ["#f97316", "#7c3aed", "#0891b2", "#16a34a"];
 const HOMEPAGE_SYMBOLS = ["EUR/USD", "GBP/USD", "BTC/USD", "ETH/USD", "XAU/USD", "WTI Crude Oil"]
   .map(getSymbolByDisplayName)
   .filter((s): s is NonNullable<typeof s> => s !== null);
-
-const BROKER_PALETTE = [
-  { color: "#e53e3e", bg: "#2a1010" },
-  { color: "#2563eb", bg: "#101a2a" },
-  { color: "#059669", bg: "#0f2318" },
-  { color: "#7c3aed", bg: "#1a1028" },
-  { color: "#dc2626", bg: "#2a1010" },
-  { color: "#0284c7", bg: "#0e1d2a" },
-];
-
-function brokerInitials(name: string) {
-  return name
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-}
 
 const CALENDAR_EVENTS = [
   { time: "12:30", event: "US CPI YoY", live: true },
@@ -52,6 +34,59 @@ function timeAgo(iso: string): string {
   return `${Math.floor(h / 24)}d`;
 }
 
+/* Inline sponsor banner used before Cashback / Copy Trading / Signals. */
+function InlineAdBanner({
+  banner,
+  onDismiss,
+}: {
+  banner: AdBannerContent;
+  onDismiss: () => void;
+}) {
+  return (
+    <div className={styles.adBanner}>
+      <div className={styles.demoBannerLeft}>
+        <span className={styles.sponsoredChip}>{banner.badge_text}</span>
+        <div className={styles.demoBrokerLogo}>
+          {banner.logo_src ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={banner.logo_src}
+              alt=""
+              style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }}
+            />
+          ) : (
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+              <polyline
+                points="2,14 7,8 11,11 18,4"
+                stroke="white"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          )}
+        </div>
+        <div>
+          <div className={styles.demoBrokerName}>{banner.sponsor_name}</div>
+          <div className={styles.demoBrokerDesc}>{banner.description}</div>
+        </div>
+      </div>
+      <div className={styles.heroTopActions}>
+        {banner.link_url && (
+          <a href={banner.link_url} className={styles.primeLearnMore}>
+            {banner.cta_label || "Learn more"} ↗
+          </a>
+        )}
+        {banner.dismissible && (
+          <button className={styles.demoDismiss} onClick={onDismiss} aria-label="Dismiss">
+            ✕
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function HomePage() {
   const [dismissedBanners, setDismissedBanners] = useState<Set<string>>(new Set());
   const [data, setData] = useState<HomepageData | null>(null);
@@ -64,26 +99,16 @@ export default function HomePage() {
   const dismissBanner = (slot: string) =>
     setDismissedBanners((prev) => new Set(prev).add(slot));
 
-  const demoBanner =
-    data?.ad_banners?.demo_banner && !dismissedBanners.has("demo_banner")
-      ? data.ad_banners.demo_banner
-      : null;
-  const primeBanner =
-    data?.ad_banners?.prime_banner && !dismissedBanners.has("prime_banner")
-      ? data.ad_banners.prime_banner
-      : null;
-  const heroTopBanner =
-    data?.ad_banners?.hero_top_banner && !dismissedBanners.has("hero_top_banner")
-      ? data.ad_banners.hero_top_banner
-      : null;
-  const sidebarLeftBanner =
-    data?.ad_banners?.sidebar_left_banner && !dismissedBanners.has("sidebar_left_banner")
-      ? data.ad_banners.sidebar_left_banner
-      : null;
-  const sidebarRightBanner =
-    data?.ad_banners?.sidebar_right_banner && !dismissedBanners.has("sidebar_right_banner")
-      ? data.ad_banners.sidebar_right_banner
-      : null;
+  const getBanner = (slot: string) =>
+    data?.ad_banners?.[slot] && !dismissedBanners.has(slot) ? data.ad_banners[slot] : null;
+
+  const stickyTopBanner = getBanner("sticky_top_banner");
+  const sidebarLeftBanner = getBanner("sidebar_left_banner");
+  const sidebarRightBanner = getBanner("sidebar_right_banner");
+  const preCashbackBanner = getBanner("pre_cashback_banner");
+  const preCopytradingBanner = getBanner("pre_copytrading_banner");
+  const preSignalsBanner = getBanner("pre_signals_banner");
+  const preMarketsBanner = getBanner("pre_markets_banner");
 
   /* ── derived data (falls back to empty arrays while loading) ── */
 
@@ -194,18 +219,19 @@ export default function HomePage() {
       )}
 
       <div className={userStyles.main}>
+      <div className={sidebarLeftBanner || sidebarRightBanner ? styles.sideAdGutter : undefined}>
       {/* ══════════════════════════════
-          Hero top banner
+          Sticky top sponsor banner
          ══════════════════════════════ */}
-      {heroTopBanner && (
-        <div className={styles.heroTopBanner}>
+      {stickyTopBanner && (
+        <div className={styles.stickyTopBanner}>
           <div className={styles.demoBannerLeft}>
-            <span className={styles.sponsoredChip}>{heroTopBanner.badge_text}</span>
+            <span className={styles.sponsoredChip}>{stickyTopBanner.badge_text}</span>
             <div className={styles.demoBrokerLogo}>
-              {heroTopBanner.logo_src ? (
+              {stickyTopBanner.logo_src ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={heroTopBanner.logo_src}
+                  src={stickyTopBanner.logo_src}
                   alt=""
                   style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }}
                 />
@@ -222,20 +248,20 @@ export default function HomePage() {
               )}
             </div>
             <div>
-              <div className={styles.demoBrokerName}>{heroTopBanner.sponsor_name}</div>
-              <div className={styles.demoBrokerDesc}>{heroTopBanner.description}</div>
+              <div className={styles.demoBrokerName}>{stickyTopBanner.sponsor_name}</div>
+              <div className={styles.demoBrokerDesc}>{stickyTopBanner.description}</div>
             </div>
           </div>
           <div className={styles.heroTopActions}>
-            {heroTopBanner.link_url && (
-              <a href={heroTopBanner.link_url} className={styles.primeLearnMore}>
-                {heroTopBanner.cta_label || "Learn more"} ↗
+            {stickyTopBanner.link_url && (
+              <a href={stickyTopBanner.link_url} className={styles.primeLearnMore}>
+                {stickyTopBanner.cta_label || "Learn more"} ↗
               </a>
             )}
-            {heroTopBanner.dismissible && (
+            {stickyTopBanner.dismissible && (
               <button
                 className={styles.demoDismiss}
-                onClick={() => dismissBanner("hero_top_banner")}
+                onClick={() => dismissBanner("sticky_top_banner")}
                 aria-label="Dismiss"
               >
                 ✕
@@ -353,179 +379,52 @@ export default function HomePage() {
       </div>
 
       {/* ══════════════════════════════
-          Featured Brokers
+          Cashback CTA
          ══════════════════════════════ */}
-      <section className={styles.section}>
-        <div className={styles.stripHeader}>
-          <div className={styles.sectionTitleGroup}>
-            <div className={styles.sectionIcon}>
-              <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                <path
-                  d="M10 2L12.39 7.26L18 8.18L14 12.08L14.9 18L10 15.27L5.1 18L6 12.08L2 8.18L7.61 7.26L10 2Z"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-            <div className={styles.sectionTitleText}>
-              <h2>Featured Brokers</h2>
-              <p>Vetted brokers with the best cashback rates</p>
-            </div>
-          </div>
-          <Link href="/brokers" className={styles.sectionLink}>
-            See all →
-          </Link>
-        </div>
-        <div className={styles.featuredGrid}>
-          {(data?.broker_sections.featured ?? []).map((b, i) => (
-            <Link href="/brokers" key={b.id} className={styles.featuredCard}>
-              <div className={styles.featuredCardTop}>
-                <span className={styles.featuredTag}>FEATURED BROKER</span>
-                <span className={styles.adBadge}>AD</span>
-              </div>
-              <div className={styles.featuredCardBody}>
-                {b.img_src ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={b.img_src}
-                    alt=""
-                    className={styles.brokerLogoCircle}
-                    style={{ objectFit: "cover" }}
-                  />
-                ) : (
-                  <div
-                    className={styles.brokerLogoCircle}
-                    style={{ background: FEATURED_COLORS[i % FEATURED_COLORS.length] }}
-                  >
-                    <svg viewBox="0 0 32 32" fill="none" width="20" height="20">
-                      <polyline
-                        points="4,22 10,14 16,18 24,8"
-                        stroke="white"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                )}
-                <div>
-                  <div className={styles.brokerName}>{b.name}</div>
-                  <div className={styles.brokerDesc}>
-                    Up to {b.cashback_rate}% cashback
-                  </div>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* ══════════════════════════════
-          Sponsored Brokers
-         ══════════════════════════════ */}
-      <section className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <div className={styles.sponsoredLabel}>
-            <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
-              <path
-                d="M10 2L12.39 7.26L18 8.18L14 12.08L14.9 18L10 15.27L5.1 18L6 12.08L2 8.18L7.61 7.26L10 2Z"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinejoin="round"
+      {preCashbackBanner && (
+        <InlineAdBanner
+          banner={preCashbackBanner}
+          onDismiss={() => dismissBanner("pre_cashback_banner")}
+        />
+      )}
+      <div className={styles.cashbackBanner}>
+        <div className={styles.cashbackLeft}>
+          <div className={styles.cashbackIcon}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <rect
+                x="2"
+                y="5"
+                width="20"
+                height="14"
+                rx="3"
+                stroke="white"
+                strokeWidth="1.8"
               />
+              <path d="M2 10h20" stroke="white" strokeWidth="1.8" />
+              <circle cx="8" cy="16" r="1.5" fill="white" />
             </svg>
-            <span>SPONSORED BROKERS</span>
           </div>
-          <div className={styles.headerRight}>
-            <Link href="/brokers" className={styles.sectionLink}>
-              See all →
-            </Link>
-            <span className={styles.adBadge}>AD</span>
-          </div>
-        </div>
-        <div className={styles.sponsoredGrid}>
-          {(data?.broker_sections.sponsored ?? []).map((b, i) => {
-            const palette = BROKER_PALETTE[i % BROKER_PALETTE.length];
-            return (
-              <Link
-                href="/brokers"
-                key={b.id}
-                className={styles.sponsoredCard}
-                style={
-                  {
-                    "--broker-color": palette.color,
-                    "--broker-bg": palette.bg,
-                  } as React.CSSProperties
-                }
-              >
-                <div className={styles.sponsoredLogo}>
-                  {b.img_src ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={b.img_src}
-                      alt=""
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        borderRadius: "12px",
-                      }}
-                    />
-                  ) : (
-                    <span>{brokerInitials(b.name)}</span>
-                  )}
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* ══════════════════════════════
-          Markets Strip
-         ══════════════════════════════ */}
-      <section className={styles.marketsSection}>
-        <div className={styles.stripHeader}>
-          <div className={styles.sectionTitleGroup}>
-            <div className={styles.sectionIcon}>
-              <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                <polyline
-                  points="2,14 7,8 11,11 18,4"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-            <div className={styles.sectionTitleText}>
-              <h2>Markets</h2>
-              <p>Live prices across forex, crypto &amp; metals</p>
+          <div>
+            <div className={styles.cashbackTitle}>Cashback on every trade</div>
+            <div className={styles.cashbackSub}>
+              Rebates auto-credited to your account — no spreadsheets.
             </div>
           </div>
-          <Link href="/markets" className={styles.sectionLink}>
-            View all →
-          </Link>
         </div>
-        <div className={styles.marketsStrip}>
-          {HOMEPAGE_SYMBOLS.map((s) => (
-            <Link
-              key={s.displayName}
-              href={symbolHref(s.displayName)}
-              className={styles.stripCard}
-            >
-              <div className={styles.tickerWrap}>
-                <SingleTickerWidget tvSymbol={s.tvSymbol} theme={theme} />
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
+        <Link href="/cashback" className={styles.cashbackBtn}>
+          See your rebates ↗
+        </Link>
+      </div>
 
       {/* ══════════════════════════════
           Copy Trading
          ══════════════════════════════ */}
+      {preCopytradingBanner && (
+        <InlineAdBanner
+          banner={preCopytradingBanner}
+          onDismiss={() => dismissBanner("pre_copytrading_banner")}
+        />
+      )}
       <section className={styles.copySection}>
         <div className={styles.stripHeader}>
           <div className={styles.sectionTitleGroup}>
@@ -571,54 +470,16 @@ export default function HomePage() {
       </section>
 
       {/* ══════════════════════════════
-          Demo broker sponsored banner
+          Signals (Plays)  +  Forex News
          ══════════════════════════════ */}
-      {demoBanner && (
-        <div className={styles.demoBanner}>
-          <div className={styles.demoBannerLeft}>
-            <span className={styles.sponsoredChip}>{demoBanner.badge_text}</span>
-            <div className={styles.demoBrokerLogo}>
-              {demoBanner.logo_src ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={demoBanner.logo_src}
-                  alt=""
-                  style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }}
-                />
-              ) : (
-                <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-                  <polyline
-                    points="2,14 7,8 11,11 18,4"
-                    stroke="white"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              )}
-            </div>
-            <div>
-              <div className={styles.demoBrokerName}>{demoBanner.sponsor_name}</div>
-              <div className={styles.demoBrokerDesc}>{demoBanner.description}</div>
-            </div>
-          </div>
-          {demoBanner.dismissible && (
-            <button
-              className={styles.demoDismiss}
-              onClick={() => dismissBanner("demo_banner")}
-              aria-label="Dismiss"
-            >
-              ✕
-            </button>
-          )}
-        </div>
+      {preSignalsBanner && (
+        <InlineAdBanner
+          banner={preSignalsBanner}
+          onDismiss={() => dismissBanner("pre_signals_banner")}
+        />
       )}
-
-      {/* ══════════════════════════════
-          Our Plays  +  Forex News
-         ══════════════════════════════ */}
       <section className={styles.playsNewsGrid}>
-        {/* Plays */}
+        {/* Signals */}
         <div className={styles.playsCard}>
           <div className={styles.cardHeader}>
             <div className={styles.sectionTitleGroup}>
@@ -632,7 +493,7 @@ export default function HomePage() {
                   />
                 </svg>
               </div>
-              <span className={styles.cardTitle}>Our Plays</span>
+              <span className={styles.cardTitle}>Signals</span>
             </div>
             <Link href="/plays" className={styles.allLink}>
               All →
@@ -700,67 +561,6 @@ export default function HomePage() {
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* ══════════════════════════════
-          Featured Partners
-         ══════════════════════════════ */}
-      <section className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <div className={styles.sponsoredLabel}>
-            <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
-              <path
-                d="M10 2L12.39 7.26L18 8.18L14 12.08L14.9 18L10 15.27L5.1 18L6 12.08L2 8.18L7.61 7.26L10 2Z"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <span>FEATURED PARTNERS</span>
-          </div>
-          <div className={styles.headerRight}>
-            <Link href="/brokers" className={styles.sectionLink}>
-              See all →
-            </Link>
-            <span className={styles.adBadge}>AD</span>
-          </div>
-        </div>
-        <div className={styles.sponsoredGrid}>
-          {(data?.broker_sections.partners ?? []).map((b, i) => {
-            const palette = BROKER_PALETTE[i % BROKER_PALETTE.length];
-            return (
-              <Link
-                href="/brokers"
-                key={b.id}
-                className={styles.sponsoredCard}
-                style={
-                  {
-                    "--broker-color": palette.color,
-                    "--broker-bg": palette.bg,
-                  } as React.CSSProperties
-                }
-              >
-                <div className={styles.sponsoredLogo}>
-                  {b.img_src ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={b.img_src}
-                      alt=""
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        borderRadius: "12px",
-                      }}
-                    />
-                  ) : (
-                    <span>{brokerInitials(b.name)}</span>
-                  )}
-                </div>
-              </Link>
-            );
-          })}
         </div>
       </section>
 
@@ -881,138 +681,121 @@ export default function HomePage() {
       </section>
 
       {/* ══════════════════════════════
-          PrimeTrade sponsored banner
+          Markets Strip
          ══════════════════════════════ */}
-      {primeBanner && (
-        <div className={styles.primeBanner}>
-          <div className={styles.primeBannerLeft}>
-            <div className={styles.primeLogo}>
-              {primeBanner.logo_src ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={primeBanner.logo_src}
-                  alt=""
-                  style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }}
-                />
-              ) : (
-                <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-                  <polyline
-                    points="2,14 7,8 11,11 18,4"
-                    stroke="white"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              )}
-            </div>
-            <div>
-              <div className={styles.primeChips}>
-                <span className={styles.sponsoredChip}>{primeBanner.badge_text}</span>
-                <span className={styles.adBadge}>AD</span>
-              </div>
-              <div className={styles.primeName}>{primeBanner.sponsor_name}</div>
-              <div className={styles.primeDesc}>{primeBanner.description}</div>
-            </div>
-          </div>
-          <a href={primeBanner.link_url || "#"} className={styles.primeLearnMore}>
-            {primeBanner.cta_label || "Learn more"} ↗
-          </a>
-        </div>
+      {preMarketsBanner && (
+        <InlineAdBanner
+          banner={preMarketsBanner}
+          onDismiss={() => dismissBanner("pre_markets_banner")}
+        />
       )}
-
-      {/* ══════════════════════════════
-          Cashback CTA
-         ══════════════════════════════ */}
-      <div className={styles.cashbackBanner}>
-        <div className={styles.cashbackLeft}>
-          <div className={styles.cashbackIcon}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-              <rect
-                x="2"
-                y="5"
-                width="20"
-                height="14"
-                rx="3"
-                stroke="white"
-                strokeWidth="1.8"
-              />
-              <path d="M2 10h20" stroke="white" strokeWidth="1.8" />
-              <circle cx="8" cy="16" r="1.5" fill="white" />
-            </svg>
-          </div>
-          <div>
-            <div className={styles.cashbackTitle}>Cashback on every trade</div>
-            <div className={styles.cashbackSub}>
-              Rebates auto-credited to your account — no spreadsheets.
+      <section className={styles.marketsSection}>
+        <div className={styles.stripHeader}>
+          <div className={styles.sectionTitleGroup}>
+            <div className={styles.sectionIcon}>
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                <polyline
+                  points="2,14 7,8 11,11 18,4"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+            <div className={styles.sectionTitleText}>
+              <h2>Markets</h2>
+              <p>Live prices across forex, crypto &amp; metals</p>
             </div>
           </div>
+          <Link href="/markets" className={styles.sectionLink}>
+            View all →
+          </Link>
         </div>
-        <Link href="/cashback" className={styles.cashbackBtn}>
-          See your rebates ↗
-        </Link>
-      </div>
-
-      {/* ══════════════════════════════
-          More Partner Brokers
-         ══════════════════════════════ */}
-      <section className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <div className={styles.sponsoredLabel}>
-            <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
-              <path
-                d="M10 2L12.39 7.26L18 8.18L14 12.08L14.9 18L10 15.27L5.1 18L6 12.08L2 8.18L7.61 7.26L10 2Z"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <span>MORE PARTNER BROKERS</span>
-          </div>
-          <div className={styles.headerRight}>
-            <Link href="/brokers" className={styles.sectionLink}>
-              See all →
+        <div className={styles.marketsStrip}>
+          {HOMEPAGE_SYMBOLS.map((s) => (
+            <Link
+              key={s.displayName}
+              href={symbolHref(s.displayName)}
+              className={styles.stripCard}
+            >
+              <div className={styles.tickerWrap}>
+                <SingleTickerWidget tvSymbol={s.tvSymbol} theme={theme} />
+              </div>
             </Link>
-            <span className={styles.adBadge}>AD</span>
-          </div>
-        </div>
-        <div className={styles.sponsoredGrid}>
-          {(data?.broker_sections.more_partners ?? []).map((b, i) => {
-            const palette = BROKER_PALETTE[i % BROKER_PALETTE.length];
-            return (
-              <Link
-                href="/brokers"
-                key={b.id}
-                className={styles.sponsoredCard}
-                style={
-                  {
-                    "--broker-color": palette.color,
-                    "--broker-bg": palette.bg,
-                  } as React.CSSProperties
-                }
-              >
-                <div className={styles.sponsoredLogo}>
-                  {b.img_src ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={b.img_src}
-                      alt=""
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        borderRadius: "12px",
-                      }}
-                    />
-                  ) : (
-                    <span>{brokerInitials(b.name)}</span>
-                  )}
-                </div>
-              </Link>
-            );
-          })}
+          ))}
         </div>
       </section>
+
+      {/* ══════════════════════════════
+          Featured Brokers
+         ══════════════════════════════ */}
+      <section className={styles.section}>
+        <div className={styles.stripHeader}>
+          <div className={styles.sectionTitleGroup}>
+            <div className={styles.sectionIcon}>
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                <path
+                  d="M10 2L12.39 7.26L18 8.18L14 12.08L14.9 18L10 15.27L5.1 18L6 12.08L2 8.18L7.61 7.26L10 2Z"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+            <div className={styles.sectionTitleText}>
+              <h2>Featured Brokers</h2>
+              <p>Vetted brokers with the best cashback rates</p>
+            </div>
+          </div>
+          <Link href="/brokers" className={styles.sectionLink}>
+            See all →
+          </Link>
+        </div>
+        <div className={styles.featuredGrid}>
+          {(data?.broker_sections.featured ?? []).map((b, i) => (
+            <Link href="/brokers" key={b.id} className={styles.featuredCard}>
+              <div className={styles.featuredCardTop}>
+                <span className={styles.featuredTag}>FEATURED BROKER</span>
+                <span className={styles.adBadge}>AD</span>
+              </div>
+              <div className={styles.featuredCardBody}>
+                {b.img_src ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={b.img_src}
+                    alt=""
+                    className={styles.brokerLogoCircle}
+                    style={{ objectFit: "cover" }}
+                  />
+                ) : (
+                  <div
+                    className={styles.brokerLogoCircle}
+                    style={{ background: FEATURED_COLORS[i % FEATURED_COLORS.length] }}
+                  >
+                    <svg viewBox="0 0 32 32" fill="none" width="20" height="20">
+                      <polyline
+                        points="4,22 10,14 16,18 24,8"
+                        stroke="white"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                )}
+                <div>
+                  <div className={styles.brokerName}>{b.name}</div>
+                  <div className={styles.brokerDesc}>
+                    Up to {b.cashback_rate}% cashback
+                  </div>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+      </div>
       </div>
       <footer className={userStyles.footer}>© 2026 CBFX — Trade smarter.</footer>
       <LoginModal />

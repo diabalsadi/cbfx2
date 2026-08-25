@@ -13,7 +13,7 @@ class BrokerPlacement(Base):
     )
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    # Homepage section key: "featured" | "sponsored" | "partners" | "more_partners"
+    # Homepage section key: "featured"
     section = Column(String, nullable=False)
     # Coverage scope this ordering applies to: "default" (fallback order, used
     # whenever a visitor's detected region has no override for this section) or

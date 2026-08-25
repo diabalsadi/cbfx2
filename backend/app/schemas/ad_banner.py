@@ -8,11 +8,13 @@ from app.schemas.broker_placement import is_valid_placement_region
 # same way the admin "Ad Placements" page's route dropdown is keyed.
 PAGE_BANNER_SLOTS = {
     "homepage": {
-        "demo_banner",
-        "prime_banner",
-        "hero_top_banner",
+        "sticky_top_banner",
         "sidebar_left_banner",
         "sidebar_right_banner",
+        "pre_cashback_banner",
+        "pre_copytrading_banner",
+        "pre_signals_banner",
+        "pre_markets_banner",
     },
     "signin": {"featured_broker"},
 }

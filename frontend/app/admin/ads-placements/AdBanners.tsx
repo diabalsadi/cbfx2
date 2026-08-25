@@ -14,11 +14,13 @@ import styles from "./AdBanners.module.scss";
 
 const PAGE_BANNER_SLOTS: Record<AdPlacementPage, { key: string; label: string }[]> = {
   homepage: [
-    { key: "demo_banner", label: "Demo Sponsored Banner" },
-    { key: "prime_banner", label: "PrimeTrade Sponsored Banner" },
-    { key: "hero_top_banner", label: "Hero Top Banner (above hero section)" },
+    { key: "sticky_top_banner", label: "Sticky Top Banner (above Hero, sticks on scroll)" },
     { key: "sidebar_left_banner", label: "Sticky Sidebar Banner (left, desktop only)" },
     { key: "sidebar_right_banner", label: "Sticky Sidebar Banner (right, desktop only)" },
+    { key: "pre_cashback_banner", label: "Ad Sponsor — before Cashback" },
+    { key: "pre_copytrading_banner", label: "Ad Sponsor — before Copy Trading" },
+    { key: "pre_signals_banner", label: "Ad Sponsor — before Signals" },
+    { key: "pre_markets_banner", label: "Ad Sponsor — before Markets" },
   ],
   signin: [{ key: "featured_broker", label: "Featured Broker (Sign In)" }],
 };

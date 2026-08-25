@@ -257,7 +257,7 @@ export interface BrokerSlot {
   cashback_rate: number;
 }
 
-export type BrokerSectionKey = "featured" | "sponsored" | "partners" | "more_partners";
+export type BrokerSectionKey = "featured";
 
 export interface HomepageData {
   market_prices: Array<{ symbol: string; price: string; change_pct: string; direction: string }>;

@@ -4,7 +4,7 @@ from datetime import datetime
 from app.schemas.broker import REGIONS
 from app.utils.countries import COUNTRY_CODES
 
-SECTIONS = {"featured", "sponsored", "partners", "more_partners"}
+SECTIONS = {"featured"}
 
 
 def is_valid_placement_region(value: str) -> bool:
