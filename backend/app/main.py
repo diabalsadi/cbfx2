@@ -31,6 +31,7 @@ import app.models.wallet_transaction
 import app.models.seo_meta
 import app.models.visit
 import app.models.notification
+import app.models.translation
 
 Base.metadata.create_all(bind=engine)
 

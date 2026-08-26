@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import type { AdBannerContent } from "@/helpers/api";
 import styles from "./FeaturedBrokerPanel.module.scss";
 
@@ -31,12 +32,13 @@ function StarIcon() {
 // login and register forms. Renders nothing if no admin has configured
 // active content for this slot (see useSigninBanner()).
 export default function FeaturedBrokerPanel({ banner }: { banner: AdBannerContent | null }) {
+  const t = useTranslations("loginModal");
   if (!banner) return null;
 
   return (
     <div className={styles.brokerCard}>
       <div className={styles.brokerCardTop}>
-        <span className={styles.featuredLabel}>FEATURED BROKER</span>
+        <span className={styles.featuredLabel}>{t("featuredBroker")}</span>
         <span className={styles.sponsoredLabel}>{banner.badge_text}</span>
       </div>
 
@@ -80,7 +82,7 @@ export default function FeaturedBrokerPanel({ banner }: { banner: AdBannerConten
 
       <div className={styles.brokerCta}>
         <a href={banner.link_url || "#"} className={styles.openAccountBtn}>
-          {banner.cta_label || "Open account"} ↗
+          {banner.cta_label || t("openAccount")} ↗
         </a>
         {banner.disclaimer && <p className={styles.disclaimer}>{banner.disclaimer}</p>}
       </div>

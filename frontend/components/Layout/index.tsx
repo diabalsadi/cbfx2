@@ -1,10 +1,11 @@
 "use client";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Link, usePathname } from "@/i18n/navigation";
 import { useState, useCallback, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import NotificationBell from "@/components/NotificationBell";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import style from "./Layout.module.scss";
 import cx from "classnames";
 
@@ -13,91 +14,90 @@ interface ILayoutProps {
   className?: string;
 }
 
-const roleLabels: Record<string, string> = {
-  super_admin: "Super Admin",
-  editor: "Editor",
-  broker: "Broker",
-  client: "Client",
-};
-
 const navItems = [
   {
-    label: "Overview",
+    labelKey: "overview",
     href: "/admin/overview",
     icon: "◈",
     roles: ["super_admin", "broker"],
   },
-  { label: "Users", href: "/admin/users", icon: "⊹", roles: ["super_admin"] },
+  { labelKey: "users", href: "/admin/users", icon: "⊹", roles: ["super_admin"] },
   {
-    label: "Articles",
+    labelKey: "articles",
     href: "/admin/articles",
     icon: "◎",
     roles: ["super_admin", "editor"],
   },
   {
-    label: "Campaigns",
+    labelKey: "campaigns",
     href: "/admin/ads-campaigns",
     icon: "◉",
     roles: ["super_admin", "broker"],
   },
   {
-    label: "Referral Clients",
+    labelKey: "referralClients",
     href: "/admin/referral-clients",
     icon: "⇄",
     roles: ["super_admin"],
   },
   {
-    label: "Brokers",
+    labelKey: "brokers",
     href: "/admin/brokers",
     icon: "⛁",
     roles: ["super_admin", "broker"],
   },
   {
-    label: "Ad Placements",
+    labelKey: "adPlacements",
     href: "/admin/ads-placements",
     icon: "▤",
     roles: ["super_admin", "broker"],
   },
   {
-    label: "SEO",
+    labelKey: "seo",
     href: "/admin/seo",
     icon: "◇",
     roles: ["super_admin", "editor"],
   },
   {
-    label: "Media",
+    labelKey: "media",
     href: "/admin/media",
     icon: "▨",
     roles: ["super_admin", "editor"],
   },
   {
-    label: "Reports",
+    labelKey: "reports",
     href: "/admin/reports",
     icon: "▣",
     roles: ["super_admin", "broker"],
   },
   {
-    label: "Referrals",
+    labelKey: "referrals",
     href: "/admin/referrals",
     icon: "⇄",
     roles: ["client"],
   },
   {
-    label: "Account",
+    labelKey: "account",
     href: "/admin/account",
     icon: "◍",
     roles: ["super_admin", "editor", "broker"],
   },
-];
+] as const;
 
 const Layout = ({ children, className }: ILayoutProps) => {
+  const t = useTranslations("admin");
+  const tNav = useTranslations("admin.nav");
+  const tRoles = useTranslations("admin.roles");
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const role = user?.role || "";
-  const filteredNav = navItems.filter((item) => item.roles.includes(role));
+  const filteredNav = navItems.filter((item) => (item.roles as readonly string[]).includes(role));
+  const KNOWN_ROLES = ["super_admin", "editor", "broker", "client"] as const;
+  const roleLabel = (r: string) =>
+    (KNOWN_ROLES as readonly string[]).includes(r) ? tRoles(r as (typeof KNOWN_ROLES)[number]) : r;
 
   const toggleSidebar = useCallback(
     () => setIsSidebarOpen((prev) => !prev),
@@ -106,9 +106,14 @@ const Layout = ({ children, className }: ILayoutProps) => {
 
   const getTitle = () => {
     if (!pathname) return "";
+    // Prefer the current nav item's translated label so the page title
+    // always matches the sidebar link, rather than title-casing the raw
+    // (English, untranslated) URL segment.
+    const match = navItems.find((item) => pathname === item.href || pathname.startsWith(item.href + "/"));
+    if (match) return tNav(match.labelKey);
     const segs = pathname.split("/").filter(Boolean);
     const last = segs[segs.length - 1];
-    if (!last || last === "admin") return "Dashboard";
+    if (!last || last === "admin") return t("dashboard");
     return last
       .split("-")
       .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
@@ -150,7 +155,7 @@ const Layout = ({ children, className }: ILayoutProps) => {
             </button>
           </div>
 
-          <div className={style.roleBadge}>{roleLabels[role] || role}</div>
+          <div className={style.roleBadge}>{roleLabel(role)}</div>
 
           <nav className={style.nav}>
             <ul className={style.navList}>
@@ -168,7 +173,7 @@ const Layout = ({ children, className }: ILayoutProps) => {
                       onClick={() => setIsSidebarOpen(false)}
                     >
                       <span className={style.navIcon}>{item.icon}</span>
-                      <span className={style.navLabel}>{item.label}</span>
+                      <span className={style.navLabel}>{tNav(item.labelKey)}</span>
                     </Link>
                   </li>
                 );
@@ -184,12 +189,12 @@ const Layout = ({ children, className }: ILayoutProps) => {
               <span className={style.userName}>
                 {user?.name || user?.email}
               </span>
-              <span className={style.userRole}>{roleLabels[role]}</span>
+              <span className={style.userRole}>{roleLabel(role)}</span>
             </div>
             <button
               className={style.logoutBtn}
               onClick={logout}
-              title="Sign out"
+              title={t("signOut")}
             >
               →
             </button>
@@ -203,7 +208,7 @@ const Layout = ({ children, className }: ILayoutProps) => {
             <button
               className={style.menuBtn}
               onClick={toggleSidebar}
-              aria-label="Menu"
+              aria-label={t("menu")}
             >
               <span />
               <span />
@@ -212,11 +217,12 @@ const Layout = ({ children, className }: ILayoutProps) => {
             <h1 className={style.pageTitle}>{getTitle()}</h1>
           </div>
           <div className={style.topbarRight}>
+            <LanguageSwitcher />
             {role === "super_admin" && <NotificationBell />}
             <button
               className={style.themeToggle}
               onClick={toggleTheme}
-              aria-label="Toggle theme"
+              aria-label={t("toggleTheme")}
             >
               {theme === "dark" ? "☀︎" : "☽"}
             </button>

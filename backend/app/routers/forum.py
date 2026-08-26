@@ -8,6 +8,7 @@ from fastapi import (
     Form,
     HTTPException,
     Query,
+    Request,
     UploadFile,
     status,
 )
@@ -30,6 +31,8 @@ from app.schemas.forum import (
 from app.schemas.user import ADMIN_ROLES
 from app.utils.auth import get_current_user
 from app.utils.forum_stats import get_reply_count_lookup
+from app.utils.geo import detect_region, extract_client_ip
+from app.utils.translate import detect_locale, translate_fields
 from app.models.user import User
 
 router = APIRouter(prefix="/forum", tags=["forum"])
@@ -91,12 +94,20 @@ def get_uploaded_image(filename: str):
 
 @router.get("/threads", response_model=List[ForumThread])
 def list_threads(
+    request: Request,
     category: Optional[str] = Query(None, description="Filter by category"),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
 ):
-    """Public — paginated list of threads, pinned first, then newest."""
+    """Public — paginated list of threads, pinned first, then newest.
+    Machine-translated into the visitor's detected locale (not cached in
+    public_cache like public.py's endpoints, so this always hits the DB —
+    translation is still cheap on repeat requests via the persistent
+    translation cache)."""
+    country_code, region = detect_region(extract_client_ip(request))
+    locale = detect_locale(request, country_code)
+
     q = db.query(ForumThreadModel)
     if category:
         q = q.filter(ForumThreadModel.category == category)
@@ -112,12 +123,19 @@ def list_threads(
     counts = get_reply_count_lookup(db, [thread.id for thread in threads])
     for thread in threads:
         thread.reply_count = counts.get(thread.id, 0)
-    return threads
+    return [
+        translate_fields(db, ForumThread.model_validate(t).model_dump(), ["title", "body"], locale)
+        for t in threads
+    ]
 
 
 @router.get("/threads/{thread_id}", response_model=ForumThreadDetail)
-def get_thread(thread_id: str, db: Session = Depends(get_db)):
-    """Public — single thread with all replies."""
+def get_thread(thread_id: str, request: Request, db: Session = Depends(get_db)):
+    """Public — single thread with all replies, machine-translated into the
+    visitor's detected locale."""
+    country_code, region = detect_region(extract_client_ip(request))
+    locale = detect_locale(request, country_code)
+
     thread = db.query(ForumThreadModel).filter(ForumThreadModel.id == thread_id).first()
     if not thread:
         raise HTTPException(status_code=404, detail="Thread not found")
@@ -130,7 +148,10 @@ def get_thread(thread_id: str, db: Session = Depends(get_db)):
     thread.reply_count = len(replies)
     result = ForumThreadDetail.model_validate(thread)
     result.replies = [ForumReply.model_validate(r) for r in replies]
-    return result
+
+    data = translate_fields(db, result.model_dump(), ["title", "body"], locale)
+    data["replies"] = [translate_fields(db, r, ["body"], locale) for r in data["replies"]]
+    return data
 
 
 @router.post(

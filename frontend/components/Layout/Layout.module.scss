@@ -17,7 +17,7 @@
   width: 0;
   overflow: hidden;
   background-color: var(--bg-sidebar);
-  border-right: 1px solid rgba(255, 255, 255, 0.04);
+  border-inline-end: 1px solid rgba(255, 255, 255, 0.04);
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   height: 100vh;
   position: sticky;
@@ -28,12 +28,18 @@
   &.open {
     width: 260px;
     box-shadow: 4px 0 32px rgba(0, 0, 0, 0.4);
+
+    // box-shadow has no logical-property equivalent, so RTL needs an
+    // explicit override to flip the shadow to the sidebar's other side.
+    :global([dir="rtl"]) & {
+      box-shadow: -4px 0 32px rgba(0, 0, 0, 0.4);
+    }
   }
 
   @media (max-width: 768px) {
     position: fixed;
     top: 0;
-    left: 0;
+    inset-inline-start: 0;
     height: 100%;
   }
 }
@@ -108,7 +114,7 @@
   padding: 4px 10px;
   display: inline-block;
   margin-bottom: 20px;
-  margin-left: 4px;
+  margin-inline-start: 4px;
 }
 
 /* Nav */

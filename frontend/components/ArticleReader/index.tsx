@@ -1,7 +1,8 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useEffect, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import DOMPurify from "dompurify";
 import { type Article } from "@/helpers/api";
 import styles from "./ArticleReader.module.scss";
@@ -12,19 +13,14 @@ type ArticleReaderProps = {
   getArticle: (id: string) => Promise<Article>;
 };
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date(value));
-}
-
 export default function ArticleReader({
   section,
   articleId,
   getArticle,
 }: ArticleReaderProps) {
+  const t = useTranslations("articleReader");
+  const tNav = useTranslations("nav");
+  const locale = useLocale();
   const [article, setArticle] = useState<Article | null>(null);
   const [error, setError] = useState("");
 
@@ -33,33 +29,36 @@ export default function ArticleReader({
       .then(setArticle)
       .catch((err: unknown) =>
         setError(
-          err instanceof Error ? err.message : "Unable to load this article.",
+          err instanceof Error ? err.message : t("unavailableTitle"),
         ),
       );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [articleId, getArticle]);
 
-  const sectionLabel = section === "news" ? "News" : "Analysis";
+  const sectionLabel = section === "news" ? tNav("news") : tNav("analysis");
+  const formatDate = (value: string) =>
+    new Intl.DateTimeFormat(locale, { month: "long", day: "numeric", year: "numeric" }).format(new Date(value));
 
   if (error) {
     return (
       <div className={styles.message}>
-        <h1>Article unavailable</h1>
+        <h1>{t("unavailableTitle")}</h1>
         <p>{error}</p>
         <Link href={`/${section}`} className={styles.backLink}>
-          ← Back to {sectionLabel}
+          {t("backTo", { section: sectionLabel })}
         </Link>
       </div>
     );
   }
 
   if (!article) {
-    return <div className={styles.loading}>Loading article…</div>;
+    return <div className={styles.loading}>{t("loading")}</div>;
   }
 
   return (
     <article className={styles.article}>
       <Link href={`/${section}`} className={styles.backLink}>
-        ← Back to {sectionLabel}
+        {t("backTo", { section: sectionLabel })}
       </Link>
       <div className={styles.eyebrow}>
         {article.symbol
@@ -68,7 +67,7 @@ export default function ArticleReader({
       </div>
       <h1 className={styles.title}>{article.title}</h1>
       <div className={styles.meta}>
-        Published {formatDate(article.created_at)} · CBFX Editorial
+        {t("published", { date: formatDate(article.created_at) })}
       </div>
       {article.cover_image_url && (
         <img className={styles.cover} src={article.cover_image_url} alt="" />

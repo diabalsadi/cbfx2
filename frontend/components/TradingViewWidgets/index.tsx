@@ -1,7 +1,30 @@
 "use client";
 import { useEffect, useRef } from "react";
+import { useLocale } from "next-intl";
+import type { Locale } from "@/i18n/routing";
 
 type TvTheme = "light" | "dark";
+
+// TradingView's own supported widget locale codes — mostly a 1:1 match with
+// ours, except Hindi, which TradingView expects as "hi_in" rather than "hi".
+// https://www.tradingview.com/widget-docs/customization/#locales
+const TV_LOCALE: Record<Locale, string> = {
+  en: "en",
+  ar: "ar",
+  es: "es",
+  fa: "fa",
+  pt: "pt",
+  zh: "zh",
+  vi: "vi",
+  hi: "hi_in",
+};
+
+/** Maps the active app locale to a TradingView widget locale code — call
+ * from any widget component so its chart/toolbar UI matches the page. */
+function useTvLocale(): string {
+  const locale = useLocale() as Locale;
+  return TV_LOCALE[locale] ?? "en";
+}
 
 interface ScriptEmbedProps {
   scriptSrc: string;
@@ -53,13 +76,14 @@ interface WidgetProps {
 
 /** Compact single-symbol name + last price + change widget, no chart. */
 export function SingleTickerWidget({ tvSymbol, theme }: WidgetProps) {
+  const locale = useTvLocale();
   return (
     <TradingViewScriptEmbed
       scriptSrc="https://s3.tradingview.com/external-embedding/embed-widget-single-quote.js"
       config={{
         symbol: tvSymbol,
         width: "100%",
-        locale: "en",
+        locale,
         colorTheme: theme,
         isTransparent: true,
       }}
@@ -68,6 +92,7 @@ export function SingleTickerWidget({ tvSymbol, theme }: WidgetProps) {
 }
 
 export function AdvancedChartWidget({ tvSymbol, theme }: WidgetProps) {
+  const locale = useTvLocale();
   return (
     <TradingViewScriptEmbed
       scriptSrc="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js"
@@ -76,7 +101,7 @@ export function AdvancedChartWidget({ tvSymbol, theme }: WidgetProps) {
         interval: "60",
         theme,
         style: "1",
-        locale: "en",
+        locale,
         timezone: "Etc/UTC",
         allow_symbol_change: false,
         withdateranges: true,
@@ -89,6 +114,7 @@ export function AdvancedChartWidget({ tvSymbol, theme }: WidgetProps) {
 }
 
 export function TechnicalAnalysisWidget({ tvSymbol, theme }: WidgetProps) {
+  const locale = useTvLocale();
   return (
     <TradingViewScriptEmbed
       scriptSrc="https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js"
@@ -98,7 +124,7 @@ export function TechnicalAnalysisWidget({ tvSymbol, theme }: WidgetProps) {
         height: "100%",
         symbol: tvSymbol,
         showIntervalTabs: true,
-        locale: "en",
+        locale,
         colorTheme: theme,
         isTransparent: true,
       }}
@@ -107,6 +133,7 @@ export function TechnicalAnalysisWidget({ tvSymbol, theme }: WidgetProps) {
 }
 
 export function TopStoriesWidget({ tvSymbol, theme }: WidgetProps) {
+  const locale = useTvLocale();
   return (
     <TradingViewScriptEmbed
       scriptSrc="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js"
@@ -118,7 +145,7 @@ export function TopStoriesWidget({ tvSymbol, theme }: WidgetProps) {
         displayMode: "regular",
         width: "100%",
         height: "100%",
-        locale: "en",
+        locale,
       }}
     />
   );
@@ -126,6 +153,7 @@ export function TopStoriesWidget({ tvSymbol, theme }: WidgetProps) {
 
 /** Live economic/financial events calendar — not tied to a single symbol. */
 export function EconomicCalendarWidget({ theme }: { theme: TvTheme }) {
+  const locale = useTvLocale();
   return (
     <TradingViewScriptEmbed
       scriptSrc="https://s3.tradingview.com/external-embedding/embed-widget-events.js"
@@ -134,7 +162,7 @@ export function EconomicCalendarWidget({ theme }: { theme: TvTheme }) {
         height: "100%",
         colorTheme: theme,
         isTransparent: true,
-        locale: "en",
+        locale,
         importanceFilter: "-1,0,1",
       }}
     />
@@ -146,6 +174,7 @@ export function SymbolOverviewWidget({
   theme,
   displayName,
 }: WidgetProps & { displayName: string }) {
+  const locale = useTvLocale();
   return (
     <TradingViewScriptEmbed
       scriptSrc="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js"
@@ -154,7 +183,7 @@ export function SymbolOverviewWidget({
         chartOnly: false,
         width: "100%",
         height: "100%",
-        locale: "en",
+        locale,
         colorTheme: theme,
         autosize: true,
         showVolume: false,

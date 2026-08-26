@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
+import { Link } from "@/i18n/navigation";
 import { useLoginModal } from "@/contexts/LoginModalContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { publicApi, type AdBannerContent } from "@/helpers/api";
@@ -51,6 +52,7 @@ function StarIcon() {
 }
 
 export default function LoginModal() {
+  const t = useTranslations("loginModal");
   const { isOpen, closeLoginModal } = useLoginModal();
   const { login } = useAuth();
   const router = useRouter();
@@ -93,7 +95,7 @@ export default function LoginModal() {
     e.preventDefault();
     setError("");
     if (!captchaToken) {
-      setError("Please complete the captcha");
+      setError(t("completeCaptcha"));
       return;
     }
     setLoading(true);
@@ -102,7 +104,7 @@ export default function LoginModal() {
       closeLoginModal();
       router.push("/");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      setError(err instanceof Error ? err.message : t("loginFailed"));
     } finally {
       setLoading(false);
       captchaRef.current?.reset();
@@ -120,19 +122,19 @@ export default function LoginModal() {
           <button
             className={styles.closeBtn}
             onClick={closeLoginModal}
-            aria-label="Close"
+            aria-label={t("close")}
           >
             ✕
           </button>
 
           <LogoIcon />
           <h2 className={styles.title}>CBFX</h2>
-          <p className={styles.subtitle}>Sign in to your account</p>
+          <p className={styles.subtitle}>{t("signInToAccount")}</p>
 
           <form onSubmit={handleSubmit} className={styles.form}>
             <div className={styles.field}>
               <label className={styles.label} htmlFor="modal-email">
-                Email
+                {t("email")}
               </label>
               <input
                 id="modal-email"
@@ -148,10 +150,10 @@ export default function LoginModal() {
             <div className={styles.field}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <label className={styles.label} htmlFor="modal-password">
-                  Password
+                  {t("password")}
                 </label>
                 <Link href="/forgot-password" className={styles.link} style={{ fontSize: "12px" }} onClick={closeLoginModal}>
-                  Forgot password?
+                  {t("forgotPassword")}
                 </Link>
               </div>
               <input
@@ -175,18 +177,18 @@ export default function LoginModal() {
               className={styles.signInBtn}
               disabled={loading}
             >
-              {loading ? "Signing in…" : "Sign In"}
+              {loading ? t("signingIn") : t("signIn")}
             </button>
           </form>
 
           <p className={styles.footer}>
-            Don&apos;t have an account?{" "}
+            {t("noAccount")}{" "}
             <Link
               href="/register"
               className={styles.link}
               onClick={closeLoginModal}
             >
-              Sign up
+              {t("signUp")}
             </Link>
           </p>
         </div>
@@ -195,7 +197,7 @@ export default function LoginModal() {
         {banner && (
           <div className={styles.brokerCard}>
             <div className={styles.brokerCardTop}>
-              <span className={styles.featuredLabel}>FEATURED BROKER</span>
+              <span className={styles.featuredLabel}>{t("featuredBroker")}</span>
               <span className={styles.sponsoredLabel}>{banner.badge_text}</span>
             </div>
 
@@ -239,7 +241,7 @@ export default function LoginModal() {
 
             <div className={styles.brokerCta}>
               <a href={banner.link_url || "#"} className={styles.openAccountBtn}>
-                {banner.cta_label || "Open account"} ↗
+                {banner.cta_label || t("openAccount")} ↗
               </a>
               {banner.disclaimer && <p className={styles.disclaimer}>{banner.disclaimer}</p>}
             </div>

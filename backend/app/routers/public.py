@@ -18,15 +18,28 @@ from app.models.forum_reply import ForumReply
 from app.models.forum_thread import ForumThread
 from app.schemas.article import Article as ArticleSchema
 from app.utils.geo import detect_region, extract_client_ip
+from app.utils.translate import detect_locale, translate_fields
 from app.utils.forum_stats import get_reply_count_lookup
 from app.utils.cache import public_cache, PUBLIC_CACHE_TTL_SECONDS
+
+# Article fields that carry human-readable copy, translated on read for
+# every /public/articles and /public/analysis endpoint below (both operate on
+# the Article model — "analysis" is just an article_type, not a separate
+# table).
+ARTICLE_TRANSLATE_FIELDS = ["title", "content", "excerpt", "meta_title", "meta_description", "meta_keywords"]
+# Ad banner fields translated on read wherever banner content is resolved.
+AD_BANNER_TRANSLATE_FIELDS = ["sponsor_name", "description", "badge_text", "cta_label", "features", "disclaimer"]
 
 router = APIRouter(prefix="/public", tags=["public"])
 
 
 @router.get("/articles", response_model=List[ArticleSchema])
-def list_published_articles(db: Session = Depends(get_db)):
-    """Public — returns only published news articles."""
+def list_published_articles(request: Request, db: Session = Depends(get_db)):
+    """Public — returns only published news articles, machine-translated
+    into the visitor's detected locale (English content is cached and
+    reused as-is across every locale's requests)."""
+    country_code, region = detect_region(extract_client_ip(request))
+    locale = detect_locale(request, country_code)
 
     def compute():
         rows = (
@@ -41,12 +54,16 @@ def list_published_articles(db: Session = Depends(get_db)):
         # ORM objects.
         return [ArticleSchema.model_validate(a) for a in rows]
 
-    return public_cache.get_or_set("public:articles:news", PUBLIC_CACHE_TTL_SECONDS, compute)
+    articles = public_cache.get_or_set("public:articles:news", PUBLIC_CACHE_TTL_SECONDS, compute)
+    return [translate_fields(db, a.model_dump(), ARTICLE_TRANSLATE_FIELDS, locale) for a in articles]
 
 
 @router.get("/articles/{article_id}", response_model=ArticleSchema)
-def get_published_article(article_id: str, db: Session = Depends(get_db)):
-    """Public — returns one published news article."""
+def get_published_article(article_id: str, request: Request, db: Session = Depends(get_db)):
+    """Public — returns one published news article, machine-translated into
+    the visitor's detected locale."""
+    country_code, region = detect_region(extract_client_ip(request))
+    locale = detect_locale(request, country_code)
 
     def compute():
         article = (
@@ -63,12 +80,15 @@ def get_published_article(article_id: str, db: Session = Depends(get_db)):
     result = public_cache.get_or_set(f"public:articles:news:{article_id}", PUBLIC_CACHE_TTL_SECONDS, compute)
     if not result:
         raise HTTPException(status_code=404, detail="Article not found")
-    return result
+    return translate_fields(db, result.model_dump(), ARTICLE_TRANSLATE_FIELDS, locale)
 
 
 @router.get("/analysis", response_model=List[ArticleSchema])
-def list_published_analysis(db: Session = Depends(get_db)):
-    """Public — returns only published articles with article_type='analysis'."""
+def list_published_analysis(request: Request, db: Session = Depends(get_db)):
+    """Public — returns only published articles with article_type='analysis',
+    machine-translated into the visitor's detected locale."""
+    country_code, region = detect_region(extract_client_ip(request))
+    locale = detect_locale(request, country_code)
 
     def compute():
         rows = (
@@ -79,12 +99,16 @@ def list_published_analysis(db: Session = Depends(get_db)):
         )
         return [ArticleSchema.model_validate(a) for a in rows]
 
-    return public_cache.get_or_set("public:articles:analysis", PUBLIC_CACHE_TTL_SECONDS, compute)
+    articles = public_cache.get_or_set("public:articles:analysis", PUBLIC_CACHE_TTL_SECONDS, compute)
+    return [translate_fields(db, a.model_dump(), ARTICLE_TRANSLATE_FIELDS, locale) for a in articles]
 
 
 @router.get("/analysis/{article_id}", response_model=ArticleSchema)
-def get_published_analysis(article_id: str, db: Session = Depends(get_db)):
-    """Public — returns one published analysis article."""
+def get_published_analysis(article_id: str, request: Request, db: Session = Depends(get_db)):
+    """Public — returns one published analysis article, machine-translated
+    into the visitor's detected locale."""
+    country_code, region = detect_region(extract_client_ip(request))
+    locale = detect_locale(request, country_code)
 
     def compute():
         article = (
@@ -101,7 +125,7 @@ def get_published_analysis(article_id: str, db: Session = Depends(get_db)):
     result = public_cache.get_or_set(f"public:articles:analysis:{article_id}", PUBLIC_CACHE_TTL_SECONDS, compute)
     if not result:
         raise HTTPException(status_code=404, detail="Article not found")
-    return result
+    return translate_fields(db, result.model_dump(), ARTICLE_TRANSLATE_FIELDS, locale)
 
 
 def _covers_visitor(broker: Broker, country_code: Optional[str], region: Optional[str]) -> bool:
@@ -124,6 +148,10 @@ def list_brokers(request: Request, db: Session = Depends(get_db)):
     """Public — returns active brokers whose coverage includes the visitor's
     detected region/country (via best-effort IP geolocation)."""
     country_code, region = detect_region(extract_client_ip(request))
+    # Locale is resolved for consistency with the other public endpoints, but
+    # deliberately unused below: Broker.name is a proper noun/brand name (not
+    # translatable copy), and there's no description field on Broker today.
+    _ = detect_locale(request, country_code)
 
     def compute():
         brokers = (
@@ -150,11 +178,15 @@ def list_brokers(request: Request, db: Session = Depends(get_db)):
 
 
 @router.get("/seo/settings")
-def get_public_seo_settings(db: Session = Depends(get_db)):
+def get_public_seo_settings(request: Request, db: Session = Depends(get_db)):
     """Public — sitewide SEO settings (verification codes, default social
     share fallbacks), fetched once by the root layout's generateMetadata()
     and merged into every page. Missing settings return an all-null object
-    rather than 404, same reasoning as get_seo_meta below."""
+    rather than 404, same reasoning as get_seo_meta below. Translatable
+    fields are machine-translated into the visitor's detected locale."""
+    country_code, region = detect_region(extract_client_ip(request))
+    locale = detect_locale(request, country_code)
+
     def compute():
         settings = db.query(SeoSettings).filter(SeoSettings.id == "global").first()
         if not settings:
@@ -181,21 +213,28 @@ def get_public_seo_settings(db: Session = Depends(get_db)):
             "default_keywords": settings.default_keywords,
         }
 
-    return public_cache.get_or_set("public:seo:settings", PUBLIC_CACHE_TTL_SECONDS, compute)
+    settings = public_cache.get_or_set("public:seo:settings", PUBLIC_CACHE_TTL_SECONDS, compute)
+    return translate_fields(
+        db, settings, ["default_share_title", "default_share_description", "default_keywords"], locale
+    )
 
 
 # Declared ahead so "settings" above is never mistaken for a route key by
 # this catch-all.
 @router.get("/seo/{route}")
-def get_seo_meta(route: str, sub_key: Optional[str] = None, db: Session = Depends(get_db)):
+def get_seo_meta(route: str, request: Request, sub_key: Optional[str] = None, db: Session = Depends(get_db)):
     """Public — server-side metadata for one route (optionally a specific
     sub-item, e.g. one market symbol), fetched by the frontend's
     generateMetadata(). Falls back from a sub_key-specific override to the
     route's generic template, and returns null (not 404) if neither is
-    configured, so a page never fails to render over missing SEO copy."""
+    configured, so a page never fails to render over missing SEO copy.
+    Translatable fields are machine-translated into the visitor's detected
+    locale."""
     if route not in SEO_ROUTES:
         return None
     sub_key = (sub_key or "").strip()
+    country_code, region = detect_region(extract_client_ip(request))
+    locale = detect_locale(request, country_code)
 
     def compute():
         seo = None
@@ -218,7 +257,10 @@ def get_seo_meta(route: str, sub_key: Optional[str] = None, db: Session = Depend
             "robots": seo.robots,
         }
 
-    return public_cache.get_or_set(f"public:seo:{route}:{sub_key}", PUBLIC_CACHE_TTL_SECONDS, compute)
+    seo = public_cache.get_or_set(f"public:seo:{route}:{sub_key}", PUBLIC_CACHE_TTL_SECONDS, compute)
+    if not seo:
+        return None
+    return translate_fields(db, seo, ["title", "description", "keywords", "og_title", "og_description"], locale)
 
 
 def _banner_content(b: AdBanner) -> dict:
@@ -268,13 +310,19 @@ def _resolve_ad_banners(
 def get_ad_banners(page: str, request: Request, db: Session = Depends(get_db)):
     """Public — resolves active banner ad content for any ad-placement page
     (e.g. "signin"), scoped to the visitor's detected region/country. Pages
-    with no configured banners return an empty object."""
+    with no configured banners return an empty object. Banner copy is
+    machine-translated into the visitor's detected locale."""
     country_code, region = detect_region(extract_client_ip(request))
-    return public_cache.get_or_set(
+    locale = detect_locale(request, country_code)
+    banners = public_cache.get_or_set(
         f"public:ad-banners:{page}:{country_code}:{region}",
         PUBLIC_CACHE_TTL_SECONDS,
         lambda: _resolve_ad_banners(db, page, country_code, region),
     )
+    return {
+        slot: translate_fields(db, content, AD_BANNER_TRANSLATE_FIELDS, locale)
+        for slot, content in banners.items()
+    }
 
 
 def _compute_homepage(db: Session, country_code: Optional[str], region: Optional[str]) -> dict:
@@ -421,15 +469,46 @@ def _compute_homepage(db: Session, country_code: Optional[str], region: Optional
     }
 
 
+def _translate_homepage(db: Session, homepage: dict, locale: str) -> dict:
+    """Translates the copy fields of a _compute_homepage() payload into
+    `locale`, without mutating `homepage` itself — that object lives inside
+    public_cache and is reused for every locale's requests during its TTL
+    window. market_prices, top_traders, open_plays, and broker_sections carry
+    no translatable copy (broker name is a proper noun, same reasoning as
+    /public/brokers) and pass through untouched."""
+    if locale == "en":
+        return homepage
+    return {
+        **homepage,
+        "latest_news": [
+            translate_fields(db, n, ["title", "excerpt"], locale) for n in homepage["latest_news"]
+        ],
+        "latest_analysis": [
+            translate_fields(db, a, ["summary"], locale) for a in homepage["latest_analysis"]
+        ],
+        "recent_threads": [
+            translate_fields(db, t, ["title"], locale) for t in homepage["recent_threads"]
+        ],
+        "ad_banners": {
+            slot: translate_fields(db, content, AD_BANNER_TRANSLATE_FIELDS, locale)
+            for slot, content in homepage["ad_banners"].items()
+        },
+    }
+
+
 @router.get("/homepage")
 def homepage_aggregate(request: Request, db: Session = Depends(get_db)):
     """Public — single call that returns all data needed to render the
     homepage. See _compute_homepage() for what it contains; cached briefly
     per (country_code, region) since it's identical for every anonymous
-    visitor in the same location."""
+    visitor in the same location. Copy fields are machine-translated into
+    the visitor's detected locale as a post-processing step on top of that
+    cache, itself backed by the persistent translation cache."""
     country_code, region = detect_region(extract_client_ip(request))
-    return public_cache.get_or_set(
+    locale = detect_locale(request, country_code)
+    homepage = public_cache.get_or_set(
         f"public:homepage:{country_code}:{region}",
         PUBLIC_CACHE_TTL_SECONDS,
         lambda: _compute_homepage(db, country_code, region),
     )
+    return _translate_homepage(db, homepage, locale)

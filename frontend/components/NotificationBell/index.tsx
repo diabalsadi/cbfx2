@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { notificationsApi, type NotificationItem } from "@/helpers/api";
 import styles from "./NotificationBell.module.scss";
 

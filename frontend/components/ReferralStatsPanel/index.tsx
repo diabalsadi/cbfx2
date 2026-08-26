@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
+import { useLocale, useTranslations } from "next-intl";
 import type { ReferralStats } from "@/helpers/api";
 import { chartSx } from "@/helpers/chartTheme";
 import ChartThemeProvider from "@/components/ChartThemeProvider";
@@ -23,6 +24,8 @@ interface ReferralStatsPanelProps {
 }
 
 export default function ReferralStatsPanel({ referralCode, stats, loading, error }: ReferralStatsPanelProps) {
+  const t = useTranslations("referrals.panel");
+  const locale = useLocale();
   const [range, setRange] = useState<Range>("weekly");
   const [copied, setCopied] = useState(false);
   const [origin, setOrigin] = useState("");
@@ -58,17 +61,17 @@ export default function ReferralStatsPanel({ referralCode, stats, loading, error
       {error && <p className={styles.error}>{error}</p>}
 
       <div className={styles.card}>
-        <h2 className={styles.cardTitle}>Your Referral Link</h2>
+        <h2 className={styles.cardTitle}>{t("yourLink")}</h2>
         <div className={styles.field}>
-          <label className={styles.label}>Referral Code</label>
+          <label className={styles.label}>{t("referralCode")}</label>
           <input className={styles.input} value={referralCode || "—"} disabled readOnly />
         </div>
         <div className={styles.field}>
-          <label className={styles.label}>Shareable Link</label>
+          <label className={styles.label}>{t("shareableLink")}</label>
           <div className={styles.linkRow}>
             <input className={styles.input} value={referralLink} disabled readOnly />
             <button className={styles.copyBtn} onClick={handleCopy} disabled={!referralLink}>
-              {copied ? "Copied!" : "Copy"}
+              {copied ? t("copied") : t("copy")}
             </button>
           </div>
         </div>
@@ -76,29 +79,29 @@ export default function ReferralStatsPanel({ referralCode, stats, loading, error
 
       <div className={styles.statsGrid}>
         <div className={styles.statCard}>
-          <span className={styles.statLabel}>Total Referred</span>
+          <span className={styles.statLabel}>{t("totalReferred")}</span>
           <span className={styles.statValue}>
-            {loading ? "—" : (stats?.total ?? 0).toLocaleString("en-US")}
+            {loading ? "—" : (stats?.total ?? 0).toLocaleString(locale)}
           </span>
-          <span className={styles.statSub}>People who signed up with your code</span>
+          <span className={styles.statSub}>{t("totalReferredSub")}</span>
         </div>
       </div>
 
       <div className={styles.card}>
         <div className={styles.sectionHeader}>
-          <h2 className={styles.cardTitle}>Referrals over time</h2>
+          <h2 className={styles.cardTitle}>{t("overTime")}</h2>
           <div className={styles.rangeToggle}>
             <button
               className={range === "weekly" ? styles.rangeBtnActive : styles.rangeBtn}
               onClick={() => setRange("weekly")}
             >
-              Week
+              {t("week")}
             </button>
             <button
               className={range === "monthly" ? styles.rangeBtnActive : styles.rangeBtn}
               onClick={() => setRange("monthly")}
             >
-              Month
+              {t("month")}
             </button>
           </div>
         </div>
@@ -116,13 +119,13 @@ export default function ReferralStatsPanel({ referralCode, stats, loading, error
       </div>
 
       <div className={styles.card}>
-        <h2 className={styles.cardTitle}>By Country</h2>
+        <h2 className={styles.cardTitle}>{t("byCountry")}</h2>
         {!loading && countryData.length > 0 ? (
           <ChartThemeProvider>
             <PieChart series={[{ data: countryData, innerRadius: 40 }]} height={260} sx={chartSx} />
           </ChartThemeProvider>
         ) : (
-          !loading && <p className={styles.hint}>No referred signups yet.</p>
+          !loading && <p className={styles.hint}>{t("noneYet")}</p>
         )}
       </div>
     </div>

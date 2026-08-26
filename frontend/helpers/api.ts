@@ -1,16 +1,32 @@
 import { withDebugIp } from './debugIp';
 import type { SeoRoute } from './seo';
+import { locales } from '@/i18n/routing';
 
 const BASE = '/api/proxy';
+
+// The active locale lives in the URL path (e.g. /ar/markets), not in any
+// client state — reading it straight from window.location keeps apiFetch a
+// plain function callable from anywhere, with no provider/hook plumbing
+// needed at every call site. Server-side callers (generateMetadata, etc.)
+// have no window and fall back to no header, which the backend's
+// detect_locale() treats the same as an unset/unsupported locale — the
+// visitor's IP-geolocation default.
+function currentLocale(): string | null {
+  if (typeof window === 'undefined') return null;
+  const first = window.location.pathname.split('/')[1];
+  return (locales as readonly string[]).includes(first) ? first : null;
+}
 
 export async function apiFetch<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('cbfx_token') : null;
+  const locale = currentLocale();
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    ...(locale ? { 'X-Locale': locale } : {}),
     ...(options.headers as Record<string, string> || {}),
   };
 

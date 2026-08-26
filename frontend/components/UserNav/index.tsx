@@ -1,25 +1,26 @@
 "use client";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Link, usePathname } from "@/i18n/navigation";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useLoginModal } from "@/contexts/LoginModalContext";
 import { useAuth } from "@/contexts/AuthContext";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import styles from "./UserNav.module.scss";
 import cx from "classnames";
 import { useState } from "react";
 
 const navItems = [
-  { label: "Home", href: "/" },
-  { label: "Markets", href: "/markets" },
-  { label: "Brokers", href: "/brokers" },
-  { label: "Copy Trading", href: "/copy-trading" },
-  { label: "Plays", href: "/plays" },
-  { label: "Analysis", href: "/analysis" },
-  { label: "News", href: "/news" },
-  { label: "Calendar", href: "/calendar" },
-  { label: "Forum", href: "/forum" },
-  { label: "Cashback", href: "/cashback" },
-];
+  { labelKey: "home", href: "/" },
+  { labelKey: "markets", href: "/markets" },
+  { labelKey: "brokers", href: "/brokers" },
+  { labelKey: "copyTrading", href: "/copy-trading" },
+  { labelKey: "plays", href: "/plays" },
+  { labelKey: "analysis", href: "/analysis" },
+  { labelKey: "news", href: "/news" },
+  { labelKey: "calendar", href: "/calendar" },
+  { labelKey: "forum", href: "/forum" },
+  { labelKey: "cashback", href: "/cashback" },
+] as const;
 
 function LogoIcon() {
   return (
@@ -38,6 +39,7 @@ function LogoIcon() {
 }
 
 export default function UserNav() {
+  const t = useTranslations("nav");
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
   const { openLoginModal } = useLoginModal();
@@ -54,7 +56,7 @@ export default function UserNav() {
           <button
             className={styles.menuBtn}
             onClick={() => setMobileOpen((o) => !o)}
-            aria-label="Menu"
+            aria-label={t("menu")}
           >
             <span />
             <span />
@@ -75,16 +77,17 @@ export default function UserNav() {
                   [styles.active]: isActive(item.href),
                 })}
               >
-                {item.label}
+                {t(item.labelKey)}
               </Link>
             ))}
           </nav>
 
           <div className={styles.actions}>
+            <LanguageSwitcher />
             <button
               className={styles.themeBtn}
               onClick={toggleTheme}
-              aria-label="Toggle theme"
+              aria-label={t("toggleTheme")}
             >
               {theme === "dark" ? "☀︎" : "☽"}
             </button>
@@ -92,23 +95,23 @@ export default function UserNav() {
               <>
                 {user.role === "client" && (
                   <Link href="/referrals" className={styles.signIn}>
-                    Referrals
+                    {t("referrals")}
                   </Link>
                 )}
                 <Link href="/account" className={styles.signIn}>
-                  Account
+                  {t("account")}
                 </Link>
                 <button className={styles.signIn} onClick={logout}>
-                  Sign out
+                  {t("signOut")}
                 </button>
               </>
             ) : (
               <>
                 <button className={styles.signIn} onClick={openLoginModal}>
-                  Sign in
+                  {t("signIn")}
                 </button>
                 <button className={styles.getStarted} onClick={openLoginModal}>
-                  Get started
+                  {t("getStarted")}
                 </button>
               </>
             )}
@@ -118,6 +121,9 @@ export default function UserNav() {
 
       {mobileOpen && (
         <nav className={styles.mobileMenu}>
+          <div className={styles.mobileLangRow}>
+            <LanguageSwitcher />
+          </div>
           {navItems.map((item) => (
             <Link
               key={item.href}
@@ -125,7 +131,7 @@ export default function UserNav() {
               className={cx({ [styles.active]: isActive(item.href) })}
               onClick={() => setMobileOpen(false)}
             >
-              {item.label}
+              {t(item.labelKey)}
             </Link>
           ))}
           {user ? (
@@ -136,7 +142,7 @@ export default function UserNav() {
                   className={cx({ [styles.active]: isActive("/referrals") })}
                   onClick={() => setMobileOpen(false)}
                 >
-                  Referrals
+                  {t("referrals")}
                 </Link>
               )}
               <Link
@@ -144,7 +150,7 @@ export default function UserNav() {
                 className={cx({ [styles.active]: isActive("/account") })}
                 onClick={() => setMobileOpen(false)}
               >
-                Account
+                {t("account")}
               </Link>
               <button
                 className={styles.mobileSignIn}
@@ -153,7 +159,7 @@ export default function UserNav() {
                   logout();
                 }}
               >
-                Sign out
+                {t("signOut")}
               </button>
             </>
           ) : (
@@ -164,7 +170,7 @@ export default function UserNav() {
                 openLoginModal();
               }}
             >
-              Sign in
+              {t("signIn")}
             </button>
           )}
         </nav>
