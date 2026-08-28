@@ -132,8 +132,12 @@ export interface PublicBroker {
   status: string;
 }
 
+// Exactly one of category/symbol — a category-level rate, or an exact-symbol
+// override. rate is $ per lot, NOT the same units as Broker.cashback_rate
+// (a separate headline %). See METAAPI_INTEGRATION_ARCHITECTURE.md §5/§6.
 export interface InstrumentCashback {
-  symbol: string;
+  category: string | null;
+  symbol: string | null;
   rate: number;
 }
 
@@ -168,8 +172,11 @@ export interface MT5Account {
   broker_name: string;
   broker_img_src: string | null;
   mt5_number: string;
+  account_type: string | null;
   balance: number;
   lifetime_earned: number;
+  // "not_connected" | "pending" | "deployed" | "connected" | "error"
+  metaapi_connection_status: string;
   created_at: string;
 }
 
@@ -535,6 +542,9 @@ export interface ReferralBucket {
 
 export interface ReferralStats {
   total: number;
+  // Referred users with a MetaApi-verified MT5 account at a cashback-eligible
+  // broker (subset of total) — see backend/app/utils/active_users.py.
+  active: number;
   by_country: Record<string, number>;
   weekly: ReferralBucket[];
   monthly: ReferralBucket[];
@@ -545,6 +555,7 @@ export interface ClientReferralSummary {
   client_name: string | null;
   referral_code: string | null;
   total: number;
+  active: number;
 }
 
 export interface AdminReferralStats extends ReferralStats {
@@ -580,9 +591,64 @@ export const visitsApi = {
 
 export const mt5AccountsApi = {
   listMine: () => api.get<MT5Account[]>('/mt5-accounts/me'),
-  create: (payload: { broker_id: string; mt5_number: string }) =>
-    api.post<MT5Account>('/mt5-accounts/', payload),
+  create: (payload: {
+    broker_id: string;
+    mt5_number: string;
+    server: string;
+    platform: 'mt4' | 'mt5';
+    investor_password: string;
+    account_type?: string;
+  }) => api.post<MT5Account>('/mt5-accounts/', payload),
   listTransactions: () => api.get<WalletTransaction[]>('/mt5-accounts/me/transactions'),
+  activeCount: () => api.get<{ active_users: number }>('/mt5-accounts/active-count'),
+};
+
+// Admin-managed symbol -> instrument-category mapping, used by the
+// (not-yet-built) rebate calculation step to resolve a traded symbol like
+// "XAUUSDm" to a category ("metals") for pricing against
+// Broker.account_types[].cashback. See METAAPI_INTEGRATION_ARCHITECTURE.md §5/§11.
+export interface SymbolCategory {
+  id: string;
+  symbol: string;
+  category: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export const symbolCategoriesApi = {
+  list: () => api.get<SymbolCategory[]>('/symbol-categories'),
+  create: (payload: { symbol: string; category: string }) =>
+    api.post<SymbolCategory>('/symbol-categories', payload),
+  update: (id: string, payload: { category: string }) =>
+    api.put<SymbolCategory>(`/symbol-categories/${id}`, payload),
+  remove: (id: string) => api.delete(`/symbol-categories/${id}`),
+};
+
+// One MT5 account with priced-but-unsettled cashback trades — expected_amount
+// is a reference figure only, nothing has been credited yet. See
+// METAAPI_INTEGRATION_ARCHITECTURE.md §6 (expected vs. actual, decided 2026-08-29).
+export interface PendingRebatePayout {
+  mt5_account_id: string;
+  user_email: string;
+  mt5_number: string;
+  broker_name: string;
+  expected_amount: number;
+  trade_count: number;
+}
+
+export interface RebatePayout {
+  id: string;
+  mt5_account_id: string;
+  expected_amount: number;
+  actual_amount: number;
+  trade_count: number;
+  note: string | null;
+}
+
+export const rebatePayoutsApi = {
+  listPending: () => api.get<PendingRebatePayout[]>('/rebate-payouts/pending'),
+  issue: (payload: { mt5_account_id: string; actual_amount: number; note?: string }) =>
+    api.post<RebatePayout>('/rebate-payouts', payload),
 };
 
 export interface SeoMetaUpsert {

@@ -40,15 +40,18 @@ function daysAgoISO(n: number): string {
 const MOCK_ACCOUNTS: MT5Account[] = [
   {
     id: "mock-1", broker_id: "mock-ic", broker_name: "IC Markets", broker_img_src: null,
-    mt5_number: "50219384", balance: 128.40, lifetime_earned: 512.90, created_at: daysAgoISO(120),
+    mt5_number: "50219384", account_type: null, balance: 128.40, lifetime_earned: 512.90,
+    metaapi_connection_status: "connected", created_at: daysAgoISO(120),
   },
   {
     id: "mock-2", broker_id: "mock-xm", broker_name: "XM Global", broker_img_src: null,
-    mt5_number: "88213765", balance: 54.10, lifetime_earned: 289.20, created_at: daysAgoISO(90),
+    mt5_number: "88213765", account_type: null, balance: 54.10, lifetime_earned: 289.20,
+    metaapi_connection_status: "connected", created_at: daysAgoISO(90),
   },
   {
     id: "mock-3", broker_id: "mock-pep", broker_name: "Pepperstone", broker_img_src: null,
-    mt5_number: "91345612", balance: 76.90, lifetime_earned: 198.50, created_at: daysAgoISO(60),
+    mt5_number: "91345612", account_type: null, balance: 76.90, lifetime_earned: 198.50,
+    metaapi_connection_status: "connected", created_at: daysAgoISO(60),
   },
 ];
 
@@ -72,6 +75,9 @@ function AddAccountModal({
   const [brokersLoading, setBrokersLoading] = useState(true);
   const [brokerId, setBrokerId] = useState("");
   const [mt5Number, setMt5Number] = useState("");
+  const [server, setServer] = useState("");
+  const [platform, setPlatform] = useState<"mt5" | "mt4">("mt5");
+  const [investorPassword, setInvestorPassword] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -93,10 +99,24 @@ function AddAccountModal({
       setError(t("mt5RequiredError"));
       return;
     }
+    if (!server.trim()) {
+      setError(t("serverRequiredError"));
+      return;
+    }
+    if (!investorPassword.trim()) {
+      setError(t("investorPasswordRequiredError"));
+      return;
+    }
     setError("");
     setSaving(true);
     try {
-      await mt5AccountsApi.create({ broker_id: brokerId, mt5_number: mt5Number.trim() });
+      await mt5AccountsApi.create({
+        broker_id: brokerId,
+        mt5_number: mt5Number.trim(),
+        server: server.trim(),
+        platform,
+        investor_password: investorPassword,
+      });
       onAdded();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : t("addFailed"));
@@ -145,6 +165,43 @@ function AddAccountModal({
               placeholder={t("mt5Placeholder")}
               required
             />
+          </div>
+
+          <div className={styles.field}>
+            <label className={styles.label}>{t("server")}</label>
+            <input
+              className={styles.input}
+              value={server}
+              onChange={(e) => setServer(e.target.value)}
+              placeholder={t("serverPlaceholder")}
+              required
+            />
+          </div>
+
+          <div className={styles.field}>
+            <label className={styles.label}>{t("platform")}</label>
+            <select
+              className={styles.select}
+              value={platform}
+              onChange={(e) => setPlatform(e.target.value as "mt4" | "mt5")}
+            >
+              <option value="mt5">MT5</option>
+              <option value="mt4">MT4</option>
+            </select>
+          </div>
+
+          <div className={styles.field}>
+            <label className={styles.label}>{t("investorPassword")}</label>
+            <input
+              className={styles.input}
+              type="password"
+              value={investorPassword}
+              onChange={(e) => setInvestorPassword(e.target.value)}
+              placeholder={t("investorPasswordPlaceholder")}
+              autoComplete="new-password"
+              required
+            />
+            <p className={styles.fieldHint}>{t("investorPasswordHint")}</p>
           </div>
 
           {error && <p className={styles.errorMsg}>{error}</p>}

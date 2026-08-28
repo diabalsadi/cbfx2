@@ -5,7 +5,12 @@ import { Link } from "@/i18n/navigation";
 import { publicApi, type PublicBrokerOffer } from "@/helpers/api";
 import { REGION_LABELS } from "@/helpers/regions";
 import { COUNTRY_LABELS } from "@/helpers/countries";
+import { INSTRUMENT_CATEGORIES, type InstrumentCategory } from "@/helpers/instrumentCategories";
 import styles from "./brokerDetail.module.scss";
+
+function isInstrumentCategory(value: string): value is InstrumentCategory {
+  return (INSTRUMENT_CATEGORIES as readonly string[]).includes(value);
+}
 
 function getInitials(name: string) {
   return name
@@ -104,8 +109,13 @@ export default function BrokerDetailClient({ params }: { params: Promise<{ id: s
                     <tbody>
                       {at.cashback.map((c, j) => (
                         <tr key={j}>
-                          <td>{c.symbol}</td>
-                          <td className={styles.rateValue}>{c.rate}%</td>
+                          <td>
+                            {c.symbol ||
+                              (c.category && isInstrumentCategory(c.category)
+                                ? t(`categories.${c.category}`)
+                                : c.category)}
+                          </td>
+                          <td className={styles.rateValue}>{t("perLotRate", { rate: c.rate })}</td>
                         </tr>
                       ))}
                     </tbody>

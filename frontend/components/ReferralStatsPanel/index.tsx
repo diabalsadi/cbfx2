@@ -85,6 +85,13 @@ export default function ReferralStatsPanel({ referralCode, stats, loading, error
           </span>
           <span className={styles.statSub}>{t("totalReferredSub")}</span>
         </div>
+        <div className={styles.statCard}>
+          <span className={styles.statLabel}>{t("activeReferred")}</span>
+          <span className={styles.statValue}>
+            {loading ? "—" : (stats?.active ?? 0).toLocaleString(locale)}
+          </span>
+          <span className={styles.statSub}>{t("activeReferredSub")}</span>
+        </div>
       </div>
 
       <div className={styles.card}>

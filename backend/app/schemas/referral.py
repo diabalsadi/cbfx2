@@ -14,6 +14,9 @@ class ReferralBucket(BaseModel):
 
 class ReferralStats(BaseModel):
     total: int
+    # Referred users with a MetaApi-verified MT5 account at a cashback-eligible
+    # broker — see app/utils/active_users.py. Subset of `total`.
+    active: int
     by_country: Dict[str, int]
     weekly: List[ReferralBucket]
     monthly: List[ReferralBucket]
@@ -24,6 +27,7 @@ class ClientReferralSummary(BaseModel):
     client_name: Optional[str] = None
     referral_code: Optional[str] = None
     total: int
+    active: int
 
 
 class AdminReferralStats(ReferralStats):

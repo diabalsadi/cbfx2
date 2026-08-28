@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
@@ -12,9 +14,24 @@ from app.schemas.mt5_account import (
     MT5Account as MT5AccountSchema,
     WalletTransaction as WalletTransactionSchema,
 )
+from app.utils.active_users import active_user_emails
 from app.utils.auth import get_current_user
+from app.utils.encryption import encrypt_field
+from app.services import metaapi_client
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/mt5-accounts", tags=["mt5-accounts"])
+
+ADMIN_STATS_ROLES = {"super_admin", "broker"}
+
+
+def require_roles(roles: set):
+    def checker(current_user: User = Depends(get_current_user)):
+        if current_user.role not in roles:
+            raise HTTPException(status_code=403, detail="Insufficient permissions")
+        return current_user
+    return checker
 
 
 def _to_schema(account: MT5Account, broker: Broker) -> MT5AccountSchema:
@@ -24,10 +41,23 @@ def _to_schema(account: MT5Account, broker: Broker) -> MT5AccountSchema:
         broker_name=broker.name,
         broker_img_src=broker.img_src,
         mt5_number=account.mt5_number,
+        account_type=account.account_type,
         balance=account.balance,
         lifetime_earned=account.lifetime_earned,
+        metaapi_connection_status=account.metaapi_connection_status,
         created_at=account.created_at,
     )
+
+
+@router.get("/active-count")
+def get_active_user_count(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(ADMIN_STATS_ROLES)),
+):
+    """Site-wide count of users with a MetaApi-verified MT5 account at a
+    cashback-eligible broker — see app/utils/active_users.py. Admin overview
+    dashboard KPI."""
+    return {"active_users": len(active_user_emails(db))}
 
 
 @router.get("/me", response_model=List[MT5AccountSchema])
@@ -107,17 +137,35 @@ def list_my_transactions(
 
 
 @router.post("/", response_model=MT5AccountSchema, status_code=201)
-def add_account(
+async def add_account(
     payload: MT5AccountCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """Link another MT5 account to the signed-in user. Nothing stops linking
     a second (or third) account with the same broker — only the exact
-    broker+number pair has to be unique across all users."""
+    broker+number pair has to be unique across all users.
+
+    Provisions the account with MetaApi for automated trade tracking.
+    Provisioning failures don't block the link itself — the account is saved
+    with metaapi_connection_status="error" and the external sync job (see
+    METAAPI_INTEGRATION_ARCHITECTURE.md §4) can be extended to retry later;
+    the customer isn't stuck because a third-party call happened to fail."""
     mt5_number = payload.mt5_number.strip()
     if not mt5_number:
         raise HTTPException(status_code=400, detail="MT5 account number is required")
+
+    server = (payload.server or "").strip()
+    if not server:
+        raise HTTPException(status_code=400, detail="MT5 server name is required")
+
+    platform = (payload.platform or "").strip().lower()
+    if platform not in ("mt4", "mt5"):
+        raise HTTPException(status_code=400, detail="Platform must be mt4 or mt5")
+
+    investor_password = (payload.investor_password or "").strip()
+    if not investor_password:
+        raise HTTPException(status_code=400, detail="Investor (read-only) password is required")
 
     broker = db.query(Broker).filter(Broker.id == payload.broker_id, Broker.status == "active").first()
     if not broker:
@@ -131,7 +179,32 @@ def add_account(
     if existing:
         raise HTTPException(status_code=400, detail="This MT5 account is already linked")
 
-    account = MT5Account(user_email=current_user.email, broker_id=broker.id, mt5_number=mt5_number)
+    account = MT5Account(
+        user_email=current_user.email,
+        broker_id=broker.id,
+        mt5_number=mt5_number,
+        server=server,
+        platform=platform,
+        investor_password_encrypted=encrypt_field(investor_password),
+        account_type=payload.account_type,
+        metaapi_connection_status="not_connected",
+    )
+
+    if metaapi_client.configured():
+        try:
+            result = await metaapi_client.provision_account(
+                login=mt5_number,
+                server=server,
+                platform=platform,
+                investor_password=investor_password,
+                name=f"{current_user.email} · {broker.name} · {mt5_number}",
+            )
+            account.metaapi_account_id = result["metaapi_account_id"]
+            account.metaapi_connection_status = result["status"]
+        except Exception:
+            logger.exception("MetaApi provisioning failed for %s / %s", broker.name, mt5_number)
+            account.metaapi_connection_status = "error"
+
     db.add(account)
     db.commit()
     db.refresh(account)

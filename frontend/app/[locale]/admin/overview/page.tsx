@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { api, visitsApi, type VisitStats } from "@/helpers/api";
+import { api, visitsApi, mt5AccountsApi, type VisitStats } from "@/helpers/api";
 import { COUNTRY_LABELS } from "@/helpers/countries";
 import { chartSx } from "@/helpers/chartTheme";
 import ChartThemeProvider from "@/components/ChartThemeProvider";
@@ -53,6 +53,8 @@ export default function OverviewPage() {
   const [stats, setStats] = useState<CampaignStats | null>(null);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeUsers, setActiveUsers] = useState<number | null>(null);
+  const [activeUsersLoading, setActiveUsersLoading] = useState(false);
 
   const [visitStats, setVisitStats] = useState<VisitStats | null>(null);
   const [visitsLoading, setVisitsLoading] = useState(true);
@@ -73,6 +75,16 @@ export default function OverviewPage() {
     } else {
       setLoading(false);
     }
+  }, [role]);
+
+  useEffect(() => {
+    if (role !== "super_admin" && role !== "broker") return;
+    setActiveUsersLoading(true);
+    mt5AccountsApi
+      .activeCount()
+      .then((r) => setActiveUsers(r.active_users))
+      .catch(() => setActiveUsers(null))
+      .finally(() => setActiveUsersLoading(false));
   }, [role]);
 
   useEffect(() => {
@@ -121,6 +133,13 @@ export default function OverviewPage() {
       {(role === "broker" || role === "super_admin") && (
         <>
           <div className={styles.statsGrid}>
+            <Card className={styles.statCard}>
+              <span className={styles.statLabel}>{t("activeUsers")}</span>
+              <span className={styles.statValue}>
+                {activeUsersLoading ? "—" : fmt(activeUsers ?? 0)}
+              </span>
+              <span className={styles.statSub}>{t("activeUsersSub")}</span>
+            </Card>
             <Card className={styles.statCard}>
               <span className={styles.statLabel}>{t("totalCampaigns")}</span>
               <span className={styles.statValue}>

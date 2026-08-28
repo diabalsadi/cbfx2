@@ -71,6 +71,18 @@ const navItems = [
     roles: ["super_admin", "broker"],
   },
   {
+    labelKey: "symbolCategories",
+    href: "/admin/symbol-categories",
+    icon: "◆",
+    roles: ["super_admin"],
+  },
+  {
+    labelKey: "rebatePayouts",
+    href: "/admin/rebate-payouts",
+    icon: "$",
+    roles: ["super_admin"],
+  },
+  {
     labelKey: "referrals",
     href: "/admin/referrals",
     icon: "⇄",

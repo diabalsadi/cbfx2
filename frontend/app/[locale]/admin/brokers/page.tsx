@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { api, type BrokerAccountType, type InstrumentCashback } from "@/helpers/api";
 import { REGIONS, REGION_LABELS } from "@/helpers/regions";
 import { COUNTRIES, COUNTRY_LABELS } from "@/helpers/countries";
+import { INSTRUMENT_CATEGORIES } from "@/helpers/instrumentCategories";
 import Card from "@/components/Card";
 import styles from "./Brokers.module.scss";
 
@@ -152,7 +153,7 @@ export default function BrokersAdminPage() {
     updateAccountType(accountTypeIndex, {
       cashback: [
         ...formData.account_types[accountTypeIndex].cashback,
-        { symbol: "", rate: 0 },
+        { category: INSTRUMENT_CATEGORIES[0], symbol: null, rate: 0 },
       ],
     });
   };
@@ -245,7 +246,7 @@ export default function BrokersAdminPage() {
           .filter((at) => at.name.trim())
           .map((at) => ({
             ...at,
-            cashback: at.cashback.filter((c) => c.symbol.trim()),
+            cashback: at.cashback.filter((c) => c.category || (c.symbol && c.symbol.trim())),
           })),
         terms_text: formData.terms_text || null,
         payout_destination: formData.payout_destination,
@@ -472,40 +473,75 @@ export default function BrokersAdminPage() {
                   />
 
                   <div className={styles.cashbackList}>
-                    {at.cashback.map((c, cIndex) => (
-                      <div key={cIndex} className={styles.cashbackRow}>
-                        <input
-                          className={styles.input}
-                          placeholder={t("instrumentPlaceholder")}
-                          value={c.symbol}
-                          onChange={(e) =>
-                            updateInstrumentRate(atIndex, cIndex, { symbol: e.target.value })
-                          }
-                        />
-                        <div className={styles.percentInputWrap}>
-                          <input
+                    {at.cashback.map((c, cIndex) => {
+                      const mode: "category" | "symbol" = c.symbol ? "symbol" : "category";
+                      return (
+                        <div key={cIndex} className={styles.cashbackRow}>
+                          <select
                             className={styles.input}
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={c.rate}
+                            value={mode}
                             onChange={(e) =>
-                              updateInstrumentRate(atIndex, cIndex, {
-                                rate: parseFloat(e.target.value) || 0,
-                              })
+                              updateInstrumentRate(
+                                atIndex,
+                                cIndex,
+                                e.target.value === "symbol"
+                                  ? { category: null, symbol: "" }
+                                  : { category: INSTRUMENT_CATEGORIES[0], symbol: null },
+                              )
                             }
-                          />
-                          <span className={styles.percentSuffix}>%</span>
+                          >
+                            <option value="category">{t("byCategory")}</option>
+                            <option value="symbol">{t("bySymbolOverride")}</option>
+                          </select>
+                          {mode === "category" ? (
+                            <select
+                              className={styles.input}
+                              value={c.category ?? INSTRUMENT_CATEGORIES[0]}
+                              onChange={(e) =>
+                                updateInstrumentRate(atIndex, cIndex, { category: e.target.value })
+                              }
+                            >
+                              {INSTRUMENT_CATEGORIES.map((cat) => (
+                                <option key={cat} value={cat}>
+                                  {t(`categories.${cat}`)}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <input
+                              className={styles.input}
+                              placeholder={t("instrumentPlaceholder")}
+                              value={c.symbol ?? ""}
+                              onChange={(e) =>
+                                updateInstrumentRate(atIndex, cIndex, { symbol: e.target.value })
+                              }
+                            />
+                          )}
+                          <div className={styles.percentInputWrap}>
+                            <input
+                              className={styles.input}
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={c.rate}
+                              onChange={(e) =>
+                                updateInstrumentRate(atIndex, cIndex, {
+                                  rate: parseFloat(e.target.value) || 0,
+                                })
+                              }
+                            />
+                            <span className={styles.percentSuffix}>{t("perLot")}</span>
+                          </div>
+                          <button
+                            type="button"
+                            className={styles.removeSmallBtn}
+                            onClick={() => removeInstrumentRate(atIndex, cIndex)}
+                          >
+                            {t("remove")}
+                          </button>
                         </div>
-                        <button
-                          type="button"
-                          className={styles.removeSmallBtn}
-                          onClick={() => removeInstrumentRate(atIndex, cIndex)}
-                        >
-                          {t("remove")}
-                        </button>
-                      </div>
-                    ))}
+                      );
+                    })}
                     <button
                       type="button"
                       className={styles.addSmallBtn}

@@ -17,6 +17,9 @@ from app.models.mt5_account import MT5Account
 from app.models.wallet_transaction import WalletTransaction
 from app.models.seo_meta import SeoMeta, SeoSettings
 from app.models.notification import Notification
+from app.models.symbol_category import SymbolCategory
+from app.models.trade_record import TradeRecord
+from app.models.rebate_payout import RebatePayout
 
 __all__ = [
     "User",
@@ -39,4 +42,7 @@ __all__ = [
     "SeoMeta",
     "SeoSettings",
     "Notification",
+    "SymbolCategory",
+    "TradeRecord",
+    "RebatePayout",
 ]

@@ -18,8 +18,18 @@ PAYOUT_DESTINATIONS = {"wallet", "trading_account"}
 
 
 class InstrumentCashback(BaseModel):
-    symbol: str
-    rate: float  # same units as Broker.cashback_rate (percentage points)
+    # Exactly one of category/symbol — a category-level rate, or an exact-symbol
+    # override that wins over a category match when resolving a trade's rate
+    # (see METAAPI_INTEGRATION_ARCHITECTURE.md §5/§6).
+    category: Optional[str] = None  # "forex" | "metals" | "commodities" | "crypto" | "indices" | "stocks" | "other"
+    symbol: Optional[str] = None  # exact override, e.g. "EURUSD"
+    rate: float  # $ per lot — NOT the same units as Broker.cashback_rate (a separate headline %)
+
+    @model_validator(mode="after")
+    def _check_exactly_one(self):
+        if bool(self.category) == bool(self.symbol):
+            raise ValueError("InstrumentCashback requires exactly one of category or symbol")
+        return self
 
 
 class BrokerAccountType(BaseModel):

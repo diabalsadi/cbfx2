@@ -8,7 +8,7 @@ from app.routers import auth
 from app.routers import articles, clients, campaigns, users, public
 from app.routers import market_prices, copy_traders, plays, analysis, forum
 from app.routers import brokers, geo, broker_placements, ad_banners, mt5_accounts, seo_meta
-from app.routers import referrals, visits, notifications, media, broker_reports
+from app.routers import referrals, visits, notifications, media, broker_reports, symbol_categories, internal, rebate_payouts
 
 # Import all models so SQLAlchemy creates their tables
 import app.models.user
@@ -33,6 +33,9 @@ import app.models.seo_meta
 import app.models.visit
 import app.models.notification
 import app.models.translation
+import app.models.symbol_category
+import app.models.trade_record
+import app.models.rebate_payout
 
 Base.metadata.create_all(bind=engine)
 
@@ -134,6 +137,19 @@ with engine.begin() as connection:
     connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS terms_text TEXT"))
     connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS payout_destination VARCHAR DEFAULT 'wallet'"))
     connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS payout_duration_days INTEGER"))
+    connection.execute(text("ALTER TABLE mt5_accounts ADD COLUMN IF NOT EXISTS account_type VARCHAR"))
+    connection.execute(text("ALTER TABLE mt5_accounts ADD COLUMN IF NOT EXISTS server VARCHAR"))
+    connection.execute(text("ALTER TABLE mt5_accounts ADD COLUMN IF NOT EXISTS platform VARCHAR"))
+    connection.execute(text("ALTER TABLE mt5_accounts ADD COLUMN IF NOT EXISTS investor_password_encrypted VARCHAR"))
+    connection.execute(text("ALTER TABLE mt5_accounts ADD COLUMN IF NOT EXISTS metaapi_account_id VARCHAR"))
+    connection.execute(text("ALTER TABLE mt5_accounts ADD COLUMN IF NOT EXISTS metaapi_connection_status VARCHAR NOT NULL DEFAULT 'not_connected'"))
+    connection.execute(text("ALTER TABLE mt5_accounts ADD COLUMN IF NOT EXISTS metaapi_last_synced_at TIMESTAMPTZ"))
+    # trade_records.rebate_amount/rebate_credited_at (Phase 3) are superseded
+    # by expected_amount/payout_id (Phase 4 rework, 2026-08-29) — the table
+    # was still empty (nothing had synced yet) when this changed, so the old
+    # columns are just left as harmless unused leftovers rather than renamed.
+    connection.execute(text("ALTER TABLE trade_records ADD COLUMN IF NOT EXISTS expected_amount FLOAT"))
+    connection.execute(text("ALTER TABLE trade_records ADD COLUMN IF NOT EXISTS payout_id VARCHAR"))
 
     # Indexes on FK/filter columns that predate their model's index=True —
     # create_all() only applies index=True to brand-new tables, so existing
@@ -160,6 +176,8 @@ with engine.begin() as connection:
         ("plays", "author_email"),
         ("users", "referred_by"),
         ("copy_traders", "is_active"),
+        ("mt5_accounts", "metaapi_account_id"),
+        ("trade_records", "payout_id"),
     ]:
         connection.execute(text(f"CREATE INDEX IF NOT EXISTS ix_{_table}_{_column} ON {_table} ({_column})"))
 
@@ -195,6 +213,9 @@ app.include_router(visits.router)
 app.include_router(notifications.router)
 app.include_router(media.router)
 app.include_router(broker_reports.router)
+app.include_router(symbol_categories.router)
+app.include_router(internal.router)
+app.include_router(rebate_payouts.router)
 
 
 @app.get("/")
