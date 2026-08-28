@@ -275,6 +275,45 @@
   }
 }
 
+.imagesHint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: 0 0 4px;
+}
+
+.imageList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.imageRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .input {
+    flex: 1;
+  }
+}
+
+.imageLocaleLabel {
+  flex-shrink: 0;
+  width: 76px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.imageThumb {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  object-fit: cover;
+  border: 1px solid var(--border);
+}
+
 .checkboxField {
   display: flex;
   align-items: center;

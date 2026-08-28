@@ -39,7 +39,22 @@
   align-items: center;
   gap: 1px;
   flex: 1;
-  overflow: hidden;
+  // min-width: 0 lets this flex child shrink below its content's intrinsic
+  // width — without it, overflow-x has nothing to scroll and links between
+  // 769px and ~1230px (too narrow for all of them, too wide for the
+  // hamburger breakpoint below) get silently clipped with no way to reach
+  // them instead of becoming scrollable.
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  // Scrollable (mouse wheel/trackpad/touch drag all still work), just
+  // without a visible scrollbar taking up space in a 58px-tall navbar.
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 .navLink {
@@ -49,6 +64,7 @@
   font-weight: 500;
   color: var(--text-secondary);
   text-decoration: none;
+  flex-shrink: 0;
   transition:
     color 0.15s,
     background 0.15s;

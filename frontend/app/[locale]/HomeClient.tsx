@@ -6,7 +6,7 @@ import UserNav from "@/components/UserNav";
 import LoginModal from "@/components/LoginModal";
 import { LoginModalProvider } from "@/contexts/LoginModalContext";
 import { useTheme } from "@/contexts/ThemeContext";
-import { SingleTickerWidget } from "@/components/TradingViewWidgets";
+import { SingleTickerWidget, EconomicCalendarWidget, MarketNewsWidget } from "@/components/TradingViewWidgets";
 import { getSymbolByDisplayName, symbolHref } from "@/helpers/tradingviewSymbols";
 import styles from "./page.module.scss";
 import userStyles from "./(user)/user.module.scss";
@@ -20,71 +20,37 @@ const HOMEPAGE_SYMBOLS = ["EUR/USD", "GBP/USD", "BTC/USD", "ETH/USD", "XAU/USD",
   .map(getSymbolByDisplayName)
   .filter((s): s is NonNullable<typeof s> => s !== null);
 
-const CALENDAR_EVENTS = [
-  { time: "12:30", event: "US CPI YoY", live: true },
-  { time: "14:00", event: "BoC Rate Decision", live: true },
-  { time: "18:00", event: "Fed Speak — Powell", live: false },
-];
 
-/* ── time-ago helper ── */
-function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const h = Math.floor(diff / 3_600_000);
-  if (h < 1) return `${Math.floor(diff / 60_000)}m`;
-  if (h < 24) return `${h}h`;
-  return `${Math.floor(h / 24)}d`;
-}
-
-/* Inline sponsor banner used before Cashback / Copy Trading / Signals. */
-function InlineAdBanner({
+/* Broker-supplied image banner used before Cashback / Copy Trading / Signals /
+   Markets, and (with sticky=true) the sticky-top slot. The image itself is
+   the whole ad — already resolved to the visitor's language by the backend. */
+function ImageAdBanner({
   banner,
   onDismiss,
+  sticky = false,
 }: {
   banner: AdBannerContent;
   onDismiss: () => void;
+  sticky?: boolean;
 }) {
   const t = useTranslations("home");
+  if (!banner.image_url) return null;
   return (
-    <div className={styles.adBanner}>
-      <div className={styles.demoBannerLeft}>
-        <span className={styles.sponsoredChip}>{banner.badge_text}</span>
-        <div className={styles.demoBrokerLogo}>
-          {banner.logo_src ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={banner.logo_src}
-              alt=""
-              style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }}
-            />
-          ) : (
-            <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-              <polyline
-                points="2,14 7,8 11,11 18,4"
-                stroke="white"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          )}
-        </div>
-        <div>
-          <div className={styles.demoBrokerName}>{banner.sponsor_name}</div>
-          <div className={styles.demoBrokerDesc}>{banner.description}</div>
-        </div>
-      </div>
-      <div className={styles.heroTopActions}>
-        {banner.link_url && (
-          <a href={banner.link_url} className={styles.primeLearnMore}>
-            {banner.cta_label || t("learnMore")} ↗
-          </a>
-        )}
-        {banner.dismissible && (
-          <button className={styles.demoDismiss} onClick={onDismiss} aria-label={t("dismiss")}>
-            ✕
-          </button>
-        )}
-      </div>
+    <div className={sticky ? styles.stickyTopBanner : styles.adBanner}>
+      <a
+        href={banner.link_url || "#"}
+        target="_blank"
+        rel="noopener noreferrer sponsored"
+        className={styles.adBannerImageLink}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={banner.image_url} alt={banner.alt} className={styles.adBannerImg} />
+      </a>
+      {banner.dismissible && (
+        <button className={styles.adBannerDismiss} onClick={onDismiss} aria-label={t("dismiss")}>
+          ✕
+        </button>
+      )}
     </div>
   );
 }
@@ -133,26 +99,10 @@ export default function HomePage() {
     tp: p.take_profit ?? "—",
   }));
 
-  const NEWS = (data?.latest_news ?? []).map((n) => ({
-    id: n.id,
-    cat:
-      n.title.includes("BTC") || n.title.includes("ETH")
-        ? t("news.cat.crypto")
-        : n.title.includes("USD") || n.title.includes("NFP")
-          ? t("news.cat.usd")
-          : n.title.includes("EUR") || n.title.includes("ECB")
-            ? t("news.cat.eur")
-            : t("news.cat.fx"),
-    time: timeAgo(n.created_at),
-    headline: n.title,
-  }));
-
   const ANALYSIS = (data?.latest_analysis ?? []).map((a) => ({
     id: a.id,
-    pair: a.pair,
-    tf: a.timeframe,
-    bias: a.bias,
-    up: a.bias === "Bullish",
+    title: a.title,
+    symbol: a.symbol,
   }));
 
   const FORUM_THREADS = (data?.recent_threads ?? []).map((thread) => ({
@@ -168,7 +118,7 @@ export default function HomePage() {
       {/* ══════════════════════════════
           Sticky sidebar ads (desktop only)
          ══════════════════════════════ */}
-      {sidebarLeftBanner && (
+      {sidebarLeftBanner?.image_url && (
         <div className={`${styles.stickySidebarAd} ${styles.stickySidebarLeft}`}>
           {sidebarLeftBanner.dismissible && (
             <button
@@ -179,22 +129,18 @@ export default function HomePage() {
               ✕
             </button>
           )}
-          <span className={styles.sponsoredChip}>{sidebarLeftBanner.badge_text}</span>
-          {sidebarLeftBanner.logo_src && (
-            <a
-              href={sidebarLeftBanner.link_url || "#"}
-              target="_blank"
-              rel="noopener noreferrer sponsored"
-              className={styles.stickySidebarImageLink}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={sidebarLeftBanner.logo_src} alt={sidebarLeftBanner.sponsor_name} className={styles.stickySidebarImage} />
-            </a>
-          )}
-          <div className={styles.stickySidebarLabel}>{sidebarLeftBanner.sponsor_name}</div>
+          <a
+            href={sidebarLeftBanner.link_url || "#"}
+            target="_blank"
+            rel="noopener noreferrer sponsored"
+            className={styles.stickySidebarImageLink}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={sidebarLeftBanner.image_url} alt={sidebarLeftBanner.alt} className={styles.stickySidebarImage} />
+          </a>
         </div>
       )}
-      {sidebarRightBanner && (
+      {sidebarRightBanner?.image_url && (
         <div className={`${styles.stickySidebarAd} ${styles.stickySidebarRight}`}>
           {sidebarRightBanner.dismissible && (
             <button
@@ -205,73 +151,29 @@ export default function HomePage() {
               ✕
             </button>
           )}
-          <span className={styles.sponsoredChip}>{sidebarRightBanner.badge_text}</span>
-          {sidebarRightBanner.logo_src && (
-            <a
-              href={sidebarRightBanner.link_url || "#"}
-              target="_blank"
-              rel="noopener noreferrer sponsored"
-              className={styles.stickySidebarImageLink}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={sidebarRightBanner.logo_src} alt={sidebarRightBanner.sponsor_name} className={styles.stickySidebarImage} />
-            </a>
-          )}
-          <div className={styles.stickySidebarLabel}>{sidebarRightBanner.sponsor_name}</div>
+          <a
+            href={sidebarRightBanner.link_url || "#"}
+            target="_blank"
+            rel="noopener noreferrer sponsored"
+            className={styles.stickySidebarImageLink}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={sidebarRightBanner.image_url} alt={sidebarRightBanner.alt} className={styles.stickySidebarImage} />
+          </a>
         </div>
       )}
 
       <div className={userStyles.main}>
-      <div className={sidebarLeftBanner || sidebarRightBanner ? styles.sideAdGutter : undefined}>
+      <div className={sidebarLeftBanner?.image_url || sidebarRightBanner?.image_url ? styles.sideAdGutter : undefined}>
       {/* ══════════════════════════════
           Sticky top sponsor banner
          ══════════════════════════════ */}
       {stickyTopBanner && (
-        <div className={styles.stickyTopBanner}>
-          <div className={styles.demoBannerLeft}>
-            <span className={styles.sponsoredChip}>{stickyTopBanner.badge_text}</span>
-            <div className={styles.demoBrokerLogo}>
-              {stickyTopBanner.logo_src ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={stickyTopBanner.logo_src}
-                  alt=""
-                  style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }}
-                />
-              ) : (
-                <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-                  <polyline
-                    points="2,14 7,8 11,11 18,4"
-                    stroke="white"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              )}
-            </div>
-            <div>
-              <div className={styles.demoBrokerName}>{stickyTopBanner.sponsor_name}</div>
-              <div className={styles.demoBrokerDesc}>{stickyTopBanner.description}</div>
-            </div>
-          </div>
-          <div className={styles.heroTopActions}>
-            {stickyTopBanner.link_url && (
-              <a href={stickyTopBanner.link_url} className={styles.primeLearnMore}>
-                {stickyTopBanner.cta_label || t("learnMore")} ↗
-              </a>
-            )}
-            {stickyTopBanner.dismissible && (
-              <button
-                className={styles.demoDismiss}
-                onClick={() => dismissBanner("sticky_top_banner")}
-                aria-label={t("dismiss")}
-              >
-                ✕
-              </button>
-            )}
-          </div>
-        </div>
+        <ImageAdBanner
+          banner={stickyTopBanner}
+          onDismiss={() => dismissBanner("sticky_top_banner")}
+          sticky
+        />
       )}
 
       {/* ══════════════════════════════
@@ -382,7 +284,7 @@ export default function HomePage() {
           Cashback CTA
          ══════════════════════════════ */}
       {preCashbackBanner && (
-        <InlineAdBanner
+        <ImageAdBanner
           banner={preCashbackBanner}
           onDismiss={() => dismissBanner("pre_cashback_banner")}
         />
@@ -418,7 +320,7 @@ export default function HomePage() {
           Copy Trading
          ══════════════════════════════ */}
       {preCopytradingBanner && (
-        <InlineAdBanner
+        <ImageAdBanner
           banner={preCopytradingBanner}
           onDismiss={() => dismissBanner("pre_copytrading_banner")}
         />
@@ -471,7 +373,7 @@ export default function HomePage() {
           Signals (Plays)  +  Forex News
          ══════════════════════════════ */}
       {preSignalsBanner && (
-        <InlineAdBanner
+        <ImageAdBanner
           banner={preSignalsBanner}
           onDismiss={() => dismissBanner("pre_signals_banner")}
         />
@@ -548,16 +450,8 @@ export default function HomePage() {
               {t("signals.all")} →
             </Link>
           </div>
-          <div className={styles.newsList}>
-            {NEWS.map((n) => (
-              <div key={n.id} className={styles.newsRow}>
-                <div className={styles.newsMeta}>
-                  <span className={styles.newsCat}>{n.cat}</span>
-                  <span className={styles.newsTime}>⏱ {n.time}</span>
-                </div>
-                <div className={styles.newsHeadline}>{n.headline}</div>
-              </div>
-            ))}
+          <div className={styles.newsWidgetBody}>
+            <MarketNewsWidget theme={theme} />
           </div>
         </div>
       </section>
@@ -589,17 +483,10 @@ export default function HomePage() {
           </div>
           <div className={styles.analysisList}>
             {ANALYSIS.map((a) => (
-              <div key={a.id} className={styles.analysisRow}>
-                <div>
-                  <span className={styles.analysisPair}>{a.pair}</span>
-                  <span className={styles.analysisTf}>{a.tf}</span>
-                </div>
-                <span
-                  className={`${styles.analysisBias} ${a.up ? styles.bullish : styles.bearish}`}
-                >
-                  {a.up ? "↑" : "↓"} {a.bias}
-                </span>
-              </div>
+              <Link key={a.id} href={`/analysis/${a.id}`} className={styles.analysisRow}>
+                {a.symbol && <span className={styles.analysisPair}>{a.symbol}</span>}
+                <span className={styles.analysisTitle}>{a.title}</span>
+              </Link>
             ))}
           </div>
         </div>
@@ -666,16 +553,8 @@ export default function HomePage() {
               {t("signals.all")} →
             </Link>
           </div>
-          <div className={styles.calList}>
-            {CALENDAR_EVENTS.map((e) => (
-              <div key={e.event} className={styles.calRow}>
-                <span className={styles.calTime}>{e.time}</span>
-                <span className={styles.calEvent}>{e.event}</span>
-                <span
-                  className={`${styles.calDot} ${e.live ? styles.live : ""}`}
-                />
-              </div>
-            ))}
+          <div className={styles.calWidgetBody}>
+            <EconomicCalendarWidget theme={theme} />
           </div>
         </div>
       </section>
@@ -684,7 +563,7 @@ export default function HomePage() {
           Markets Strip
          ══════════════════════════════ */}
       {preMarketsBanner && (
-        <InlineAdBanner
+        <ImageAdBanner
           banner={preMarketsBanner}
           onDismiss={() => dismissBanner("pre_markets_banner")}
         />

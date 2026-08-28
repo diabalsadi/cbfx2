@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import {
+  api,
   adBannersApi,
   type AdPlacementPage,
   type AdBanner,
@@ -10,8 +11,20 @@ import {
 } from "@/helpers/api";
 import { REGIONS, REGION_LABELS } from "@/helpers/regions";
 import { COUNTRIES, COUNTRY_LABELS, COUNTRY_TO_REGION } from "@/helpers/countries";
+import { locales } from "@/i18n/routing";
 import Card from "@/components/Card";
 import styles from "./AdBanners.module.scss";
+
+const LOCALE_LABELS: Record<string, string> = {
+  en: "English",
+  ar: "العربية",
+  es: "Español",
+  fa: "فارسی",
+  pt: "Português",
+  zh: "中文",
+  vi: "Tiếng Việt",
+  hi: "हिन्दी",
+};
 
 const SLOT_LABEL_KEY = {
   homepage: [
@@ -28,29 +41,26 @@ const SLOT_LABEL_KEY = {
 
 type ScopeMode = "default" | "region" | "country";
 
+interface BrokerOption {
+  id: string;
+  name: string;
+}
+
 const EMPTY_FORM: AdBannerUpsert = {
-  sponsor_name: "",
-  description: "",
-  badge_text: "SPONSORED",
-  logo_src: null,
+  broker_id: "",
+  images: {},
+  default_image_url: null,
   link_url: null,
-  cta_label: null,
-  features: [],
-  disclaimer: null,
   dismissible: false,
   status: "active",
 };
 
 function toForm(b: AdBanner): AdBannerUpsert {
   return {
-    sponsor_name: b.sponsor_name,
-    description: b.description,
-    badge_text: b.badge_text,
-    logo_src: b.logo_src,
+    broker_id: b.broker_id,
+    images: b.images,
+    default_image_url: b.default_image_url,
     link_url: b.link_url,
-    cta_label: b.cta_label,
-    features: b.features,
-    disclaimer: b.disclaimer,
     dismissible: b.dismissible,
     status: b.status,
   };
@@ -64,6 +74,7 @@ type BySlotRegion = Record<string, Partial<Record<BrokerPlacementRegion, AdBanne
 
 export default function AdBanners({ page }: { page: AdPlacementPage }) {
   const t = useTranslations("adminAdsPlacements");
+  const [brokers, setBrokers] = useState<BrokerOption[]>([]);
   const [bySlotRegion, setBySlotRegion] = useState<BySlotRegion>({});
   const [mode, setMode] = useState<Record<string, ScopeMode>>({});
   const [scope, setScope] = useState<Record<string, BrokerPlacementRegion>>({});
@@ -79,6 +90,13 @@ export default function AdBanners({ page }: { page: AdPlacementPage }) {
     if (scope === "default") return t("scopeDefault");
     return REGION_LABELS[scope] || COUNTRY_LABELS[scope] || scope;
   };
+
+  useEffect(() => {
+    api
+      .get<BrokerOption[]>("/brokers/")
+      .then(setBrokers)
+      .catch(() => setBrokers([]));
+  }, []);
 
   const fetchAll = useCallback(() => {
     adBannersApi
@@ -153,20 +171,27 @@ export default function AdBanners({ page }: { page: AdPlacementPage }) {
     setForms((prev) => ({ ...prev, [key]: { ...(prev[key] ?? getForm(slot, scopeValue)), ...patch } }));
   };
 
+  const updateImage = (slot: string, scopeValue: BrokerPlacementRegion, locale: string, url: string) => {
+    const form = getForm(slot, scopeValue);
+    const images = { ...form.images };
+    if (url.trim()) {
+      images[locale] = url.trim();
+    } else {
+      delete images[locale];
+    }
+    updateForm(slot, scopeValue, { images });
+  };
+
   const handleSave = async (slot: string, scopeValue: BrokerPlacementRegion) => {
     const key = formKey(slot, scopeValue);
     const form = forms[key] ?? getForm(slot, scopeValue);
-    if (!form.sponsor_name.trim()) {
-      alert(t("sponsorNameRequired"));
+    if (!form.broker_id) {
+      alert(t("brokerRequired"));
       return;
     }
-    const payload: AdBannerUpsert = {
-      ...form,
-      features: form.features.map((f) => f.trim()).filter(Boolean),
-    };
     setSaving((prev) => ({ ...prev, [key]: true }));
     try {
-      const saved = await adBannersApi.set(page, slot, scopeValue, payload);
+      const saved = await adBannersApi.set(page, slot, scopeValue, form);
       setBySlotRegion((prev) => ({
         ...prev,
         [slot]: { ...(prev[slot] ?? {}), [scopeValue]: saved },
@@ -329,43 +354,21 @@ export default function AdBanners({ page }: { page: AdPlacementPage }) {
               </div>
 
               <div className={styles.field}>
-                <label className={styles.fieldLabel}>{t("sponsorName")}</label>
-                <input
+                <label className={styles.fieldLabel}>{t("broker")}</label>
+                <select
                   className={styles.input}
-                  value={form.sponsor_name}
-                  onChange={(e) => updateForm(slot, currentScope, { sponsor_name: e.target.value })}
-                  placeholder={t("sponsorNamePlaceholder")}
-                />
-              </div>
-
-              <div className={styles.field}>
-                <label className={styles.fieldLabel}>{t("description")}</label>
-                <input
-                  className={styles.input}
-                  value={form.description}
-                  onChange={(e) => updateForm(slot, currentScope, { description: e.target.value })}
-                  placeholder={t("descriptionPlaceholder")}
-                />
-              </div>
-
-              <div className={styles.fieldRow}>
-                <div className={styles.field}>
-                  <label className={styles.fieldLabel}>{t("badgeText")}</label>
-                  <input
-                    className={styles.input}
-                    value={form.badge_text}
-                    onChange={(e) => updateForm(slot, currentScope, { badge_text: e.target.value })}
-                  />
-                </div>
-                <div className={styles.field}>
-                  <label className={styles.fieldLabel}>{t("ctaLabel")}</label>
-                  <input
-                    className={styles.input}
-                    value={form.cta_label ?? ""}
-                    onChange={(e) => updateForm(slot, currentScope, { cta_label: e.target.value || null })}
-                    placeholder={t("ctaLabelPlaceholder")}
-                  />
-                </div>
+                  value={form.broker_id}
+                  onChange={(e) => updateForm(slot, currentScope, { broker_id: e.target.value })}
+                >
+                  <option value="" disabled>
+                    {t("selectBroker")}
+                  </option>
+                  {brokers.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className={styles.field}>
@@ -379,36 +382,42 @@ export default function AdBanners({ page }: { page: AdPlacementPage }) {
               </div>
 
               <div className={styles.field}>
-                <label className={styles.fieldLabel}>{t("logoUrl")}</label>
+                <label className={styles.fieldLabel}>{t("defaultImage")}</label>
+                <p className={styles.imagesHint}>{t("defaultImageHint")}</p>
+                {form.default_image_url && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={form.default_image_url} alt="" className={styles.imageThumb} />
+                )}
                 <input
                   className={styles.input}
-                  value={form.logo_src ?? ""}
-                  onChange={(e) => updateForm(slot, currentScope, { logo_src: e.target.value || null })}
-                  placeholder={t("logoUrlPlaceholder")}
-                />
-              </div>
-
-              <div className={styles.field}>
-                <label className={styles.fieldLabel}>{t("features")}</label>
-                <textarea
-                  className={styles.textarea}
-                  value={form.features.join("\n")}
+                  value={form.default_image_url ?? ""}
                   onChange={(e) =>
-                    updateForm(slot, currentScope, { features: e.target.value.split("\n") })
+                    updateForm(slot, currentScope, { default_image_url: e.target.value || null })
                   }
-                  placeholder={t("featuresPlaceholder")}
-                  rows={3}
+                  placeholder={t("imageUrlPlaceholder")}
                 />
               </div>
 
               <div className={styles.field}>
-                <label className={styles.fieldLabel}>{t("disclaimer")}</label>
-                <input
-                  className={styles.input}
-                  value={form.disclaimer ?? ""}
-                  onChange={(e) => updateForm(slot, currentScope, { disclaimer: e.target.value || null })}
-                  placeholder={t("disclaimerPlaceholder")}
-                />
+                <label className={styles.fieldLabel}>{t("bannerImages")}</label>
+                <p className={styles.imagesHint}>{t("bannerImagesHint")}</p>
+                <div className={styles.imageList}>
+                  {locales.map((loc) => (
+                    <div key={loc} className={styles.imageRow}>
+                      <span className={styles.imageLocaleLabel}>{LOCALE_LABELS[loc] ?? loc}</span>
+                      {form.images[loc] && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={form.images[loc]} alt="" className={styles.imageThumb} />
+                      )}
+                      <input
+                        className={styles.input}
+                        value={form.images[loc] ?? ""}
+                        onChange={(e) => updateImage(slot, currentScope, loc, e.target.value)}
+                        placeholder={t("imageUrlPlaceholder")}
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className={styles.fieldRow}>

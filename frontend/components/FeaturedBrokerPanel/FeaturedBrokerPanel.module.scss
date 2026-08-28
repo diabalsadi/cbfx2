@@ -31,86 +31,21 @@
   }
 }
 
-.brokerCardTop {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 22px;
-}
-
 .featuredLabel {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1.2px;
   color: #f97316;
   text-transform: uppercase;
+  margin-bottom: 16px;
 }
 
-.sponsoredLabel {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.8px;
-  color: #555;
-  text-transform: uppercase;
-}
-
-.brokerHeader {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 28px;
-}
-
-.brokerLogo {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  box-shadow: 0 4px 16px rgba(14, 165, 233, 0.3);
-}
-
-.brokerName {
-  font-size: 20px;
-  font-weight: 800;
-  color: #fff;
-  letter-spacing: -0.4px;
-  margin-bottom: 4px;
-}
-
-.brokerTagline {
-  font-size: 13px;
-  color: #999;
-}
-
-/* Feature bullets */
-.featureList {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-
-  li {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 14px;
-    font-weight: 500;
-    color: #e5e5e5;
-  }
-}
-
-/* CTA area */
-.brokerCta {
-  margin-top: 32px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+.brokerImage {
+  width: 100%;
+  height: auto;
+  border-radius: 14px;
+  display: block;
+  margin-bottom: 24px;
 }
 
 .openAccountBtn {
@@ -133,11 +68,4 @@
     background: #ea6c0a;
     box-shadow: 0 6px 24px rgba(249, 115, 22, 0.4);
   }
-}
-
-.disclaimer {
-  text-align: center;
-  font-size: 11px;
-  color: #555;
-  margin: 0;
 }

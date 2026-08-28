@@ -13,7 +13,6 @@ from app.schemas.seo_meta import SEO_ROUTES
 from app.models.market_price import MarketPrice
 from app.models.copy_trader import CopyTrader
 from app.models.play import Play
-from app.models.analysis import Analysis
 from app.models.forum_reply import ForumReply
 from app.models.forum_thread import ForumThread
 from app.schemas.article import Article as ArticleSchema
@@ -29,8 +28,6 @@ from app.utils.broker_offer import referral_url
 # the Article model — "analysis" is just an article_type, not a separate
 # table).
 ARTICLE_TRANSLATE_FIELDS = ["title", "content", "excerpt", "meta_title", "meta_description", "meta_keywords"]
-# Ad banner fields translated on read wherever banner content is resolved.
-AD_BANNER_TRANSLATE_FIELDS = ["sponsor_name", "description", "badge_text", "cta_label", "features", "disclaimer"]
 
 router = APIRouter(prefix="/public", tags=["public"])
 
@@ -293,17 +290,33 @@ def get_seo_meta(route: str, request: Request, sub_key: Optional[str] = None, db
     return translate_fields(db, seo, ["title", "description", "keywords", "og_title", "og_description"], locale)
 
 
-def _banner_content(b: AdBanner) -> dict:
+def _banner_content(b: AdBanner, broker: Optional[Broker]) -> dict:
+    link = b.link_url or (referral_url(broker.signup_url, broker.id, broker.referral_id) if broker else None)
     return {
-        "sponsor_name": b.sponsor_name,
-        "description": b.description,
-        "badge_text": b.badge_text,
-        "logo_src": b.logo_src,
-        "link_url": b.link_url,
-        "cta_label": b.cta_label,
-        "features": b.features or [],
-        "disclaimer": b.disclaimer,
+        "broker_name": broker.name if broker else "",
+        "images": b.images or {},
+        "default_image_url": b.default_image_url,
+        "link_url": link,
         "dismissible": b.dismissible,
+    }
+
+
+def _flatten_banner_for_locale(content: dict, locale: str) -> dict:
+    """Picks the one image the visitor actually sees: an exact locale match,
+    else the banner's language-agnostic default, else whatever's configured
+    — the image is authored per language by the broker, not machine-
+    translated like other content."""
+    images = content.get("images") or {}
+    image_url = (
+        images.get(locale)
+        or content.get("default_image_url")
+        or next(iter(images.values()), None)
+    )
+    return {
+        "image_url": image_url,
+        "link_url": content.get("link_url"),
+        "alt": content.get("broker_name", ""),
+        "dismissible": content.get("dismissible", False),
     }
 
 
@@ -313,7 +326,10 @@ def _resolve_ad_banners(
     """Active banner ad content for `page`, resolved per slot to the
     visitor's most specific match: a country override, then a region
     override, then the slot's "default" content. A slot is omitted entirely
-    if no admin has configured active content for it."""
+    if no admin has configured active content for it. Returned content still
+    carries every language's image (see _flatten_banner_for_locale) — locale
+    resolution happens per-request, after this cached, locale-agnostic
+    lookup."""
     banners = (
         db.query(AdBanner)
         .filter(AdBanner.page == page, AdBanner.status == "active")
@@ -324,7 +340,7 @@ def _resolve_ad_banners(
     for b in banners:
         banners_by_slot.setdefault(b.slot, {})[b.region] = b
 
-    resolved = {}
+    chosen_by_slot: dict = {}
     for slot, region_map in banners_by_slot.items():
         chosen = region_map.get(country_code) if country_code else None
         if not chosen and region:
@@ -332,16 +348,28 @@ def _resolve_ad_banners(
         if not chosen:
             chosen = region_map.get("default")
         if chosen:
-            resolved[slot] = _banner_content(chosen)
-    return resolved
+            chosen_by_slot[slot] = chosen
+
+    brokers = (
+        {
+            b.id: b
+            for b in db.query(Broker).filter(Broker.id.in_({c.broker_id for c in chosen_by_slot.values()})).all()
+        }
+        if chosen_by_slot
+        else {}
+    )
+
+    return {
+        slot: _banner_content(banner, brokers.get(banner.broker_id))
+        for slot, banner in chosen_by_slot.items()
+    }
 
 
 @router.get("/ad-banners/{page}")
 def get_ad_banners(page: str, request: Request, db: Session = Depends(get_db)):
     """Public — resolves active banner ad content for any ad-placement page
-    (e.g. "signin"), scoped to the visitor's detected region/country. Pages
-    with no configured banners return an empty object. Banner copy is
-    machine-translated into the visitor's detected locale."""
+    (e.g. "signin"), scoped to the visitor's detected region/country, and
+    picks each banner's image for the visitor's detected locale."""
     country_code, region = detect_region(extract_client_ip(request))
     locale = detect_locale(request, country_code)
     banners = public_cache.get_or_set(
@@ -350,7 +378,7 @@ def get_ad_banners(page: str, request: Request, db: Session = Depends(get_db)):
         lambda: _resolve_ad_banners(db, page, country_code, region),
     )
     return {
-        slot: translate_fields(db, content, AD_BANNER_TRANSLATE_FIELDS, locale)
+        slot: _flatten_banner_for_locale(content, locale)
         for slot, content in banners.items()
     }
 
@@ -387,9 +415,13 @@ def _compute_homepage(db: Session, country_code: Optional[str], region: Optional
         .all()
     )
 
+    # "Technical Analysis" on the homepage is Article rows authored with
+    # article_type="analysis" — the same feed that powers /analysis and
+    # /public/analysis — not the separate, unused-elsewhere Analysis model.
     latest_analysis = (
-        db.query(Analysis)
-        .order_by(Analysis.updated_at.desc())
+        db.query(Article)
+        .filter(Article.is_published == True, Article.article_type == "analysis")
+        .order_by(Article.created_at.desc())
         .limit(5)
         .all()
     )
@@ -474,8 +506,8 @@ def _compute_homepage(db: Session, country_code: Optional[str], region: Optional
 
     def analysis(a):
         return {
-            "id": a.id, "pair": a.pair, "timeframe": a.timeframe,
-            "bias": a.bias, "summary": a.summary,
+            "id": a.id, "title": a.title, "symbol": a.symbol,
+            "market_category": a.market_category, "created_at": a.created_at.isoformat(),
         }
 
     def thread(th):
@@ -514,13 +546,13 @@ def _translate_homepage(db: Session, homepage: dict, locale: str) -> dict:
             translate_fields(db, n, ["title", "excerpt"], locale) for n in homepage["latest_news"]
         ],
         "latest_analysis": [
-            translate_fields(db, a, ["summary"], locale) for a in homepage["latest_analysis"]
+            translate_fields(db, a, ["title"], locale) for a in homepage["latest_analysis"]
         ],
         "recent_threads": [
             translate_fields(db, t, ["title"], locale) for t in homepage["recent_threads"]
         ],
         "ad_banners": {
-            slot: translate_fields(db, content, AD_BANNER_TRANSLATE_FIELDS, locale)
+            slot: _flatten_banner_for_locale(content, locale)
             for slot, content in homepage["ad_banners"].items()
         },
     }

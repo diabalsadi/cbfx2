@@ -448,118 +448,71 @@
   gap: 12px;
 }
 
-.demoBannerLeft {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  min-width: 0;
-}
-
-.sponsoredChip {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: var(--accent);
-  background: rgba(249, 115, 22, 0.12);
-  border: 1px solid rgba(249, 115, 22, 0.2);
-  border-radius: 4px;
-  padding: 2px 7px;
-  flex-shrink: 0;
-}
-
-.demoBrokerLogo {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  background: var(--accent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.demoBrokerName {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 2px;
-}
-
-.demoBrokerDesc {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.demoDismiss {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: 14px;
-  padding: 4px 8px;
-  border-radius: 6px;
-  flex-shrink: 0;
-  transition:
-    color 0.15s,
-    background 0.15s;
-
-  &:hover {
-    color: var(--text-primary);
-    background: var(--bg-secondary);
-  }
-}
-
 /* ═══════════════════════════════
    Sticky top sponsor banner — pinned below the navbar so it stays
    visible while the visitor scrolls through Hero and beyond.
    ═══════════════════════════════ */
 .stickyTopBanner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #18130d;
-  border: 1px solid #2e2010;
-  border-radius: 14px;
-  padding: 16px 20px;
-  margin-top: 20px;
-  margin-bottom: 20px;
-  gap: 12px;
   position: sticky;
   top: 58px; // navbar height
   z-index: 30;
-
-  @media (max-width: 600px) {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}
-
-.heroTopActions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
 }
 
 /* ═══════════════════════════════
-   Inline sponsor banners (before Cashback / Copy Trading / Signals)
-   — share the same box layout as .demoBanner below.
+   Broker-supplied image banners (sticky top, and before Cashback /
+   Copy Trading / Signals / Markets) — the image itself is the whole ad,
+   already resolved to the visitor's language.
    ═══════════════════════════════ */
 .adBanner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #18130d;
-  border: 1px solid #2e2010;
+  position: relative;
   border-radius: 14px;
-  padding: 16px 20px;
+  overflow: hidden;
   margin-bottom: 20px;
-  gap: 12px;
+  border: 1px solid var(--border);
+}
+
+.adBannerImageLink {
+  display: block;
+  width: 100%;
+}
+
+.adBannerImg {
+  width: 100%;
+  height: auto;
+  max-height: 140px;
+  object-fit: cover;
+  display: block;
 
   @media (max-width: 600px) {
-    flex-direction: column;
-    align-items: flex-start;
+    max-height: 90px;
+  }
+}
+
+.adBannerDismiss {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.55);
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.8);
   }
 }
 
@@ -664,7 +617,6 @@ $main-max-width: 1200px;
 
 .stickySidebarImageLink {
   display: block;
-  margin-top: 8px;
   flex: 1;
   min-height: 0;
 }
@@ -675,16 +627,6 @@ $main-max-width: 1200px;
   object-fit: cover;
   border-radius: 10px;
   display: block;
-}
-
-.stickySidebarLabel {
-  margin-top: 8px;
-  flex-shrink: 0;
-  font-size: 11px;
-  color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 /* ═══════════════════════════════
@@ -807,50 +749,9 @@ $main-max-width: 1200px;
   }
 }
 
-/* News list */
-.newsList {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.newsRow {
-  padding: 10px 12px;
-  border-radius: 10px;
-  transition: background 0.12s;
-
-  &:hover {
-    background: var(--bg-secondary);
-  }
-}
-
-.newsMeta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
-}
-
-.newsCat {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  color: var(--accent);
-  background: rgba(249, 115, 22, 0.1);
-  border-radius: 4px;
-  padding: 2px 7px;
-}
-
-.newsTime {
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
-.newsHeadline {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-primary);
-  line-height: 1.4;
+/* News widget */
+.newsWidgetBody {
+  height: 340px;
 }
 
 /* ═══════════════════════════════
@@ -886,10 +787,11 @@ $main-max-width: 1200px;
 
 .analysisRow {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 3px;
   padding: 10px 12px;
   border-radius: 10px;
+  text-decoration: none;
   transition: background 0.12s;
 
   &:hover {
@@ -898,27 +800,17 @@ $main-max-width: 1200px;
 }
 
 .analysisPair {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-right: 8px;
-}
-
-.analysisTf {
   font-size: 11px;
-  color: var(--text-muted);
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  color: var(--accent);
 }
 
-.analysisBias {
-  font-size: 12px;
-  font-weight: 600;
-
-  &.bullish {
-    color: #16a34a;
-  }
-  &.bearish {
-    color: #dc2626;
-  }
+.analysisTitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.4;
 }
 
 /* Forum */
@@ -953,66 +845,8 @@ $main-max-width: 1200px;
 }
 
 /* Calendar */
-.calList {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.calRow {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  transition: background 0.12s;
-
-  &:hover {
-    background: var(--bg-secondary);
-  }
-}
-
-.calTime {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-muted);
-  min-width: 42px;
-}
-
-.calEvent {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-primary);
-  flex: 1;
-}
-
-.calDot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--border);
-  flex-shrink: 0;
-
-  &.live {
-    background: #dc2626;
-    box-shadow: 0 0 6px rgba(220, 38, 38, 0.5);
-  }
-}
-
-/* ═══════════════════════════════
-   PrimeTrade banner
-   ═══════════════════════════════ */
-.primeLearnMore {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--accent);
-  text-decoration: none;
-  white-space: nowrap;
-  flex-shrink: 0;
-
-  &:hover {
-    text-decoration: underline;
-  }
+.calWidgetBody {
+  height: 320px;
 }
 
 /* ═══════════════════════════════

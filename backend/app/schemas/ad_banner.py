@@ -1,8 +1,9 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from datetime import datetime
-from typing import List, Optional
+from typing import Dict, Optional
 
 from app.schemas.broker_placement import is_valid_placement_region
+from app.utils.translate import SUPPORTED_LOCALES
 
 # Ad-placement routes and the banner-ad slots available on each. Keyed the
 # same way the admin "Ad Placements" page's route dropdown is keyed.
@@ -33,16 +34,27 @@ is_valid_banner_region = is_valid_placement_region
 
 
 class AdBannerUpsert(BaseModel):
-    sponsor_name: str
-    description: str = ""
-    badge_text: str = "SPONSORED"
-    logo_src: Optional[str] = None
+    broker_id: str
+    # {"en": "https://...", ...} — one creative image per language. Resolved
+    # to the visitor's locale at read time (falls back to default_image_url,
+    # then any available image) rather than machine-translated like other
+    # content.
+    images: Dict[str, str] = {}
+    # Shown when the visitor's locale has no entry in `images`.
+    default_image_url: Optional[str] = None
+    # Click-through override; falls back to the broker's own referral link
+    # when unset.
     link_url: Optional[str] = None
-    cta_label: Optional[str] = None
-    features: List[str] = []
-    disclaimer: Optional[str] = None
     dismissible: bool = False
     status: str = "active"
+
+    @field_validator("images")
+    @classmethod
+    def _check_locales(cls, v: Dict[str, str]) -> Dict[str, str]:
+        invalid = sorted(set(v) - SUPPORTED_LOCALES)
+        if invalid:
+            raise ValueError(f"Unsupported locale(s): {', '.join(invalid)}")
+        return v
 
 
 class AdBanner(AdBannerUpsert):

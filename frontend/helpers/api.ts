@@ -309,7 +309,7 @@ export interface HomepageData {
   top_traders: Array<{ id: string; name: string; avatar_initials: string; roi_12m: number; followers: number; win_rate: number; strategy: string; pairs: string[] }>;
   latest_news: Array<{ id: string; title: string; excerpt?: string; cover_image_url?: string; created_at: string }>;
   open_plays: Array<{ id: string; pair: string; direction: string; entry_price: string; take_profit?: string; stop_loss?: string; timeframe?: string; play_type: string; status: string }>;
-  latest_analysis: Array<{ id: string; pair: string; timeframe: string; bias: string; summary?: string }>;
+  latest_analysis: Array<{ id: string; title: string; symbol?: string; market_category?: string; created_at: string }>;
   recent_threads: Array<{ id: string; title: string; category: string; author_email: string; reply_count: number; is_pinned: boolean; created_at: string }>;
   broker_sections: Record<BrokerSectionKey, BrokerSlot[]>;
   ad_banners: Record<string, AdBannerContent>;
@@ -338,22 +338,16 @@ export interface BrokerPlacement {
 // ad blocks.
 export type AdPlacementPage = "homepage" | "signin";
 
+// What a visitor actually sees — the banner's image (already picked for
+// their locale) and where clicking it goes.
 export interface AdBannerContent {
-  sponsor_name: string;
-  description: string;
-  badge_text: string;
-  logo_src: string | null;
+  image_url: string | null;
   link_url: string | null;
-  cta_label: string | null;
-  // Short feature-bullet strings, e.g. ["FCA · ASIC regulated", "0.0 pip
-  // spreads"] — used by richer banner slots like the sign-in featured broker
-  // card. Empty for slots that don't use bullets.
-  features: string[];
-  disclaimer: string | null;
+  alt: string;
   dismissible: boolean;
 }
 
-export interface AdBanner extends AdBannerContent {
+export interface AdBanner {
   id: string;
   page: AdPlacementPage;
   slot: string;
@@ -361,12 +355,28 @@ export interface AdBanner extends AdBannerContent {
   // geo_coverage region code (e.g. "europe"), or an ISO country code — same
   // scope semantics as BrokerPlacementRegion.
   region: BrokerPlacementRegion;
+  broker_id: string;
+  // One creative image per language the broker provided, e.g.
+  // { en: "https://...", ar: "https://..." }. Resolved to the visitor's
+  // locale on read (AdBannerContent.image_url) — not machine-translated.
+  images: Record<string, string>;
+  // Shown when the visitor's locale has no entry in `images`.
+  default_image_url: string | null;
+  // Click-through override; falls back to the broker's own referral link
+  // when unset.
+  link_url: string | null;
+  dismissible: boolean;
   status: "active" | "inactive";
   created_at: string;
   updated_at: string;
 }
 
-export interface AdBannerUpsert extends AdBannerContent {
+export interface AdBannerUpsert {
+  broker_id: string;
+  images: Record<string, string>;
+  default_image_url: string | null;
+  link_url: string | null;
+  dismissible: boolean;
   status: "active" | "inactive";
 }
 

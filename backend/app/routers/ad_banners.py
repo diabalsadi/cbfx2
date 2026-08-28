@@ -4,6 +4,7 @@ from typing import List, Optional
 
 from app.database import get_db
 from app.models.ad_banner import AdBanner
+from app.models.broker import Broker
 from app.schemas.ad_banner import (
     PAGE_BANNER_SLOTS,
     STATUSES,
@@ -71,8 +72,8 @@ def set_banner(
         )
     if payload.status not in STATUSES:
         raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {', '.join(sorted(STATUSES))}")
-    if not payload.sponsor_name.strip():
-        raise HTTPException(status_code=400, detail="Sponsor name is required")
+    if not db.query(Broker).filter(Broker.id == payload.broker_id).first():
+        raise HTTPException(status_code=400, detail="Invalid broker selected")
 
     banner = (
         db.query(AdBanner)

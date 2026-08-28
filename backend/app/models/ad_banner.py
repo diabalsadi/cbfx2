@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Boolean, DateTime, JSON, UniqueConstraint
+from sqlalchemy import Column, String, Boolean, DateTime, JSON, ForeignKey, UniqueConstraint
 from sqlalchemy.sql import func
 from app.database import Base
 import uuid
@@ -20,17 +20,19 @@ class AdBanner(Base):
     # broker geo_coverage region codes (e.g. "europe") or an ISO country code
     # (e.g. "US"), letting admins show different banner content per region.
     region = Column(String, nullable=False, default="default")
-    sponsor_name = Column(String, nullable=False)
-    description = Column(String, nullable=False, default="")
-    badge_text = Column(String, nullable=False, default="SPONSORED")
-    logo_src = Column(String, nullable=True)
+    broker_id = Column(String, ForeignKey("brokers.id", ondelete="CASCADE"), nullable=False, index=True)
+    # {"en": "https://...", "ar": "https://...", ...} — one creative image the
+    # broker supplied per language. Resolved at read time to the visitor's
+    # locale, falling back to default_image_url, then any available image.
+    images = Column(JSON, nullable=False, default=dict)
+    # Shown when the visitor's locale has no entry in `images` — a single
+    # creative that works for any language (e.g. a logo-only or text-free
+    # image), so a banner isn't blank for languages the broker hasn't
+    # supplied a specific creative for.
+    default_image_url = Column(String, nullable=True)
+    # Click-through override; when unset, falls back to the broker's own
+    # UTM referral link (see utils/broker_offer.py:referral_url).
     link_url = Column(String, nullable=True)
-    cta_label = Column(String, nullable=True)
-    # JSON list of short feature-bullet strings, e.g. ["FCA · ASIC regulated",
-    # "0.0 pip spreads"] — used by richer banner slots like the sign-in
-    # featured broker card. Empty for slots that don't use bullets.
-    features = Column(JSON, nullable=False, default=list)
-    disclaimer = Column(String, nullable=True)
     dismissible = Column(Boolean, nullable=False, default=False)
     status = Column(String, nullable=False, default="active")  # active | inactive
     created_at = Column(DateTime(timezone=True), server_default=func.now())

@@ -151,6 +151,27 @@ export function TopStoriesWidget({ tvSymbol, theme }: WidgetProps) {
   );
 }
 
+/** General financial newswire — not tied to a single symbol, unlike
+ * TopStoriesWidget above. Used on the News route to supplement our own
+ * admin-authored articles with a live third-party feed. */
+export function MarketNewsWidget({ theme }: { theme: TvTheme }) {
+  const locale = useTvLocale();
+  return (
+    <TradingViewScriptEmbed
+      scriptSrc="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js"
+      config={{
+        feedMode: "all_symbols",
+        colorTheme: theme,
+        isTransparent: true,
+        displayMode: "regular",
+        width: "100%",
+        height: "100%",
+        locale,
+      }}
+    />
+  );
+}
+
 /** Live economic/financial events calendar — not tied to a single symbol. */
 export function EconomicCalendarWidget({ theme }: { theme: TvTheme }) {
   const locale = useTvLocale();
