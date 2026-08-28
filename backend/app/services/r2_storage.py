@@ -14,6 +14,7 @@ import boto3
 from botocore.client import Config
 
 IMAGES_PREFIX = "images/"
+REPORTS_PREFIX = "broker-reports/"
 
 # Extension is derived from this allowlist (never from the client-supplied
 # filename), matching the pattern in routers/forum.py — keeps the store from
@@ -25,7 +26,14 @@ ALLOWED_IMAGE_TYPES = {
     "image/gif": ".gif",
 }
 
+# Broker trading-report uploads are validated by filename extension, not
+# content-type — browsers send inconsistent MIME types for spreadsheet/CSV
+# files (e.g. "application/vnd.ms-excel" vs "text/csv" vs blank), unlike the
+# fixed set of image MIME types above.
+ALLOWED_REPORT_EXTENSIONS = {".csv", ".xlsx", ".xls", ".pdf"}
+
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+MAX_REPORT_UPLOAD_BYTES = 25 * 1024 * 1024
 
 _client = None
 
@@ -35,6 +43,12 @@ class MediaImage(TypedDict):
     url: str
     size: int
     last_modified: str
+
+
+class BrokerReportFile(TypedDict):
+    key: str
+    url: str
+    size: int
 
 
 def _bucket_name() -> str:
@@ -76,7 +90,7 @@ def _public_url(key: str) -> str:
 def _safe_stem(filename: str) -> str:
     stem = Path(filename).stem
     stem = re.sub(r"[^a-zA-Z0-9_-]+", "-", stem).strip("-").lower()
-    return stem[:60] or "image"
+    return stem[:60] or "file"
 
 
 def upload_image(filename: str, content_type: str, data: bytes) -> MediaImage:
@@ -122,3 +136,27 @@ def delete_image(key: str) -> None:
     if not key.startswith(IMAGES_PREFIX) or ".." in key:
         raise ValueError("Invalid image key")
     _get_client().delete_object(Bucket=_bucket_name(), Key=key)
+
+
+def upload_broker_report(broker_id: str, filename: str, data: bytes) -> BrokerReportFile:
+    suffix = Path(filename).suffix.lower()
+    if suffix not in ALLOWED_REPORT_EXTENSIONS:
+        allowed = ", ".join(sorted(ALLOWED_REPORT_EXTENSIONS))
+        raise ValueError(f"Unsupported report file type. Allowed: {allowed}")
+    if len(data) > MAX_REPORT_UPLOAD_BYTES:
+        raise ValueError("Report file must be 25MB or smaller.")
+
+    key = f"{REPORTS_PREFIX}{broker_id}/{uuid.uuid4().hex[:8]}-{_safe_stem(filename)}{suffix}"
+    _get_client().put_object(Bucket=_bucket_name(), Key=key, Body=data)
+    return {"key": key, "url": _public_url(key), "size": len(data)}
+
+
+def delete_broker_report(key: str) -> None:
+    if not key.startswith(REPORTS_PREFIX) or ".." in key:
+        raise ValueError("Invalid report key")
+    _get_client().delete_object(Bucket=_bucket_name(), Key=key)
+
+
+def url_for(key: str) -> str:
+    """Public URL for a previously-uploaded object key (image or report)."""
+    return _public_url(key)

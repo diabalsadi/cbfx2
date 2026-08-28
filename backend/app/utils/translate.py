@@ -11,6 +11,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.translation import Translation
+from app.services import cloudflare_kv
+from app.utils.cache import PUBLIC_CACHE_TTL_SECONDS
 
 logger = logging.getLogger(__name__)
 
@@ -81,15 +83,34 @@ def _hash_text(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+def _google_translate_cache_key(texts: list, target_locale: str, fmt: str) -> str:
+    # \x1f (unit separator) as the join char so no real text content could
+    # ever be crafted to collide two different (texts, locale, fmt) inputs
+    # onto the same digest.
+    digest = hashlib.sha256("\x1f".join(texts).encode("utf-8")).hexdigest()
+    return f"translate:google:{target_locale}:{fmt}:{digest}"
+
+
 def _call_google_translate(texts: list, target_locale: str, fmt: str) -> list:
     """Best-effort batched call to Google Cloud Translation API v2 (Basic),
     authenticated with a plain API key (form field, no OAuth/SDK). Fails open
     on ANY problem — missing key, network error, timeout, non-200, unexpected
     response shape — returning `texts` unchanged so a Google outage or
-    misconfiguration never turns a public response into a 500."""
+    misconfiguration never turns a public response into a 500.
+
+    The actual Google response for a given (texts, target_locale, fmt) batch
+    is cached in Cloudflare KV for PUBLIC_CACHE_TTL_SECONDS — this sits in
+    front of the network call only; `_translate_many`'s per-string DB cache
+    above it is still the permanent store, so a KV miss/expiry never re-bills
+    Google for text it has already translated before."""
     api_key = os.getenv("GOOGLE_TRANSLATE_API_KEY")
     if not api_key or not texts:
         return texts
+
+    cache_key = _google_translate_cache_key(texts, target_locale, fmt)
+    cached = cloudflare_kv.get(cache_key)
+    if isinstance(cached, list) and len(cached) == len(texts):
+        return cached
 
     fields = [
         ("key", api_key),
@@ -106,7 +127,9 @@ def _call_google_translate(texts: list, target_locale: str, fmt: str) -> list:
         translations = data["data"]["translations"]
         if len(translations) != len(texts):
             raise ValueError("translation count mismatch")
-        return [t["translatedText"] for t in translations]
+        result = [t["translatedText"] for t in translations]
+        cloudflare_kv.set(cache_key, result, PUBLIC_CACHE_TTL_SECONDS)
+        return result
     except urllib.error.HTTPError as e:
         # Google's response body (not just the bare status code) carries the
         # actual reason — e.g. "accessNotConfigured" (API not enabled for this

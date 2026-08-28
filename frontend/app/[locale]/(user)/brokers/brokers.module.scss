@@ -212,6 +212,7 @@
 }
 
 .ctaBtn {
+  display: block;
   width: 100%;
   padding: 11px;
   background: var(--accent);
@@ -220,9 +221,12 @@
   border-radius: 10px;
   font-size: 14px;
   font-weight: 600;
+  text-align: center;
+  text-decoration: none;
   cursor: pointer;
   transition: background 0.15s;
   margin-top: auto;
+  box-sizing: border-box;
 
   &:hover {
     background: var(--accent-hover);

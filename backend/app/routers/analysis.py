@@ -6,11 +6,22 @@ from app.database import get_db
 from app.models.analysis import Analysis as AnalysisModel
 from app.schemas.analysis import Analysis, AnalysisCreate, AnalysisUpdate
 from app.utils.auth import get_current_user
+from app.utils.cache import purge_public_cache
 from app.utils.geo import detect_region, extract_client_ip
 from app.utils.translate import detect_locale, translate_fields
 from app.models.user import User
 
 router = APIRouter(prefix="/analysis", tags=["analysis"])
+
+ALLOWED_ROLES = {"super_admin", "editor"}
+
+
+def require_roles(roles: set):
+    def checker(current_user: User = Depends(get_current_user)):
+        if current_user.role not in roles:
+            raise HTTPException(status_code=403, detail="Insufficient permissions")
+        return current_user
+    return checker
 
 
 @router.get("", response_model=List[Analysis])
@@ -43,15 +54,14 @@ def get_analysis(analysis_id: str, request: Request, db: Session = Depends(get_d
 def create_analysis(
     data: AnalysisCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_roles(ALLOWED_ROLES)),
 ):
     """Admin-only — create an analysis entry."""
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Admin only")
     entry = AnalysisModel(**data.model_dump(), author_email=current_user.email)
     db.add(entry)
     db.commit()
     db.refresh(entry)
+    purge_public_cache()
     return entry
 
 
@@ -60,11 +70,9 @@ def update_analysis(
     analysis_id: str,
     data: AnalysisUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_roles(ALLOWED_ROLES)),
 ):
     """Admin-only — update an analysis entry."""
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Admin only")
     entry = db.query(AnalysisModel).filter(AnalysisModel.id == analysis_id).first()
     if not entry:
         raise HTTPException(status_code=404, detail="Analysis not found")
@@ -72,6 +80,7 @@ def update_analysis(
         setattr(entry, field, value)
     db.commit()
     db.refresh(entry)
+    purge_public_cache()
     return entry
 
 
@@ -79,13 +88,12 @@ def update_analysis(
 def delete_analysis(
     analysis_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_roles(ALLOWED_ROLES)),
 ):
     """Admin-only — delete an analysis entry."""
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Admin only")
     entry = db.query(AnalysisModel).filter(AnalysisModel.id == analysis_id).first()
     if not entry:
         raise HTTPException(status_code=404, detail="Analysis not found")
     db.delete(entry)
     db.commit()
+    purge_public_cache()

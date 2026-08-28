@@ -6,9 +6,20 @@ from app.database import get_db
 from app.models.market_price import MarketPrice as MarketPriceModel
 from app.schemas.market_price import MarketPrice, MarketPriceCreate, MarketPriceUpdate
 from app.utils.auth import get_current_user
+from app.utils.cache import purge_public_cache
 from app.models.user import User
 
 router = APIRouter(prefix="/market-prices", tags=["market-prices"])
+
+ALLOWED_ROLES = {"super_admin", "editor"}
+
+
+def require_roles(roles: set):
+    def checker(current_user: User = Depends(get_current_user)):
+        if current_user.role not in roles:
+            raise HTTPException(status_code=403, detail="Insufficient permissions")
+        return current_user
+    return checker
 
 
 @router.get("", response_model=List[MarketPrice])
@@ -21,11 +32,9 @@ def list_market_prices(db: Session = Depends(get_db)):
 def create_market_price(
     data: MarketPriceCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_roles(ALLOWED_ROLES)),
 ):
     """Admin-only — create a new market price entry."""
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Admin only")
     existing = db.query(MarketPriceModel).filter(MarketPriceModel.symbol == data.symbol).first()
     if existing:
         raise HTTPException(status_code=400, detail="Symbol already exists")
@@ -33,6 +42,7 @@ def create_market_price(
     db.add(entry)
     db.commit()
     db.refresh(entry)
+    purge_public_cache()
     return entry
 
 
@@ -41,11 +51,9 @@ def update_market_price(
     symbol: str,
     data: MarketPriceUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_roles(ALLOWED_ROLES)),
 ):
     """Admin-only — update price/change for a symbol."""
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Admin only")
     entry = db.query(MarketPriceModel).filter(MarketPriceModel.symbol == symbol).first()
     if not entry:
         raise HTTPException(status_code=404, detail="Symbol not found")
@@ -53,4 +61,5 @@ def update_market_price(
         setattr(entry, field, value)
     db.commit()
     db.refresh(entry)
+    purge_public_cache()
     return entry

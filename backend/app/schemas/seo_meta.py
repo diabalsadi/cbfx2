@@ -13,6 +13,7 @@ SEO_ROUTES = {
     "analysis",
     "analysis_detail",
     "brokers",
+    "brokers_detail",
     "calendar",
     "cashback",
     "copy_trading",

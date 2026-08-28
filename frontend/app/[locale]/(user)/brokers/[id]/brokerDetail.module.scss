@@ -1,0 +1,188 @@
+.page {
+  padding: 32px 0 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 780px;
+}
+
+.state {
+  padding: 60px 0;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 15px;
+}
+
+.backLink {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-decoration: none;
+
+  &:hover {
+    color: var(--accent);
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: var(--accent);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 18px;
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.name {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 4px;
+}
+
+.coverage {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.rateBadge {
+  margin-left: auto;
+  background: var(--accent-light);
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 14px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.ctaBtn {
+  display: block;
+  text-align: center;
+  padding: 13px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.15s;
+
+  &:hover {
+    background: var(--accent-hover);
+  }
+}
+
+.ctaUnavailable {
+  padding: 13px;
+  background: var(--bg-secondary);
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  color: var(--text-muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.hint {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.accountTypeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.accountTypeCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.accountTypeName {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.accountTypeDesc {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  margin: 0 0 8px;
+}
+
+.rateTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+
+  td {
+    padding: 4px 0;
+    color: var(--text-primary);
+  }
+}
+
+.rateValue {
+  text-align: right;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.payoutRow {
+  display: flex;
+  gap: 32px;
+  background: var(--bg-secondary);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.payoutLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.payoutValue {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.termsText {
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  margin: 0;
+}

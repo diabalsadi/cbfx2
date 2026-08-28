@@ -13,6 +13,7 @@ from app.schemas.ad_banner import (
     AdBanner as AdBannerSchema,
 )
 from app.utils.auth import get_current_user
+from app.utils.cache import purge_public_cache
 from app.models.user import User
 
 router = APIRouter(prefix="/ad-banners", tags=["ad-banners"])
@@ -86,6 +87,7 @@ def set_banner(
         db.add(banner)
     db.commit()
     db.refresh(banner)
+    purge_public_cache()
     return banner
 
 
@@ -106,3 +108,4 @@ def clear_banner(
     if banner:
         db.delete(banner)
         db.commit()
+        purge_public_cache()

@@ -8,7 +8,7 @@ from app.routers import auth
 from app.routers import articles, clients, campaigns, users, public
 from app.routers import market_prices, copy_traders, plays, analysis, forum
 from app.routers import brokers, geo, broker_placements, ad_banners, mt5_accounts, seo_meta
-from app.routers import referrals, visits, notifications, media
+from app.routers import referrals, visits, notifications, media, broker_reports
 
 # Import all models so SQLAlchemy creates their tables
 import app.models.user
@@ -28,6 +28,7 @@ import app.models.broker_placement
 import app.models.ad_banner
 import app.models.mt5_account
 import app.models.wallet_transaction
+import app.models.broker_report
 import app.models.seo_meta
 import app.models.visit
 import app.models.notification
@@ -125,6 +126,11 @@ with engine.begin() as connection:
     connection.execute(text("ALTER TABLE pending_registrations ADD COLUMN IF NOT EXISTS token_hash VARCHAR"))
     connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS owner_email VARCHAR"))
     connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT FALSE"))
+    connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS signup_url VARCHAR"))
+    connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS account_types JSON DEFAULT '[]'::json"))
+    connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS terms_text TEXT"))
+    connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS payout_destination VARCHAR DEFAULT 'wallet'"))
+    connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS payout_duration_days INTEGER"))
 
     # Indexes on FK/filter columns that predate their model's index=True —
     # create_all() only applies index=True to brand-new tables, so existing
@@ -185,6 +191,7 @@ app.include_router(referrals.router)
 app.include_router(visits.router)
 app.include_router(notifications.router)
 app.include_router(media.router)
+app.include_router(broker_reports.router)
 
 
 @app.get("/")

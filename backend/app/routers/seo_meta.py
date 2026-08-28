@@ -14,6 +14,7 @@ from app.schemas.seo_meta import (
     SeoSettings as SeoSettingsSchema,
 )
 from app.utils.auth import get_current_user
+from app.utils.cache import purge_public_cache
 from app.models.user import User
 
 router = APIRouter(prefix="/seo", tags=["seo"])
@@ -74,6 +75,7 @@ def set_seo_settings(
         setattr(settings, field, value)
     db.commit()
     db.refresh(settings)
+    purge_public_cache()
     return settings
 
 
@@ -106,6 +108,7 @@ def set_seo_meta(
         db.add(seo)
     db.commit()
     db.refresh(seo)
+    purge_public_cache()
     return seo
 
 
@@ -125,3 +128,4 @@ def clear_seo_meta(
     if seo:
         db.delete(seo)
         db.commit()
+        purge_public_cache()

@@ -6,6 +6,7 @@ from app.database import get_db
 from app.models.article import Article
 from app.schemas.article import ArticleCreate, ArticleUpdate, Article as ArticleSchema
 from app.utils.auth import get_current_user
+from app.utils.cache import purge_public_cache
 from app.models.user import User
 
 router = APIRouter(prefix="/articles", tags=["articles"])
@@ -53,6 +54,7 @@ def create_article(
     db.add(article)
     db.commit()
     db.refresh(article)
+    purge_public_cache()
     return article
 
 
@@ -82,6 +84,7 @@ def update_article(
         setattr(article, field, value)
     db.commit()
     db.refresh(article)
+    purge_public_cache()
     return article
 
 
@@ -96,3 +99,4 @@ def delete_article(
         raise HTTPException(status_code=404, detail="Article not found")
     db.delete(article)
     db.commit()
+    purge_public_cache()

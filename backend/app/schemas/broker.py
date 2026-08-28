@@ -14,6 +14,19 @@ REGIONS = {
 }
 
 COVERAGE_TYPES = {"region", "country"}
+PAYOUT_DESTINATIONS = {"wallet", "trading_account"}
+
+
+class InstrumentCashback(BaseModel):
+    symbol: str
+    rate: float  # same units as Broker.cashback_rate (percentage points)
+
+
+class BrokerAccountType(BaseModel):
+    name: str
+    description: Optional[str] = None
+    # Empty means this account type just uses the broker's flat cashback_rate.
+    cashback: List[InstrumentCashback] = []
 
 
 def _validate_coverage(coverage_type: Optional[str], geo_coverage: Optional[List[str]]):
@@ -35,6 +48,11 @@ class BrokerBase(BaseModel):
     geo_coverage: List[str] = []
     cashback_rate: float = 0.0  # percentage points, e.g. 82.5 means 82.5%
     referral_id: Optional[str] = None
+    signup_url: Optional[str] = None
+    account_types: List[BrokerAccountType] = []
+    terms_text: Optional[str] = None
+    payout_destination: Literal["wallet", "trading_account"] = "wallet"
+    payout_duration_days: Optional[int] = None
     status: Optional[str] = "active"
 
     @model_validator(mode="after")
@@ -57,6 +75,11 @@ class BrokerUpdate(BaseModel):
     geo_coverage: Optional[List[str]] = None
     cashback_rate: Optional[float] = None
     referral_id: Optional[str] = None
+    signup_url: Optional[str] = None
+    account_types: Optional[List[BrokerAccountType]] = None
+    terms_text: Optional[str] = None
+    payout_destination: Optional[Literal["wallet", "trading_account"]] = None
+    payout_duration_days: Optional[int] = None
     status: Optional[str] = None
     # Only a super_admin caller's value for this field is honored — see
     # update_broker(); present here so the same schema/endpoint can be used

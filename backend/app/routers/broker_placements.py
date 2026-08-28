@@ -12,6 +12,7 @@ from app.schemas.broker_placement import (
     BrokerPlacement as BrokerPlacementSchema,
 )
 from app.utils.auth import get_current_user
+from app.utils.cache import purge_public_cache
 from app.models.user import User
 
 router = APIRouter(prefix="/broker-placements", tags=["broker-placements"])
@@ -89,6 +90,7 @@ def set_placement(
         db.add(placement)
     db.commit()
     db.refresh(placement)
+    purge_public_cache()
     return placement
 
 
@@ -113,3 +115,4 @@ def clear_placement(
     if placement:
         db.delete(placement)
         db.commit()
+        purge_public_cache()

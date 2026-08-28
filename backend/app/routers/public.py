@@ -17,10 +17,12 @@ from app.models.analysis import Analysis
 from app.models.forum_reply import ForumReply
 from app.models.forum_thread import ForumThread
 from app.schemas.article import Article as ArticleSchema
+from app.schemas.broker_offer import PublicBrokerOffer
 from app.utils.geo import detect_region, extract_client_ip
 from app.utils.translate import detect_locale, translate_fields
 from app.utils.forum_stats import get_reply_count_lookup
 from app.utils.cache import public_cache, PUBLIC_CACHE_TTL_SECONDS
+from app.utils.broker_offer import referral_url
 
 # Article fields that carry human-readable copy, translated on read for
 # every /public/articles and /public/analysis endpoint below (both operate on
@@ -48,14 +50,14 @@ def list_published_articles(request: Request, db: Session = Depends(get_db)):
             .order_by(Article.created_at.desc())
             .all()
         )
-        # Validate to plain Pydantic models before caching — the ORM rows
-        # are bound to this request's db session, which closes once the
-        # request ends, so a later cache hit must never hand back the raw
-        # ORM objects.
-        return [ArticleSchema.model_validate(a) for a in rows]
+        # Validate to plain JSON-safe dicts before caching — the ORM rows are
+        # bound to this request's db session, which closes once the request
+        # ends, so a later cache hit must never hand back the raw ORM
+        # objects, and the cache itself (Cloudflare KV) only stores JSON.
+        return [ArticleSchema.model_validate(a).model_dump(mode="json") for a in rows]
 
     articles = public_cache.get_or_set("public:articles:news", PUBLIC_CACHE_TTL_SECONDS, compute)
-    return [translate_fields(db, a.model_dump(), ARTICLE_TRANSLATE_FIELDS, locale) for a in articles]
+    return [translate_fields(db, a, ARTICLE_TRANSLATE_FIELDS, locale) for a in articles]
 
 
 @router.get("/articles/{article_id}", response_model=ArticleSchema)
@@ -75,12 +77,12 @@ def get_published_article(article_id: str, request: Request, db: Session = Depen
             )
             .first()
         )
-        return ArticleSchema.model_validate(article) if article else None
+        return ArticleSchema.model_validate(article).model_dump(mode="json") if article else None
 
     result = public_cache.get_or_set(f"public:articles:news:{article_id}", PUBLIC_CACHE_TTL_SECONDS, compute)
     if not result:
         raise HTTPException(status_code=404, detail="Article not found")
-    return translate_fields(db, result.model_dump(), ARTICLE_TRANSLATE_FIELDS, locale)
+    return translate_fields(db, result, ARTICLE_TRANSLATE_FIELDS, locale)
 
 
 @router.get("/analysis", response_model=List[ArticleSchema])
@@ -97,10 +99,10 @@ def list_published_analysis(request: Request, db: Session = Depends(get_db)):
             .order_by(Article.created_at.desc())
             .all()
         )
-        return [ArticleSchema.model_validate(a) for a in rows]
+        return [ArticleSchema.model_validate(a).model_dump(mode="json") for a in rows]
 
     articles = public_cache.get_or_set("public:articles:analysis", PUBLIC_CACHE_TTL_SECONDS, compute)
-    return [translate_fields(db, a.model_dump(), ARTICLE_TRANSLATE_FIELDS, locale) for a in articles]
+    return [translate_fields(db, a, ARTICLE_TRANSLATE_FIELDS, locale) for a in articles]
 
 
 @router.get("/analysis/{article_id}", response_model=ArticleSchema)
@@ -120,12 +122,12 @@ def get_published_analysis(article_id: str, request: Request, db: Session = Depe
             )
             .first()
         )
-        return ArticleSchema.model_validate(article) if article else None
+        return ArticleSchema.model_validate(article).model_dump(mode="json") if article else None
 
     result = public_cache.get_or_set(f"public:articles:analysis:{article_id}", PUBLIC_CACHE_TTL_SECONDS, compute)
     if not result:
         raise HTTPException(status_code=404, detail="Article not found")
-    return translate_fields(db, result.model_dump(), ARTICLE_TRANSLATE_FIELDS, locale)
+    return translate_fields(db, result, ARTICLE_TRANSLATE_FIELDS, locale)
 
 
 def _covers_visitor(broker: Broker, country_code: Optional[str], region: Optional[str]) -> bool:
@@ -168,6 +170,7 @@ def list_brokers(request: Request, db: Session = Depends(get_db)):
                 "coverage_type": b.coverage_type,
                 "geo_coverage": b.geo_coverage,
                 "cashback_rate": b.cashback_rate,
+                "account_types_count": len(b.account_types or []),
                 "status": b.status,
             }
             for b in brokers
@@ -175,6 +178,33 @@ def list_brokers(request: Request, db: Session = Depends(get_db)):
         ]
 
     return public_cache.get_or_set(f"public:brokers:{country_code}:{region}", PUBLIC_CACHE_TTL_SECONDS, compute)
+
+
+@router.get("/brokers/{broker_id}", response_model=PublicBrokerOffer)
+def get_broker_offer(broker_id: str, request: Request, db: Session = Depends(get_db)):
+    """Public — one broker's full cashback offer (account types, per-instrument
+    rates, terms, payout details) plus a UTM-tagged referral link built from
+    its signup_url. 404s for a broker outside the visitor's detected coverage,
+    same visibility rule as the list endpoint."""
+    country_code, region = detect_region(extract_client_ip(request))
+
+    broker = db.query(Broker).filter(Broker.id == broker_id, Broker.status == "active").first()
+    if not broker or not _visible_to_visitor(broker, country_code, region):
+        raise HTTPException(status_code=404, detail="Broker not found")
+
+    return PublicBrokerOffer(
+        id=broker.id,
+        name=broker.name,
+        img_src=broker.img_src,
+        coverage_type=broker.coverage_type,
+        geo_coverage=broker.geo_coverage,
+        cashback_rate=broker.cashback_rate,
+        account_types=broker.account_types or [],
+        terms_text=broker.terms_text,
+        payout_destination=broker.payout_destination,
+        payout_duration_days=broker.payout_duration_days,
+        referral_url=referral_url(broker.signup_url, broker.id, broker.referral_id),
+    )
 
 
 @router.get("/seo/settings")

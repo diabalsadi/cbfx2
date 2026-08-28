@@ -6,9 +6,20 @@ from app.database import get_db
 from app.models.copy_trader import CopyTrader as CopyTraderModel
 from app.schemas.copy_trader import CopyTrader, CopyTraderCreate, CopyTraderUpdate
 from app.utils.auth import get_current_user
+from app.utils.cache import purge_public_cache
 from app.models.user import User
 
 router = APIRouter(prefix="/copy-traders", tags=["copy-traders"])
+
+ALLOWED_ROLES = {"super_admin", "editor"}
+
+
+def require_roles(roles: set):
+    def checker(current_user: User = Depends(get_current_user)):
+        if current_user.role not in roles:
+            raise HTTPException(status_code=403, detail="Insufficient permissions")
+        return current_user
+    return checker
 
 
 @router.get("", response_model=List[CopyTrader])
@@ -57,15 +68,14 @@ def get_copy_trader(trader_id: str, db: Session = Depends(get_db)):
 def create_copy_trader(
     data: CopyTraderCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_roles(ALLOWED_ROLES)),
 ):
     """Admin-only — create a copy trader profile."""
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Admin only")
     trader = CopyTraderModel(**data.model_dump())
     db.add(trader)
     db.commit()
     db.refresh(trader)
+    purge_public_cache()
     return trader
 
 
@@ -74,11 +84,9 @@ def update_copy_trader(
     trader_id: str,
     data: CopyTraderUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_roles(ALLOWED_ROLES)),
 ):
     """Admin-only — update a copy trader profile."""
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Admin only")
     trader = db.query(CopyTraderModel).filter(CopyTraderModel.id == trader_id).first()
     if not trader:
         raise HTTPException(status_code=404, detail="Trader not found")
@@ -86,6 +94,7 @@ def update_copy_trader(
         setattr(trader, field, value)
     db.commit()
     db.refresh(trader)
+    purge_public_cache()
     return trader
 
 
@@ -93,13 +102,12 @@ def update_copy_trader(
 def delete_copy_trader(
     trader_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_roles(ALLOWED_ROLES)),
 ):
     """Admin-only — remove a copy trader profile."""
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Admin only")
     trader = db.query(CopyTraderModel).filter(CopyTraderModel.id == trader_id).first()
     if not trader:
         raise HTTPException(status_code=404, detail="Trader not found")
     db.delete(trader)
     db.commit()
+    purge_public_cache()

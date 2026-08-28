@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { api } from "@/helpers/api";
+import { api, type BrokerAccountType, type InstrumentCashback } from "@/helpers/api";
 import { REGIONS, REGION_LABELS } from "@/helpers/regions";
 import { COUNTRIES, COUNTRY_LABELS } from "@/helpers/countries";
 import Card from "@/components/Card";
@@ -15,11 +15,17 @@ export interface Broker {
   geo_coverage: string[];
   cashback_rate: number;
   referral_id: string | null;
+  signup_url: string | null;
+  account_types: BrokerAccountType[];
+  terms_text: string | null;
+  payout_destination: "wallet" | "trading_account";
+  payout_duration_days: number | null;
   status: string;
   created_at: string;
 }
 
 const STATUS_OPTIONS = ["active", "inactive"] as const;
+const PAYOUT_DESTINATIONS = ["wallet", "trading_account"] as const;
 
 const EMPTY_FORM = {
   name: "",
@@ -28,6 +34,11 @@ const EMPTY_FORM = {
   geo_coverage: [] as string[],
   cashback_rate: "",
   referral_id: "",
+  signup_url: "",
+  account_types: [] as BrokerAccountType[],
+  terms_text: "",
+  payout_destination: "wallet" as "wallet" | "trading_account",
+  payout_duration_days: "",
   status: "active",
 };
 
@@ -104,10 +115,66 @@ export default function BrokersAdminPage() {
       geo_coverage: broker.geo_coverage,
       cashback_rate: String(broker.cashback_rate),
       referral_id: broker.referral_id || "",
+      signup_url: broker.signup_url || "",
+      account_types: broker.account_types || [],
+      terms_text: broker.terms_text || "",
+      payout_destination: broker.payout_destination || "wallet",
+      payout_duration_days:
+        broker.payout_duration_days != null ? String(broker.payout_duration_days) : "",
       status: broker.status,
     });
     setFormError("");
     setShowForm(true);
+  };
+
+  const addAccountType = () => {
+    setFormData((v) => ({
+      ...v,
+      account_types: [...v.account_types, { name: "", description: null, cashback: [] }],
+    }));
+  };
+
+  const removeAccountType = (index: number) => {
+    setFormData((v) => ({
+      ...v,
+      account_types: v.account_types.filter((_, i) => i !== index),
+    }));
+  };
+
+  const updateAccountType = (index: number, patch: Partial<BrokerAccountType>) => {
+    setFormData((v) => ({
+      ...v,
+      account_types: v.account_types.map((at, i) => (i === index ? { ...at, ...patch } : at)),
+    }));
+  };
+
+  const addInstrumentRate = (accountTypeIndex: number) => {
+    updateAccountType(accountTypeIndex, {
+      cashback: [
+        ...formData.account_types[accountTypeIndex].cashback,
+        { symbol: "", rate: 0 },
+      ],
+    });
+  };
+
+  const removeInstrumentRate = (accountTypeIndex: number, rateIndex: number) => {
+    updateAccountType(accountTypeIndex, {
+      cashback: formData.account_types[accountTypeIndex].cashback.filter(
+        (_, i) => i !== rateIndex,
+      ),
+    });
+  };
+
+  const updateInstrumentRate = (
+    accountTypeIndex: number,
+    rateIndex: number,
+    patch: Partial<InstrumentCashback>,
+  ) => {
+    updateAccountType(accountTypeIndex, {
+      cashback: formData.account_types[accountTypeIndex].cashback.map((c, i) =>
+        i === rateIndex ? { ...c, ...patch } : c,
+      ),
+    });
   };
 
   const closeForm = () => {
@@ -173,6 +240,18 @@ export default function BrokersAdminPage() {
           ? parseFloat(formData.cashback_rate)
           : 0,
         referral_id: formData.referral_id || null,
+        signup_url: formData.signup_url || null,
+        account_types: formData.account_types
+          .filter((at) => at.name.trim())
+          .map((at) => ({
+            ...at,
+            cashback: at.cashback.filter((c) => c.symbol.trim()),
+          })),
+        terms_text: formData.terms_text || null,
+        payout_destination: formData.payout_destination,
+        payout_duration_days: formData.payout_duration_days
+          ? parseInt(formData.payout_duration_days, 10)
+          : null,
         status: formData.status,
       };
       if (editingId) {
@@ -284,16 +363,159 @@ export default function BrokersAdminPage() {
               </div>
             </div>
 
+            <div className={styles.formRow}>
+              <div className={styles.field}>
+                <label className={styles.label}>{t("referralId")}</label>
+                <input
+                  className={styles.input}
+                  placeholder={t("referralIdPlaceholder")}
+                  value={formData.referral_id}
+                  onChange={(e) =>
+                    setFormData((v) => ({ ...v, referral_id: e.target.value }))
+                  }
+                />
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label}>{t("signupUrl")}</label>
+                <input
+                  className={styles.input}
+                  placeholder={t("signupUrlPlaceholder")}
+                  value={formData.signup_url}
+                  onChange={(e) =>
+                    setFormData((v) => ({ ...v, signup_url: e.target.value }))
+                  }
+                />
+              </div>
+            </div>
+
+            <div className={styles.formRow}>
+              <div className={styles.field}>
+                <label className={styles.label}>{t("payoutDestination")}</label>
+                <select
+                  className={styles.input}
+                  value={formData.payout_destination}
+                  onChange={(e) =>
+                    setFormData((v) => ({
+                      ...v,
+                      payout_destination: e.target.value as "wallet" | "trading_account",
+                    }))
+                  }
+                >
+                  {PAYOUT_DESTINATIONS.map((d) => (
+                    <option key={d} value={d}>
+                      {d === "wallet" ? t("payoutWallet") : t("payoutTradingAccount")}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label}>{t("payoutDurationDays")}</label>
+                <input
+                  className={styles.input}
+                  type="number"
+                  min="0"
+                  placeholder={t("payoutDurationPlaceholder")}
+                  value={formData.payout_duration_days}
+                  onChange={(e) =>
+                    setFormData((v) => ({ ...v, payout_duration_days: e.target.value }))
+                  }
+                />
+              </div>
+            </div>
+
             <div className={styles.field}>
-              <label className={styles.label}>{t("referralId")}</label>
-              <input
-                className={styles.input}
-                placeholder={t("referralIdPlaceholder")}
-                value={formData.referral_id}
+              <label className={styles.label}>{t("termsText")}</label>
+              <textarea
+                className={styles.textarea}
+                placeholder={t("termsPlaceholder")}
+                rows={3}
+                value={formData.terms_text}
                 onChange={(e) =>
-                  setFormData((v) => ({ ...v, referral_id: e.target.value }))
+                  setFormData((v) => ({ ...v, terms_text: e.target.value }))
                 }
               />
+            </div>
+
+            <div className={styles.field}>
+              <div className={styles.accountTypesHeader}>
+                <label className={styles.label}>{t("accountTypes")}</label>
+                <button type="button" className={styles.addSmallBtn} onClick={addAccountType}>
+                  {t("addAccountType")}
+                </button>
+              </div>
+              <p className={styles.hint}>{t("accountTypesHint")}</p>
+
+              {formData.account_types.map((at, atIndex) => (
+                <Card key={atIndex} className={styles.accountTypeCard}>
+                  <div className={styles.accountTypeRow}>
+                    <input
+                      className={styles.input}
+                      placeholder={t("accountTypeNamePlaceholder")}
+                      value={at.name}
+                      onChange={(e) => updateAccountType(atIndex, { name: e.target.value })}
+                    />
+                    <button
+                      type="button"
+                      className={styles.removeSmallBtn}
+                      onClick={() => removeAccountType(atIndex)}
+                    >
+                      {t("remove")}
+                    </button>
+                  </div>
+                  <input
+                    className={styles.input}
+                    placeholder={t("accountTypeDescriptionPlaceholder")}
+                    value={at.description || ""}
+                    onChange={(e) =>
+                      updateAccountType(atIndex, { description: e.target.value })
+                    }
+                  />
+
+                  <div className={styles.cashbackList}>
+                    {at.cashback.map((c, cIndex) => (
+                      <div key={cIndex} className={styles.cashbackRow}>
+                        <input
+                          className={styles.input}
+                          placeholder={t("instrumentPlaceholder")}
+                          value={c.symbol}
+                          onChange={(e) =>
+                            updateInstrumentRate(atIndex, cIndex, { symbol: e.target.value })
+                          }
+                        />
+                        <div className={styles.percentInputWrap}>
+                          <input
+                            className={styles.input}
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={c.rate}
+                            onChange={(e) =>
+                              updateInstrumentRate(atIndex, cIndex, {
+                                rate: parseFloat(e.target.value) || 0,
+                              })
+                            }
+                          />
+                          <span className={styles.percentSuffix}>%</span>
+                        </div>
+                        <button
+                          type="button"
+                          className={styles.removeSmallBtn}
+                          onClick={() => removeInstrumentRate(atIndex, cIndex)}
+                        >
+                          {t("remove")}
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      className={styles.addSmallBtn}
+                      onClick={() => addInstrumentRate(atIndex)}
+                    >
+                      {t("addInstrumentRate")}
+                    </button>
+                  </div>
+                </Card>
+              ))}
             </div>
 
             <div className={styles.field}>

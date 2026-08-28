@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { REGION_LABELS } from "@/helpers/regions";
 import { COUNTRY_LABELS } from "@/helpers/countries";
@@ -13,6 +14,7 @@ type Broker = {
   coverage_type: "region" | "country";
   geo_coverage: string[];
   cashback_rate: number;
+  account_types_count: number;
   status: string;
 };
 
@@ -23,8 +25,7 @@ type DisplayBroker = {
   company: string;
   status: string;
   rebate: string;
-  rating: string;
-  type: string;
+  accountTypesCount: number;
 };
 
 function getInitials(name: string) {
@@ -61,7 +62,7 @@ export default function BrokersPage() {
       })
       .then((data: Broker[]) => {
         if (cancelled) return;
-        const mapped = data.map((b, i) => {
+        const mapped = data.map((b) => {
           const labels = b.coverage_type === "country" ? COUNTRY_LABELS : REGION_LABELS;
           return {
             id: b.id,
@@ -72,8 +73,7 @@ export default function BrokersPage() {
               : t("vettedPartner"),
             status: b.status,
             rebate: `${b.cashback_rate}%`,
-            rating: `4.${5 + (i % 5)}`,
-            type: i % 2 === 0 ? t("ecn") : t("marketMaker"),
+            accountTypesCount: b.account_types_count,
           };
         });
         setBrokers(mapped);
@@ -142,7 +142,11 @@ export default function BrokersPage() {
                   )}
                   <div className={styles.brokerInfo}>
                     <div className={styles.brokerName}>{b.name}</div>
-                    <div className={styles.brokerType}>{b.type}</div>
+                    <div className={styles.brokerType}>
+                      {b.accountTypesCount > 0
+                        ? t("accountTypesCount", { count: b.accountTypesCount })
+                        : t("vettedPartner")}
+                    </div>
                   </div>
                   <div className={styles.featuredBadge}>{t("featured")}</div>
                 </div>
@@ -156,11 +160,6 @@ export default function BrokersPage() {
                   </div>
                   <div className={styles.metricDivider} />
                   <div className={styles.metric}>
-                    <span className={styles.metricValue}>⭐ {b.rating}</span>
-                    <span className={styles.metricLabel}>{t("rating")}</span>
-                  </div>
-                  <div className={styles.metricDivider} />
-                  <div className={styles.metric}>
                     <span className={`${styles.metricValue} ${styles.active}`}>
                       {t("active")}
                     </span>
@@ -168,7 +167,9 @@ export default function BrokersPage() {
                   </div>
                 </div>
 
-                <button className={styles.ctaBtn}>{t("getCashback")}</button>
+                <Link href={`/brokers/${b.id}`} className={styles.ctaBtn}>
+                  {t("getCashback")}
+                </Link>
               </div>
             ))}
           </div>

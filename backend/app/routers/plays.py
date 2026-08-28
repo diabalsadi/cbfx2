@@ -7,9 +7,20 @@ from app.database import get_db
 from app.models.play import Play as PlayModel
 from app.schemas.play import Play, PlayCreate, PlayUpdate
 from app.utils.auth import get_current_user
+from app.utils.cache import purge_public_cache
 from app.models.user import User
 
 router = APIRouter(prefix="/plays", tags=["plays"])
+
+ALLOWED_ROLES = {"super_admin", "editor"}
+
+
+def require_roles(roles: set):
+    def checker(current_user: User = Depends(get_current_user)):
+        if current_user.role not in roles:
+            raise HTTPException(status_code=403, detail="Insufficient permissions")
+        return current_user
+    return checker
 
 
 @router.get("", response_model=List[Play])
@@ -27,11 +38,9 @@ def list_open_plays(
 @router.get("/all", response_model=List[Play])
 def list_all_plays(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_roles(ALLOWED_ROLES)),
 ):
     """Admin-only — all plays regardless of status."""
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Admin only")
     return db.query(PlayModel).order_by(PlayModel.created_at.desc()).all()
 
 
@@ -48,15 +57,14 @@ def get_play(play_id: str, db: Session = Depends(get_db)):
 def create_play(
     data: PlayCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_roles(ALLOWED_ROLES)),
 ):
     """Admin-only — create a new play."""
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Admin only")
     play = PlayModel(**data.model_dump(), author_email=current_user.email)
     db.add(play)
     db.commit()
     db.refresh(play)
+    purge_public_cache()
     return play
 
 
@@ -65,11 +73,9 @@ def update_play(
     play_id: str,
     data: PlayUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_roles(ALLOWED_ROLES)),
 ):
     """Admin-only — update a play (e.g. close it)."""
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Admin only")
     play = db.query(PlayModel).filter(PlayModel.id == play_id).first()
     if not play:
         raise HTTPException(status_code=404, detail="Play not found")
@@ -81,6 +87,7 @@ def update_play(
         setattr(play, field, value)
     db.commit()
     db.refresh(play)
+    purge_public_cache()
     return play
 
 
@@ -88,13 +95,12 @@ def update_play(
 def delete_play(
     play_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_roles(ALLOWED_ROLES)),
 ):
     """Admin-only — delete a play."""
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Admin only")
     play = db.query(PlayModel).filter(PlayModel.id == play_id).first()
     if not play:
         raise HTTPException(status_code=404, detail="Play not found")
     db.delete(play)
     db.commit()
+    purge_public_cache()

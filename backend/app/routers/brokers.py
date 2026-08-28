@@ -6,6 +6,7 @@ from app.database import get_db
 from app.models.broker import Broker
 from app.schemas.broker import BrokerCreate, BrokerUpdate, Broker as BrokerSchema
 from app.utils.auth import get_current_user
+from app.utils.cache import purge_public_cache
 from app.models.user import User
 
 router = APIRouter(prefix="/brokers", tags=["brokers"])
@@ -61,6 +62,7 @@ def create_broker(
     db.add(broker)
     db.commit()
     db.refresh(broker)
+    purge_public_cache()
     return broker
 
 
@@ -85,6 +87,7 @@ def update_broker(
         setattr(broker, field, value)
     db.commit()
     db.refresh(broker)
+    purge_public_cache()
     return broker
 
 
@@ -99,3 +102,4 @@ def delete_broker(
         raise HTTPException(status_code=404, detail="Broker not found")
     db.delete(broker)
     db.commit()
+    purge_public_cache()

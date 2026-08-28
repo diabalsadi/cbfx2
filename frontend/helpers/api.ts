@@ -128,7 +128,36 @@ export interface PublicBroker {
   coverage_type: 'region' | 'country';
   geo_coverage: string[];
   cashback_rate: number;
+  account_types_count: number;
   status: string;
+}
+
+export interface InstrumentCashback {
+  symbol: string;
+  rate: number;
+}
+
+export interface BrokerAccountType {
+  name: string;
+  description: string | null;
+  cashback: InstrumentCashback[];
+}
+
+// One broker's full cashback offer — account types, per-instrument rates,
+// terms, payout details, and a UTM-tagged link to actually sign up with
+// them. Fetched per-broker on the offer detail page.
+export interface PublicBrokerOffer {
+  id: string;
+  name: string;
+  img_src: string | null;
+  coverage_type: 'region' | 'country';
+  geo_coverage: string[];
+  cashback_rate: number;
+  account_types: BrokerAccountType[];
+  terms_text: string | null;
+  payout_destination: 'wallet' | 'trading_account';
+  payout_duration_days: number | null;
+  referral_url: string | null;
 }
 
 // One linked MT5 account and its cashback wallet. A user can have several —
@@ -403,6 +432,9 @@ export const publicApi = {
   // Active brokers whose coverage includes the visitor's IP-detected
   // region/country — used to populate the register page's broker picker.
   brokers: () => api.get<PublicBroker[]>('/public/brokers'),
+  // One broker's full offer (account types, per-instrument rates, terms,
+  // payout details, referral link) — the /brokers/[id] detail page.
+  brokerOffer: (id: string) => api.get<PublicBrokerOffer>(`/public/brokers/${id}`),
 };
 
 export const usersApi = {
@@ -705,6 +737,29 @@ export const mediaApi = {
     return apiUpload<MediaImage>('/media/images', formData);
   },
   remove: (key: string) => apiFetch<void>(`/media/images/${key.split('/').map(encodeURIComponent).join('/')}`, { method: 'DELETE' }),
+};
+
+export interface BrokerReport {
+  id: string;
+  broker_id: string;
+  broker_name: string;
+  filename: string;
+  url: string;
+  size: number;
+  uploaded_by: string | null;
+  created_at: string;
+}
+
+export const brokerReportsApi = {
+  list: (brokerId?: string) =>
+    api.get<BrokerReport[]>(`/broker-reports/${brokerId ? `?broker_id=${encodeURIComponent(brokerId)}` : ''}`),
+  upload: (brokerId: string, file: File) => {
+    const formData = new FormData();
+    formData.append('broker_id', brokerId);
+    formData.append('file', file);
+    return apiUpload<BrokerReport>('/broker-reports/', formData);
+  },
+  remove: (id: string) => apiFetch<void>(`/broker-reports/${id}`, { method: 'DELETE' }),
 };
 
 export const notificationsApi = {

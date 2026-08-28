@@ -23,6 +23,71 @@
   margin: 0;
 }
 
+.brokerField {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-width: 360px;
+}
+
+.brokerLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.brokerSelect {
+  padding: 10px 12px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+  transition: border-color var(--transition);
+
+  &:focus {
+    border-color: var(--accent);
+  }
+  option {
+    background: var(--bg-card);
+  }
+}
+
+.errorMsg {
+  font-size: 13px;
+  color: #d8342c;
+  margin: 0;
+}
+
+.empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.deleteBtn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  cursor: pointer;
+  margin-left: 8px;
+  transition: all var(--transition);
+
+  &:hover {
+    background: #fdeaea;
+    border-color: #d8342c;
+    color: #d8342c;
+  }
+}
+
 .uploadCard {
   display: flex !important;
   flex-direction: column;
@@ -34,6 +99,11 @@
   transition: all var(--transition);
   cursor: default;
   text-align: center;
+
+  &.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
 
   &.dragging {
     border-color: var(--accent) !important;
