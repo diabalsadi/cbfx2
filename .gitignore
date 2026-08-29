@@ -14,3 +14,7 @@ AGENT.md
 AGENTS.md
 plan.md
 cbfx-backend-env
+*.md
+*.xlsx
+*.pdf
+*.csv
