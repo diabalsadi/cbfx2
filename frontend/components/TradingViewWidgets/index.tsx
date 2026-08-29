@@ -6,11 +6,13 @@ import type { Locale } from "@/i18n/routing";
 type TvTheme = "light" | "dark";
 
 // TradingView's own supported widget locale codes — mostly a 1:1 match with
-// ours, except Hindi, which TradingView expects as "hi_in" rather than "hi".
+// ours, except Hindi ("hi_in" rather than "hi") and Arabic ("ar_AE" rather
+// than plain "ar" — TradingView's widgets don't recognize "ar" or "ar_SA",
+// verified against the live widget embed).
 // https://www.tradingview.com/widget-docs/customization/#locales
 const TV_LOCALE: Record<Locale, string> = {
   en: "en",
-  ar: "ar",
+  ar: "ar_AE",
   es: "es",
   fa: "fa",
   pt: "pt",
@@ -64,6 +66,13 @@ function TradingViewScriptEmbed({ scriptSrc, config }: ScriptEmbedProps) {
     <div
       className="tradingview-widget-container"
       ref={containerRef}
+      // Isolated from the page's own dir — on ar/fa (RTL_LOCALES), the rest
+      // of the app renders dir="rtl", but TradingView's embeds aren't built
+      // to expect an RTL ancestor and can misbehave (including seemingly
+      // ignoring their own `locale` config) when they inherit it. Forcing
+      // ltr here keeps the widget in the direction context it actually
+      // expects, regardless of the surrounding page.
+      dir="ltr"
       style={{ height: "100%", width: "100%" }}
     />
   );
