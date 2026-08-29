@@ -651,6 +651,12 @@ export const rebatePayoutsApi = {
     api.post<RebatePayout>('/rebate-payouts', payload),
 };
 
+// Combined Signals + Copy Trading subscription paywall (Stripe embedded checkout).
+export const billingApi = {
+  createCheckout: (payload: { return_url: string }) =>
+    api.post<{ client_secret: string }>('/billing/checkout', payload),
+};
+
 export interface SeoMetaUpsert {
   title: string;
   description: string;

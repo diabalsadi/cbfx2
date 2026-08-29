@@ -8,7 +8,7 @@ from app.routers import auth
 from app.routers import articles, clients, campaigns, users, public
 from app.routers import market_prices, copy_traders, plays, analysis, forum
 from app.routers import brokers, geo, broker_placements, ad_banners, mt5_accounts, seo_meta
-from app.routers import referrals, visits, notifications, media, broker_reports, symbol_categories, internal, rebate_payouts
+from app.routers import referrals, visits, notifications, media, broker_reports, symbol_categories, internal, rebate_payouts, billing
 
 # Import all models so SQLAlchemy creates their tables
 import app.models.user
@@ -150,6 +150,9 @@ with engine.begin() as connection:
     # columns are just left as harmless unused leftovers rather than renamed.
     connection.execute(text("ALTER TABLE trade_records ADD COLUMN IF NOT EXISTS expected_amount FLOAT"))
     connection.execute(text("ALTER TABLE trade_records ADD COLUMN IF NOT EXISTS payout_id VARCHAR"))
+    connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_customer_id VARCHAR"))
+    connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_subscription_id VARCHAR"))
+    connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_status VARCHAR NOT NULL DEFAULT 'inactive'"))
 
     # Indexes on FK/filter columns that predate their model's index=True —
     # create_all() only applies index=True to brand-new tables, so existing
@@ -178,6 +181,7 @@ with engine.begin() as connection:
         ("copy_traders", "is_active"),
         ("mt5_accounts", "metaapi_account_id"),
         ("trade_records", "payout_id"),
+        ("users", "stripe_customer_id"),
     ]:
         connection.execute(text(f"CREATE INDEX IF NOT EXISTS ix_{_table}_{_column} ON {_table} ({_column})"))
 
@@ -216,6 +220,7 @@ app.include_router(broker_reports.router)
 app.include_router(symbol_categories.router)
 app.include_router(internal.router)
 app.include_router(rebate_payouts.router)
+app.include_router(billing.router)
 
 
 @app.get("/")

@@ -25,6 +25,11 @@ class UserBase(BaseModel):
     # the admin portal forces a /admin/change-password stop before anything
     # else until it's cleared (see users.update_me()).
     must_change_password: bool = False
+    # Stripe's own vocabulary (active/trialing/past_due/canceled/...), set
+    # only by the /billing/webhook handler — read-only here, never accepted
+    # by any *Update schema. "active" or "trialing" means the combined
+    # Signals + Copy Trading subscription is unlocked.
+    subscription_status: str = "inactive"
 
 
 class User(UserBase):

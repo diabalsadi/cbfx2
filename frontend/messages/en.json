@@ -65,14 +65,36 @@
     "learnMore": "Learn more",
     "dismiss": "Dismiss",
     "hero": {
-      "title1": "Trade smarter.",
-      "title2": "Earn on every pip.",
-      "subtitle": "Cashback, copy trading, premium signals and a live community — all in one cockpit.",
       "getStarted": "Get started",
-      "exploreCopyTrading": "Explore copy trading",
       "activeTraders": "Active traders",
       "vettedBrokers": "Vetted brokers",
-      "signalLatency": "Signal latency"
+      "signalLatency": "Signal latency",
+      "slides": {
+        "cashback": {
+          "tag": "Cashback",
+          "title1": "Trade More,",
+          "title2": "Earn More Back",
+          "subtitle": "Get cashback on every lot you trade — with every broker we support. No catch, no cap.",
+          "cta": "Explore Cashback"
+        },
+        "copyTrading": {
+          "tag": "Copy Trading",
+          "title1": "Copy the Trades",
+          "title2": "of Top Performers",
+          "subtitle": "Mirror real strategies from vetted traders, automatically, in real time.",
+          "cta": "Explore Copy Trading"
+        },
+        "signals": {
+          "tag": "Signals",
+          "title1": "Live Signals,",
+          "title2": "Delivered Instantly",
+          "subtitle": "Fresh trade ideas from our analysts — entries, targets, and stops, the moment they're called.",
+          "cta": "View All Signals",
+          "noSignals": "No open signals right now — check back soon.",
+          "entry": "Entry",
+          "tp": "TP"
+        }
+      }
     },
     "cashback": {
       "title": "Cashback on every trade",
@@ -177,6 +199,21 @@
     "payoutDurationDays": "Every {days} days",
     "payoutDurationUnspecified": "Not specified",
     "termsTitle": "Terms & Conditions"
+  },
+  "proGate": {
+    "priceLabel": "$25 / month",
+    "close": "Close",
+    "signInToUnlock": "Sign In to Unlock",
+    "subscribeNow": "Subscribe Now",
+    "subscribeFailed": "Failed to start checkout. Please try again.",
+    "signals": {
+      "title": "Unlock Live Trade Signals",
+      "subtitle": "Subscribe to get real-time entries, targets, and stops from our analysts — the moment they're called."
+    },
+    "copyTrading": {
+      "title": "Unlock Copy Trading",
+      "subtitle": "Subscribe to automatically mirror trades from our top-performing traders."
+    }
   },
   "copyTrading": {
     "title": "Copy Trading",

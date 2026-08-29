@@ -6,6 +6,13 @@ For local development, you can use the following test accounts:
 - **Editor**: `editor@cbfx.com` / `password123`
 - **Broker**: `broker@cbfx.com` / `password123`
 
+### Stripe test card (Signals / Copy Trading subscription checkout)
+Stripe is in test mode — no real charge occurs. Use:
+- **Card number**: `4242 4242 4242 4242`
+- **Expiry**: any future date
+- **CVC**: any 3 digits
+- **ZIP**: any value
+
 ## Backend
 
 ### How to run

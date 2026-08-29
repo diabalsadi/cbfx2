@@ -93,6 +93,11 @@
   color: #666;
 }
 
+.hintError {
+  font-size: 12px;
+  color: #f87171;
+}
+
 .input,
 .select {
   width: 100%;
@@ -121,6 +126,15 @@
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+  }
+}
+
+.inputError {
+  border-color: #f87171 !important;
+
+  &:focus {
+    border-color: #f87171 !important;
+    box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.12) !important;
   }
 }
 

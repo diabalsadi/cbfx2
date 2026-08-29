@@ -20,6 +20,17 @@ const HOMEPAGE_SYMBOLS = ["EUR/USD", "GBP/USD", "BTC/USD", "ETH/USD", "XAU/USD",
   .map(getSymbolByDisplayName)
   .filter((s): s is NonNullable<typeof s> => s !== null);
 
+/* Hero carousel — rotates through the platform's 3 core features, auto-
+   advancing every 30s. Order also drives the dot indicators. */
+const HERO_SLIDE_KEYS = ["cashback", "copyTrading", "signals"] as const;
+type HeroSlideKey = (typeof HERO_SLIDE_KEYS)[number];
+const HERO_SLIDE_HREF: Record<HeroSlideKey, string> = {
+  cashback: "/cashback",
+  copyTrading: "/copy-trading",
+  signals: "/plays",
+};
+const HERO_ROTATE_MS = 30_000;
+
 
 /* Broker-supplied image banner used before Cashback / Copy Trading / Signals /
    Markets, and (with sticky=true) the sticky-top slot. The image itself is
@@ -60,9 +71,18 @@ export default function HomePage() {
   const [dismissedBanners, setDismissedBanners] = useState<Set<string>>(new Set());
   const [data, setData] = useState<HomepageData | null>(null);
   const { theme } = useTheme();
+  const [heroSlideIndex, setHeroSlideIndex] = useState(0);
 
   useEffect(() => {
     publicApi.homepage().then(setData).catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    const id = setInterval(
+      () => setHeroSlideIndex((i) => (i + 1) % HERO_SLIDE_KEYS.length),
+      HERO_ROTATE_MS,
+    );
+    return () => clearInterval(id);
   }, []);
 
   const dismissBanner = (slot: string) =>
@@ -98,6 +118,9 @@ export default function HomePage() {
     entry: p.entry_price,
     tp: p.take_profit ?? "—",
   }));
+
+  const heroSlideKey: HeroSlideKey = HERO_SLIDE_KEYS[heroSlideIndex];
+  const heroSignals = PLAYS.slice(0, 3);
 
   const ANALYSIS = (data?.latest_analysis ?? []).map((a) => ({
     id: a.id,
@@ -186,21 +209,32 @@ export default function HomePage() {
             <div className={styles.eyebrow}>
               <span>CBFX</span>
               <span className={styles.dot} />
-              <span className={styles.sub}>PRO</span>
+              <span className={styles.sub}>{t(`hero.slides.${heroSlideKey}.tag`)}</span>
             </div>
             <h1 className={styles.headline}>
-              {t("hero.title1")}
+              {t(`hero.slides.${heroSlideKey}.title1`)}
               <br />
-              <span className={styles.accent}>{t("hero.title2")}</span>
+              <span className={styles.accent}>{t(`hero.slides.${heroSlideKey}.title2`)}</span>
             </h1>
-            <p className={styles.subline}>{t("hero.subtitle")}</p>
+            <p className={styles.subline}>{t(`hero.slides.${heroSlideKey}.subtitle`)}</p>
             <div className={styles.ctas}>
-              <Link href="/login" className={styles.btnPrimary}>
-                {t("hero.getStarted")} ↗
+              <Link href={HERO_SLIDE_HREF[heroSlideKey]} className={styles.btnPrimary}>
+                {t(`hero.slides.${heroSlideKey}.cta`)} ↗
               </Link>
-              <Link href="/copy-trading" className={styles.btnSecondary}>
-                {t("hero.exploreCopyTrading")}
+              <Link href="/login" className={styles.btnSecondary}>
+                {t("hero.getStarted")}
               </Link>
+            </div>
+            <div className={styles.heroDots}>
+              {HERO_SLIDE_KEYS.map((key, i) => (
+                <button
+                  key={key}
+                  type="button"
+                  className={i === heroSlideIndex ? styles.heroDotActive : styles.heroDot}
+                  aria-label={t(`hero.slides.${key}.tag`)}
+                  onClick={() => setHeroSlideIndex(i)}
+                />
+              ))}
             </div>
             <div className={styles.stats}>
               <div className={styles.stat}>
@@ -264,19 +298,50 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className={styles.priceGrid}>
-            {HOMEPAGE_SYMBOLS.map((s) => (
-              <Link
-                key={s.displayName}
-                href={symbolHref(s.displayName)}
-                className={styles.priceCard}
-              >
-                <div className={styles.tickerWrap}>
-                  <SingleTickerWidget tvSymbol={s.tvSymbol} theme={theme} />
-                </div>
-              </Link>
-            ))}
-          </div>
+          {heroSlideKey === "signals" ? (
+            <div className={styles.heroSignalsList}>
+              {heroSignals.length === 0 ? (
+                <p className={styles.heroSignalsEmpty}>{t("hero.slides.signals.noSignals")}</p>
+              ) : (
+                heroSignals.map((p) => (
+                  <Link key={p.id} href="/plays" className={styles.heroSignalCard}>
+                    <div className={styles.heroSignalTop}>
+                      <span className={styles.heroSignalPair}>{p.pair}</span>
+                      <span
+                        className={
+                          p.dir === "LONG" ? styles.heroSignalDirLong : styles.heroSignalDirShort
+                        }
+                      >
+                        {p.dir}
+                      </span>
+                    </div>
+                    <div className={styles.heroSignalMeta}>
+                      <span>
+                        {t("hero.slides.signals.entry")} {p.entry}
+                      </span>
+                      <span>
+                        {t("hero.slides.signals.tp")} {p.tp}
+                      </span>
+                    </div>
+                  </Link>
+                ))
+              )}
+            </div>
+          ) : (
+            <div className={styles.priceGrid}>
+              {HOMEPAGE_SYMBOLS.map((s) => (
+                <Link
+                  key={s.displayName}
+                  href={symbolHref(s.displayName)}
+                  className={styles.priceCard}
+                >
+                  <div className={styles.tickerWrap}>
+                    <SingleTickerWidget tvSymbol={s.tvSymbol} theme={theme} />
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </section>
       </div>
 

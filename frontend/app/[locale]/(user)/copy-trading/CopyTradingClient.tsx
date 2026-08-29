@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useLoginModal } from "@/contexts/LoginModalContext";
+import ProGate from "@/components/ProGate";
 import styles from "./copy-trading.module.scss";
 
 const TRADERS = [
@@ -128,6 +129,7 @@ export default function CopyTradingPage() {
   );
 
   return (
+    <ProGate feature="copyTrading">
     <div className={styles.page}>
       {/* ── Header ── */}
       <div className={styles.header}>
@@ -283,6 +285,7 @@ export default function CopyTradingPage() {
         ))}
       </div>
     </div>
+    </ProGate>
   );
 }
 

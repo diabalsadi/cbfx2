@@ -65,14 +65,36 @@
     "learnMore": "Tìm hiểu thêm",
     "dismiss": "Đóng",
     "hero": {
-      "title1": "Giao dịch thông minh hơn.",
-      "title2": "Kiếm lời trên từng pip.",
-      "subtitle": "Hoàn tiền, sao chép giao dịch, tín hiệu cao cấp và cộng đồng trực tiếp — tất cả trong một nơi.",
       "getStarted": "Bắt đầu",
-      "exploreCopyTrading": "Khám phá sao chép giao dịch",
       "activeTraders": "Nhà giao dịch hoạt động",
       "vettedBrokers": "Sàn giao dịch đã kiểm duyệt",
-      "signalLatency": "Độ trễ tín hiệu"
+      "signalLatency": "Độ trễ tín hiệu",
+      "slides": {
+        "cashback": {
+          "tag": "Hoàn Tiền",
+          "title1": "Giao Dịch Nhiều Hơn,",
+          "title2": "Hoàn Tiền Nhiều Hơn",
+          "subtitle": "Nhận hoàn tiền cho mỗi lot bạn giao dịch — với mọi sàn chúng tôi hỗ trợ. Không điều khoản ẩn, không giới hạn.",
+          "cta": "Khám Phá Hoàn Tiền"
+        },
+        "copyTrading": {
+          "tag": "Sao Chép Giao Dịch",
+          "title1": "Sao Chép Giao Dịch",
+          "title2": "Của Các Trader Hàng Đầu",
+          "subtitle": "Tự động sao chép chiến lược thực từ các trader đã được xác minh, theo thời gian thực.",
+          "cta": "Khám Phá Sao Chép Giao Dịch"
+        },
+        "signals": {
+          "tag": "Tín Hiệu",
+          "title1": "Tín Hiệu Trực Tiếp,",
+          "title2": "Gửi Đến Ngay Lập Tức",
+          "subtitle": "Ý tưởng giao dịch mới từ các nhà phân tích của chúng tôi — điểm vào, mục tiêu và cắt lỗ, ngay khi được công bố.",
+          "cta": "Xem Tất Cả Tín Hiệu",
+          "noSignals": "Hiện chưa có tín hiệu nào đang mở — hãy quay lại sau.",
+          "entry": "Vào lệnh",
+          "tp": "Chốt lời"
+        }
+      }
     },
     "cashback": {
       "title": "Hoàn tiền trên mọi giao dịch",
@@ -177,6 +199,21 @@
     "payoutDurationDays": "Mỗi {days} ngày",
     "payoutDurationUnspecified": "Chưa xác định",
     "termsTitle": "Điều Khoản & Điều Kiện"
+  },
+  "proGate": {
+    "priceLabel": "$25 / tháng",
+    "close": "Đóng",
+    "signInToUnlock": "Đăng Nhập Để Mở Khóa",
+    "subscribeNow": "Đăng Ký Ngay",
+    "subscribeFailed": "Không thể bắt đầu thanh toán. Vui lòng thử lại.",
+    "signals": {
+      "title": "Mở Khóa Tín Hiệu Giao Dịch Trực Tiếp",
+      "subtitle": "Đăng ký để nhận điểm vào, mục tiêu và cắt lỗ theo thời gian thực từ các nhà phân tích của chúng tôi."
+    },
+    "copyTrading": {
+      "title": "Mở Khóa Sao Chép Giao Dịch",
+      "subtitle": "Đăng ký để tự động sao chép giao dịch từ các trader hàng đầu của chúng tôi."
+    }
   },
   "copyTrading": {
     "title": "Sao Chép Giao Dịch",

@@ -65,14 +65,36 @@
     "learnMore": "Saiba mais",
     "dismiss": "Fechar",
     "hero": {
-      "title1": "Opere com inteligência.",
-      "title2": "Ganhe em cada pip.",
-      "subtitle": "Cashback, copy trading, sinais premium e uma comunidade ativa — tudo em um só lugar.",
       "getStarted": "Começar",
-      "exploreCopyTrading": "Explorar copy trading",
       "activeTraders": "Traders ativos",
       "vettedBrokers": "Corretoras verificadas",
-      "signalLatency": "Latência do sinal"
+      "signalLatency": "Latência do sinal",
+      "slides": {
+        "cashback": {
+          "tag": "Cashback",
+          "title1": "Opere Mais,",
+          "title2": "Ganhe Mais de Volta",
+          "subtitle": "Receba cashback em cada lote negociado — com todas as corretoras que oferecemos suporte. Sem letras miúdas, sem limite.",
+          "cta": "Explorar Cashback"
+        },
+        "copyTrading": {
+          "tag": "Copy Trading",
+          "title1": "Copie as Operações",
+          "title2": "dos Melhores Traders",
+          "subtitle": "Replique estratégias reais de traders verificados, automaticamente e em tempo real.",
+          "cta": "Explorar Copy Trading"
+        },
+        "signals": {
+          "tag": "Sinais",
+          "title1": "Sinais ao Vivo,",
+          "title2": "Entregues Instantaneamente",
+          "subtitle": "Ideias de negociação frescas dos nossos analistas — entradas, alvos e stops, no momento em que são divulgados.",
+          "cta": "Ver Todos os Sinais",
+          "noSignals": "Nenhum sinal aberto no momento — volte em breve.",
+          "entry": "Entrada",
+          "tp": "TP"
+        }
+      }
     },
     "cashback": {
       "title": "Cashback em cada operação",
@@ -177,6 +199,21 @@
     "payoutDurationDays": "A cada {days} dias",
     "payoutDurationUnspecified": "Não especificado",
     "termsTitle": "Termos e Condições"
+  },
+  "proGate": {
+    "priceLabel": "$25 / mês",
+    "close": "Fechar",
+    "signInToUnlock": "Entrar para Desbloquear",
+    "subscribeNow": "Assinar Agora",
+    "subscribeFailed": "Falha ao iniciar o pagamento. Tente novamente.",
+    "signals": {
+      "title": "Desbloqueie Sinais de Trading ao Vivo",
+      "subtitle": "Assine para receber entradas, alvos e stops em tempo real dos nossos analistas — no momento em que são divulgados."
+    },
+    "copyTrading": {
+      "title": "Desbloqueie o Copy Trading",
+      "subtitle": "Assine para replicar automaticamente as operações dos nossos melhores traders."
+    }
   },
   "copyTrading": {
     "title": "Copy Trading",

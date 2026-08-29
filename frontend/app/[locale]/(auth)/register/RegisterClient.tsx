@@ -41,6 +41,25 @@ function newAccountDraft(defaultBrokerId = ""): AccountDraft {
 const OTP_LENGTH = 6;
 const RESEND_COOLDOWN_MS = 60_000;
 
+// Mirrors backend/app/utils/validation.py:validate_password_strength exactly
+// — keep both in sync if the rule ever changes.
+const MAX_PASSWORD_LENGTH = 128;
+const HAS_LOWER = /[a-z]/;
+const HAS_UPPER = /[A-Z]/;
+const HAS_DIGIT = /\d/;
+const HAS_SPECIAL = /[^\w\s]/;
+
+function isPasswordValid(password: string): boolean {
+  return (
+    password.length >= 8 &&
+    password.length <= MAX_PASSWORD_LENGTH &&
+    HAS_LOWER.test(password) &&
+    HAS_UPPER.test(password) &&
+    HAS_DIGIT.test(password) &&
+    HAS_SPECIAL.test(password)
+  );
+}
+
 function formatCountdown(ms: number): string {
   const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
   const m = Math.floor(totalSeconds / 60);
@@ -94,6 +113,8 @@ export default function RegisterPage() {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordTouched, setPasswordTouched] = useState(false);
+  const passwordInvalid = passwordTouched && !isPasswordValid(password);
   const [referralCode, setReferralCode] = useState("");
   const [accounts, setAccounts] = useState<AccountDraft[]>([]);
 
@@ -179,6 +200,12 @@ export default function RegisterPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+
+    if (!isPasswordValid(password)) {
+      setPasswordTouched(true);
+      setError(tAuth("passwordHint"));
+      return;
+    }
 
     for (const a of accounts) {
       if (!a.brokerId) {
@@ -415,15 +442,19 @@ export default function RegisterPage() {
             <input
               id="password"
               type="password"
-              className={styles.input}
+              className={passwordInvalid ? `${styles.input} ${styles.inputError}` : styles.input}
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              onBlur={() => setPasswordTouched(true)}
               required
               minLength={8}
+              maxLength={MAX_PASSWORD_LENGTH}
               autoComplete="new-password"
             />
-            <span className={styles.hint}>{tAuth("passwordHint")}</span>
+            <span className={passwordInvalid ? styles.hintError : styles.hint}>
+              {tAuth("passwordHint")}
+            </span>
           </div>
 
           <div className={styles.field}>

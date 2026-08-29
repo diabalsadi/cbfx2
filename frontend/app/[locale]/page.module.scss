@@ -163,6 +163,114 @@
   }
 }
 
+/* Hero carousel dot indicators */
+.heroDots {
+  display: flex;
+  gap: 8px;
+}
+
+.heroDot,
+.heroDotActive {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    width 0.15s;
+}
+
+.heroDot {
+  background: var(--border);
+
+  &:hover {
+    background: var(--text-muted);
+  }
+}
+
+.heroDotActive {
+  width: 20px;
+  border-radius: 4px;
+  background: var(--accent);
+}
+
+/* Hero signals slide — replaces the price grid when that slide is active */
+.heroSignalsList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.heroSignalsEmpty {
+  color: var(--text-muted);
+  font-size: 14px;
+  margin: 0;
+  padding: 20px;
+  text-align: center;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.heroSignalCard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  text-decoration: none;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+
+  &:hover {
+    border-color: var(--accent);
+    box-shadow: 0 4px 16px rgba(249, 115, 22, 0.1);
+  }
+}
+
+.heroSignalTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.heroSignalPair {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.heroSignalDirLong,
+.heroSignalDirShort {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.heroSignalDirLong {
+  color: #16a34a;
+  background: rgba(22, 163, 74, 0.12);
+}
+
+.heroSignalDirShort {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.heroSignalMeta {
+  display: flex;
+  gap: 14px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+
 /* Stats row */
 .stats {
   display: flex;

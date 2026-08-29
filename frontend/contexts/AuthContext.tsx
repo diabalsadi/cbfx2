@@ -16,6 +16,9 @@ interface User {
   role: string;
   region: string | null;
   must_change_password: boolean;
+  // Stripe's own vocabulary (active/trialing/past_due/canceled/...) — see
+  // helpers/subscription.ts:hasProAccess for what actually unlocks access.
+  subscription_status: string;
 }
 
 // Which portal a login is for. The backend only accepts admin-role accounts

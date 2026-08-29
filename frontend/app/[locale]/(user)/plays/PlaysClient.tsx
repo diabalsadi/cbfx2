@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import styles from "./plays.module.scss";
 import { playsApi, type Play } from "@/helpers/api";
+import ProGate from "@/components/ProGate";
 
 export default function PlaysPage() {
   const t = useTranslations("plays");
@@ -39,6 +40,7 @@ export default function PlaysPage() {
   });
 
   return (
+    <ProGate feature="signals">
     <div className={styles.container}>
       <div className={styles.pageHeader}>
         <div>
@@ -248,5 +250,6 @@ export default function PlaysPage() {
         </div>
       )}
     </div>
+    </ProGate>
   );
 }

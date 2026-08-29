@@ -27,6 +27,15 @@ class User(Base):
     # gate to route the next login to /admin/change-password before anything
     # else, instead of trusting the emailed temp password indefinitely.
     must_change_password = Column(Boolean, nullable=False, default=False)
+    # Combined Signals + Copy Trading subscription (Stripe). stripe_customer_id
+    # is set on first checkout attempt; stripe_subscription_id/status are set
+    # by the /billing/webhook handler from Stripe's own subscription events —
+    # never trust the Checkout redirect alone, the webhook is the source of
+    # truth. subscription_status stores Stripe's own vocabulary verbatim
+    # (active/trialing/past_due/canceled/...) — see app/services/stripe_client.py.
+    stripe_customer_id = Column(String, nullable=True, index=True)
+    stripe_subscription_id = Column(String, nullable=True)
+    subscription_status = Column(String, nullable=False, default="inactive")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()

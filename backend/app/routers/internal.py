@@ -1,7 +1,10 @@
-"""Endpoints meant for external automation (cron), not end users — see
-METAAPI_INTEGRATION_ARCHITECTURE.md §4. Protected via METAAPI_SYNC_KEY /
-METAAPI_SYNC_SECRET headers instead of the usual user JWT, since there's no
-signed-in user driving the call.
+"""Endpoints meant for external automation (cron), not end users — the
+once-daily MetaApi sync (METAAPI_INTEGRATION_ARCHITECTURE.md §4) and the
+Stripe subscription-status reconciliation below. Protected via
+METAAPI_SYNC_KEY / METAAPI_SYNC_SECRET headers instead of the usual user
+JWT, since there's no signed-in user driving the call — the name predates
+this file covering more than MetaApi, kept as-is rather than force a cron
+config change to rename it.
 """
 import os
 from datetime import datetime, timedelta, timezone
@@ -14,6 +17,7 @@ from app.database import get_db
 from app.models.mt5_account import MT5Account
 from app.services.metaapi_sync import sync_accounts
 from app.services.rebate_calculation import calculate_rebates
+from app.services import stripe_client
 from app.utils.otp import secure_compare
 
 router = APIRouter(prefix="/internal", tags=["internal"])
@@ -64,3 +68,18 @@ async def sync_metaapi(
         "results": results,
         "rebates": rebates,
     }
+
+
+@router.post("/sync-subscriptions")
+def sync_subscriptions(
+    db: Session = Depends(get_db),
+    _auth: None = Depends(_require_sync_auth),
+):
+    """Daily reconciliation safety net for the Stripe subscription paywall —
+    re-fetches every subscribed user's status directly from Stripe in case a
+    webhook was missed, so a lapsed/failed payment never leaves someone with
+    stale "active" access past the end of the day it happened. The webhook
+    handler (POST /billing/webhook) is still the primary, real-time path."""
+    if not stripe_client.configured():
+        raise HTTPException(status_code=503, detail="Billing is not configured")
+    return stripe_client.sync_subscription_statuses(db)

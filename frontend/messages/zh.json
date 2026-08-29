@@ -65,14 +65,36 @@
     "learnMore": "了解更多",
     "dismiss": "关闭",
     "hero": {
-      "title1": "更智能地交易。",
-      "title2": "每个点位都能获利。",
-      "subtitle": "返现、跟单交易、优质信号和实时社区 — 一站式体验。",
       "getStarted": "开始使用",
-      "exploreCopyTrading": "探索跟单交易",
       "activeTraders": "活跃交易者",
       "vettedBrokers": "认证经纪商",
-      "signalLatency": "信号延迟"
+      "signalLatency": "信号延迟",
+      "slides": {
+        "cashback": {
+          "tag": "返现",
+          "title1": "多交易，",
+          "title2": "多返现",
+          "subtitle": "每一手交易都可获得返现 — 覆盖我们支持的所有经纪商。没有隐藏条款，没有上限。",
+          "cta": "了解返现"
+        },
+        "copyTrading": {
+          "tag": "跟单交易",
+          "title1": "跟单顶尖交易者",
+          "title2": "的真实操作",
+          "subtitle": "自动、实时复制经过验证的交易者的真实策略。",
+          "cta": "探索跟单交易"
+        },
+        "signals": {
+          "tag": "信号",
+          "title1": "实时信号，",
+          "title2": "即时送达",
+          "subtitle": "来自我们分析师的最新交易思路 — 入场点、目标位和止损，发布即达。",
+          "cta": "查看全部信号",
+          "noSignals": "目前暂无进行中的信号，请稍后再来查看。",
+          "entry": "入场",
+          "tp": "止盈"
+        }
+      }
     },
     "cashback": {
       "title": "每笔交易均可返现",
@@ -177,6 +199,21 @@
     "payoutDurationDays": "每 {days} 天",
     "payoutDurationUnspecified": "未指定",
     "termsTitle": "条款与条件"
+  },
+  "proGate": {
+    "priceLabel": "$25 / 月",
+    "close": "关闭",
+    "signInToUnlock": "登录以解锁",
+    "subscribeNow": "立即订阅",
+    "subscribeFailed": "无法启动支付，请重试。",
+    "signals": {
+      "title": "解锁实时交易信号",
+      "subtitle": "订阅即可实时获取我们分析师发布的入场点、目标位和止损。"
+    },
+    "copyTrading": {
+      "title": "解锁跟单交易",
+      "subtitle": "订阅即可自动跟随我们顶尖交易者的操作。"
+    }
   },
   "copyTrading": {
     "title": "跟单交易",
