@@ -69,6 +69,56 @@
   gap: 22px;
 }
 
+/* Hero carousel transition — crossfade only, no unmounting. The text block
+   is one persistent DOM node whose content is swapped by JS *while it's
+   momentarily invisible* (.heroSlideTextFading), so there's never an
+   instant content pop or a blank flash. The right side keeps both the price
+   grid and the signals list permanently mounted, stacked via CSS grid, and
+   only their opacity crossfades — critical so the price grid's TradingView
+   widgets are never torn down and reinitialized by a slide change. */
+.heroSlideText {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  opacity: 1;
+  transition: opacity 0.26s ease, filter 0.26s ease;
+}
+
+.heroSlideTextFading {
+  opacity: 0;
+  filter: blur(2px);
+}
+
+.heroSlideRight {
+  position: relative;
+  display: grid;
+}
+
+/* Both children occupy the same grid cell, stacked — this is what makes the
+   crossfade possible without either one leaving the DOM. */
+.heroLayer {
+  grid-area: 1 / 1;
+  transition: opacity 0.4s ease;
+}
+
+.heroLayerVisible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.heroLayerHidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .heroSlideText,
+  .heroSlideTextFading,
+  .heroLayer {
+    transition: none;
+  }
+}
+
 .eyebrow {
   display: flex;
   align-items: center;

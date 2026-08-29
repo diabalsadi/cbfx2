@@ -1,7 +1,7 @@
 "use client";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import UserNav from "@/components/UserNav";
 import LoginModal from "@/components/LoginModal";
 import { LoginModalProvider } from "@/contexts/LoginModalContext";
@@ -29,7 +29,10 @@ const HERO_SLIDE_HREF: Record<HeroSlideKey, string> = {
   copyTrading: "/copy-trading",
   signals: "/plays",
 };
-const HERO_ROTATE_MS = 30_000;
+const HERO_ROTATE_MS = 10_000;
+// How long the text cross-fades out before its content swaps and fades back
+// in — must match .heroSlideText's CSS transition duration in page.module.scss.
+const HERO_FADE_MS = 260;
 
 
 /* Broker-supplied image banner used before Cashback / Copy Trading / Signals /
@@ -72,17 +75,40 @@ export default function HomePage() {
   const [data, setData] = useState<HomepageData | null>(null);
   const { theme } = useTheme();
   const [heroSlideIndex, setHeroSlideIndex] = useState(0);
+  // True only during the brief window between "start fading the old text
+  // out" and "swap in the new text" — drives .heroSlideTextFading in CSS.
+  // The price grid / signals list on the right never remount on slide
+  // change (see heroSlideRight below), so TradingView's widgets are
+  // completely unaffected by this — only their opacity crossfades.
+  const [heroFading, setHeroFading] = useState(false);
+  const heroSlideIndexRef = useRef(heroSlideIndex);
+  const heroFadeTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     publicApi.homepage().then(setData).catch(console.error);
   }, []);
 
   useEffect(() => {
-    const id = setInterval(
-      () => setHeroSlideIndex((i) => (i + 1) % HERO_SLIDE_KEYS.length),
-      HERO_ROTATE_MS,
-    );
-    return () => clearInterval(id);
+    heroSlideIndexRef.current = heroSlideIndex;
+  }, [heroSlideIndex]);
+
+  const goToHeroSlide = (index: number) => {
+    if (heroFadeTimeout.current) clearTimeout(heroFadeTimeout.current);
+    setHeroFading(true);
+    heroFadeTimeout.current = setTimeout(() => {
+      setHeroSlideIndex(index);
+      setHeroFading(false);
+    }, HERO_FADE_MS);
+  };
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      goToHeroSlide((heroSlideIndexRef.current + 1) % HERO_SLIDE_KEYS.length);
+    }, HERO_ROTATE_MS);
+    return () => {
+      clearInterval(id);
+      if (heroFadeTimeout.current) clearTimeout(heroFadeTimeout.current);
+    };
   }, []);
 
   const dismissBanner = (slot: string) =>
@@ -187,153 +213,508 @@ export default function HomePage() {
       )}
 
       <div className={userStyles.main}>
-      <div className={sidebarLeftBanner?.image_url || sidebarRightBanner?.image_url ? styles.sideAdGutter : undefined}>
-      {/* ══════════════════════════════
+        <div className={sidebarLeftBanner?.image_url || sidebarRightBanner?.image_url ? styles.sideAdGutter : undefined}>
+          {/* ══════════════════════════════
           Sticky top sponsor banner
          ══════════════════════════════ */}
-      {stickyTopBanner && (
-        <ImageAdBanner
-          banner={stickyTopBanner}
-          onDismiss={() => dismissBanner("sticky_top_banner")}
-          sticky
-        />
-      )}
+          {stickyTopBanner && (
+            <ImageAdBanner
+              banner={stickyTopBanner}
+              onDismiss={() => dismissBanner("sticky_top_banner")}
+              sticky
+            />
+          )}
 
-      {/* ══════════════════════════════
+          {/* ══════════════════════════════
           Hero card
          ══════════════════════════════ */}
-      <div className={styles.heroCard}>
-        <div className={styles.heroBlob} />
-        <section className={styles.hero}>
-          <div className={styles.heroLeft}>
-            <div className={styles.eyebrow}>
-              <span>CBFX</span>
-              <span className={styles.dot} />
-              <span className={styles.sub}>{t(`hero.slides.${heroSlideKey}.tag`)}</span>
-            </div>
-            <h1 className={styles.headline}>
-              {t(`hero.slides.${heroSlideKey}.title1`)}
-              <br />
-              <span className={styles.accent}>{t(`hero.slides.${heroSlideKey}.title2`)}</span>
-            </h1>
-            <p className={styles.subline}>{t(`hero.slides.${heroSlideKey}.subtitle`)}</p>
-            <div className={styles.ctas}>
-              <Link href={HERO_SLIDE_HREF[heroSlideKey]} className={styles.btnPrimary}>
-                {t(`hero.slides.${heroSlideKey}.cta`)} ↗
-              </Link>
-              <Link href="/login" className={styles.btnSecondary}>
-                {t("hero.getStarted")}
-              </Link>
-            </div>
-            <div className={styles.heroDots}>
-              {HERO_SLIDE_KEYS.map((key, i) => (
-                <button
-                  key={key}
-                  type="button"
-                  className={i === heroSlideIndex ? styles.heroDotActive : styles.heroDot}
-                  aria-label={t(`hero.slides.${key}.tag`)}
-                  onClick={() => setHeroSlideIndex(i)}
-                />
-              ))}
-            </div>
-            <div className={styles.stats}>
-              <div className={styles.stat}>
-                <svg className={styles.statSvg} viewBox="0 0 20 20" fill="none">
-                  <path
-                    d="M10 9a3 3 0 100-6 3 3 0 000 6zM4 17a6 6 0 0112 0"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <div>
-                  <span className={styles.statValue}>120k+</span>
-                  <span className={styles.statLabel}>{t("hero.activeTraders")}</span>
+          <div className={styles.heroCard}>
+            <div className={styles.heroBlob} />
+            <section className={styles.hero}>
+              <div className={styles.heroLeft}>
+                <div
+                  className={
+                    heroFading
+                      ? `${styles.heroSlideText} ${styles.heroSlideTextFading}`
+                      : styles.heroSlideText
+                  }
+                >
+                  <div className={styles.eyebrow}>
+                    <span>CBFX</span>
+                    <span className={styles.dot} />
+                    <span className={styles.sub}>{t(`hero.slides.${heroSlideKey}.tag`)}</span>
+                  </div>
+                  <h1 className={styles.headline}>
+                    {t(`hero.slides.${heroSlideKey}.title1`)}
+                    <br />
+                    <span className={styles.accent}>{t(`hero.slides.${heroSlideKey}.title2`)}</span>
+                  </h1>
+                  <p className={styles.subline}>{t(`hero.slides.${heroSlideKey}.subtitle`)}</p>
+                  <div className={styles.ctas}>
+                    <Link href={HERO_SLIDE_HREF[heroSlideKey]} className={styles.btnPrimary}>
+                      {t(`hero.slides.${heroSlideKey}.cta`)} ↗
+                    </Link>
+                    <Link href="/login" className={styles.btnSecondary}>
+                      {t("hero.getStarted")}
+                    </Link>
+                  </div>
+                </div>
+                <div className={styles.heroDots}>
+                  {HERO_SLIDE_KEYS.map((key, i) => (
+                    <button
+                      key={key}
+                      type="button"
+                      className={i === heroSlideIndex ? styles.heroDotActive : styles.heroDot}
+                      aria-label={t(`hero.slides.${key}.tag`)}
+                      onClick={() => goToHeroSlide(i)}
+                    />
+                  ))}
+                </div>
+                <div className={styles.stats}>
+                  <div className={styles.stat}>
+                    <svg className={styles.statSvg} viewBox="0 0 20 20" fill="none">
+                      <path
+                        d="M10 9a3 3 0 100-6 3 3 0 000 6zM4 17a6 6 0 0112 0"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    <div>
+                      <span className={styles.statValue}>120k+</span>
+                      <span className={styles.statLabel}>{t("hero.activeTraders")}</span>
+                    </div>
+                  </div>
+                  <div className={styles.stat}>
+                    <svg className={styles.statSvg} viewBox="0 0 20 20" fill="none">
+                      <rect
+                        x="2"
+                        y="7"
+                        width="16"
+                        height="12"
+                        rx="2"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                      />
+                      <path
+                        d="M6 7V5a4 4 0 018 0v2"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    <div>
+                      <span className={styles.statValue}>30+</span>
+                      <span className={styles.statLabel}>{t("hero.vettedBrokers")}</span>
+                    </div>
+                  </div>
+                  <div className={styles.stat}>
+                    <svg className={styles.statSvg} viewBox="0 0 20 20" fill="none">
+                      <path
+                        d="M10 2v4M10 14v4M2 10h4M14 10h4"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                      />
+                      <circle
+                        cx="10"
+                        cy="10"
+                        r="3"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                      />
+                    </svg>
+                    <div>
+                      <span className={styles.statValue}>&lt;10ms</span>
+                      <span className={styles.statLabel}>{t("hero.signalLatency")}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className={styles.stat}>
-                <svg className={styles.statSvg} viewBox="0 0 20 20" fill="none">
-                  <rect
-                    x="2"
-                    y="7"
-                    width="16"
-                    height="12"
-                    rx="2"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                  />
-                  <path
-                    d="M6 7V5a4 4 0 018 0v2"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <div>
-                  <span className={styles.statValue}>30+</span>
-                  <span className={styles.statLabel}>{t("hero.vettedBrokers")}</span>
+
+              <div className={styles.heroSlideRight}>
+                {/* Both layers stay permanently mounted and only crossfade via
+                   opacity — the price grid's SingleTickerWidgets (real
+                   TradingView iframes) must never unmount/remount just
+                   because the slide rotated to/from "signals" and back. */}
+                <div
+                  className={
+                    heroSlideKey === "signals"
+                      ? `${styles.heroLayer} ${styles.heroLayerVisible}`
+                      : `${styles.heroLayer} ${styles.heroLayerHidden}`
+                  }
+                >
+                  <div className={styles.heroSignalsList}>
+                    {heroSignals.length === 0 ? (
+                      <p className={styles.heroSignalsEmpty}>{t("hero.slides.signals.noSignals")}</p>
+                    ) : (
+                      heroSignals.map((p) => (
+                        <Link key={p.id} href="/plays" className={styles.heroSignalCard}>
+                          <div className={styles.heroSignalTop}>
+                            <span className={styles.heroSignalPair}>{p.pair}</span>
+                            <span
+                              className={
+                                p.dir === "LONG" ? styles.heroSignalDirLong : styles.heroSignalDirShort
+                              }
+                            >
+                              {p.dir}
+                            </span>
+                          </div>
+                          <div className={styles.heroSignalMeta}>
+                            <span>
+                              {t("hero.slides.signals.entry")} {p.entry}
+                            </span>
+                            <span>
+                              {t("hero.slides.signals.tp")} {p.tp}
+                            </span>
+                          </div>
+                        </Link>
+                      ))
+                    )}
+                  </div>
+                </div>
+                <div
+                  className={
+                    heroSlideKey === "signals"
+                      ? `${styles.heroLayer} ${styles.heroLayerHidden}`
+                      : `${styles.heroLayer} ${styles.heroLayerVisible}`
+                  }
+                >
+                  <div className={styles.priceGrid}>
+                    {HOMEPAGE_SYMBOLS.map((s) => (
+                      <Link
+                        key={s.displayName}
+                        href={symbolHref(s.displayName)}
+                        className={styles.priceCard}
+                      >
+                        <div className={styles.tickerWrap}>
+                          <SingleTickerWidget tvSymbol={s.tvSymbol} theme={theme} />
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               </div>
-              <div className={styles.stat}>
-                <svg className={styles.statSvg} viewBox="0 0 20 20" fill="none">
-                  <path
-                    d="M10 2v4M10 14v4M2 10h4M14 10h4"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  />
-                  <circle
-                    cx="10"
-                    cy="10"
-                    r="3"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                  />
-                </svg>
-                <div>
-                  <span className={styles.statValue}>&lt;10ms</span>
-                  <span className={styles.statLabel}>{t("hero.signalLatency")}</span>
-                </div>
-              </div>
-            </div>
+            </section>
           </div>
 
-          {heroSlideKey === "signals" ? (
-            <div className={styles.heroSignalsList}>
-              {heroSignals.length === 0 ? (
-                <p className={styles.heroSignalsEmpty}>{t("hero.slides.signals.noSignals")}</p>
-              ) : (
-                heroSignals.map((p) => (
-                  <Link key={p.id} href="/plays" className={styles.heroSignalCard}>
-                    <div className={styles.heroSignalTop}>
-                      <span className={styles.heroSignalPair}>{p.pair}</span>
+          {/* ══════════════════════════════
+          Cashback CTA
+         ══════════════════════════════ */}
+          {preCashbackBanner && (
+            <ImageAdBanner
+              banner={preCashbackBanner}
+              onDismiss={() => dismissBanner("pre_cashback_banner")}
+            />
+          )}
+          <div className={styles.cashbackBanner}>
+            <div className={styles.cashbackLeft}>
+              <div className={styles.cashbackIcon}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                  <rect
+                    x="2"
+                    y="5"
+                    width="20"
+                    height="14"
+                    rx="3"
+                    stroke="white"
+                    strokeWidth="1.8"
+                  />
+                  <path d="M2 10h20" stroke="white" strokeWidth="1.8" />
+                  <circle cx="8" cy="16" r="1.5" fill="white" />
+                </svg>
+              </div>
+              <div>
+                <div className={styles.cashbackTitle}>{t("cashback.title")}</div>
+                <div className={styles.cashbackSub}>{t("cashback.subtitle")}</div>
+              </div>
+            </div>
+            <Link href="/cashback" className={styles.cashbackBtn}>
+              {t("cashback.cta")} ↗
+            </Link>
+          </div>
+
+          {/* ══════════════════════════════
+          Copy Trading
+         ══════════════════════════════ */}
+          {preCopytradingBanner && (
+            <ImageAdBanner
+              banner={preCopytradingBanner}
+              onDismiss={() => dismissBanner("pre_copytrading_banner")}
+            />
+          )}
+          <section className={styles.copySection}>
+            <div className={styles.stripHeader}>
+              <div className={styles.sectionTitleGroup}>
+                <div className={styles.sectionIcon}>
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                    <path
+                      d="M4 10h12M10 4l6 6-6 6"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+                <div className={styles.sectionTitleText}>
+                  <h2>{t("copyTrading.title")}</h2>
+                  <p>{t("copyTrading.subtitle")}</p>
+                </div>
+              </div>
+              <Link href="/copy-trading" className={styles.sectionLink}>
+                {t("copyTrading.viewAll")} →
+              </Link>
+            </div>
+            <div className={styles.copyGrid}>
+              {COPY_TRADERS.map((trader) => (
+                <div key={trader.name} className={styles.traderCard}>
+                  <div className={styles.traderTop}>
+                    <div className={styles.traderAvatar}>{trader.initials}</div>
+                    <div>
+                      <div className={styles.traderName}>{trader.name}</div>
+                      <div className={styles.traderFollowers}>
+                        {trader.followers} {t("copyTrading.followers")}
+                      </div>
+                    </div>
+                  </div>
+                  <div className={styles.traderBottom}>
+                    <span className={styles.traderRoi}>{trader.roi}</span>
+                    <span className={styles.traderRoiLabel}>{t("copyTrading.roiLabel")}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* ══════════════════════════════
+          Signals (Plays)  +  Forex News
+         ══════════════════════════════ */}
+          {preSignalsBanner && (
+            <ImageAdBanner
+              banner={preSignalsBanner}
+              onDismiss={() => dismissBanner("pre_signals_banner")}
+            />
+          )}
+          <section className={styles.playsNewsGrid}>
+            {/* Signals */}
+            <div className={styles.playsCard}>
+              <div className={styles.cardHeader}>
+                <div className={styles.sectionTitleGroup}>
+                  <div className={styles.sectionIcon}>
+                    <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                      <polygon
+                        points="4,3 16,10 4,17"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                  <span className={styles.cardTitle}>{t("signals.title")}</span>
+                </div>
+                <Link href="/plays" className={styles.allLink}>
+                  {t("signals.all")} →
+                </Link>
+              </div>
+              <div className={styles.playsList}>
+                {PLAYS.map((p) => (
+                  <div key={p.id} className={styles.playRow}>
+                    <div className={styles.playLeft}>
+                      <span className={styles.playPair}>{p.pair}</span>
                       <span
-                        className={
-                          p.dir === "LONG" ? styles.heroSignalDirLong : styles.heroSignalDirShort
-                        }
+                        className={`${styles.playDir} ${p.dir === "LONG" ? styles.long : styles.short}`}
                       >
                         {p.dir}
                       </span>
                     </div>
-                    <div className={styles.heroSignalMeta}>
-                      <span>
-                        {t("hero.slides.signals.entry")} {p.entry}
-                      </span>
-                      <span>
-                        {t("hero.slides.signals.tp")} {p.tp}
-                      </span>
+                    <div className={styles.playRight}>
+                      {t("signals.entryTp", { entry: p.entry, tp: p.tp })}
                     </div>
-                  </Link>
-                ))
-              )}
+                    <button className={styles.playStar} aria-label={t("signals.star")}>
+                      ☆
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
-          ) : (
-            <div className={styles.priceGrid}>
+
+            {/* Forex News */}
+            <div className={styles.newsCard}>
+              <div className={styles.cardHeader}>
+                <div className={styles.sectionTitleGroup}>
+                  <div className={styles.sectionIcon}>
+                    <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                      <rect
+                        x="2"
+                        y="3"
+                        width="16"
+                        height="14"
+                        rx="2"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                      />
+                      <path
+                        d="M6 7h8M6 10h8M6 13h5"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </div>
+                  <span className={styles.cardTitle}>{t("news.title")}</span>
+                </div>
+                <Link href="/news" className={styles.allLink}>
+                  {t("signals.all")} →
+                </Link>
+              </div>
+              <div className={styles.newsWidgetBody}>
+                <MarketNewsWidget theme={theme} />
+              </div>
+            </div>
+          </section>
+
+          {/* ══════════════════════════════
+          Analysis  +  Forum  +  Calendar
+         ══════════════════════════════ */}
+          <section className={styles.triGrid}>
+            {/* Technical Analysis */}
+            <div className={styles.triCard}>
+              <div className={styles.cardHeader}>
+                <div className={styles.sectionTitleGroup}>
+                  <div className={styles.sectionIcon}>
+                    <svg width="13" height="13" viewBox="0 0 20 20" fill="none">
+                      <polyline
+                        points="2,14 7,8 11,11 18,4"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                  <span className={styles.cardTitle}>{t("triGrid.technicalAnalysis")}</span>
+                </div>
+                <Link href="/analysis" className={styles.allLink}>
+                  {t("signals.all")} →
+                </Link>
+              </div>
+              <div className={styles.analysisList}>
+                {ANALYSIS.map((a) => (
+                  <Link key={a.id} href={`/analysis/${a.id}`} className={styles.analysisRow}>
+                    {a.symbol && <span className={styles.analysisPair}>{a.symbol}</span>}
+                    <span className={styles.analysisTitle}>{a.title}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Studies Forum */}
+            <div className={styles.triCard}>
+              <div className={styles.cardHeader}>
+                <div className={styles.sectionTitleGroup}>
+                  <div className={styles.sectionIcon}>
+                    <svg width="13" height="13" viewBox="0 0 20 20" fill="none">
+                      <path
+                        d="M2 4h16v10H2zM6 17h8"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                  <span className={styles.cardTitle}>{t("triGrid.studiesForum")}</span>
+                </div>
+                <Link href="/forum" className={styles.allLink}>
+                  {t("signals.all")} →
+                </Link>
+              </div>
+              <div className={styles.forumList}>
+                {FORUM_THREADS.map((thread) => (
+                  <div key={thread.id} className={styles.forumRow}>
+                    <div className={styles.forumTitle}>{thread.title}</div>
+                    <div className={styles.forumReplies}>
+                      {thread.replies} {t("triGrid.replies")}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Live Calendar */}
+            <div className={styles.triCard}>
+              <div className={styles.cardHeader}>
+                <div className={styles.sectionTitleGroup}>
+                  <div className={styles.sectionIcon}>
+                    <svg width="13" height="13" viewBox="0 0 20 20" fill="none">
+                      <rect
+                        x="2"
+                        y="3"
+                        width="16"
+                        height="15"
+                        rx="2"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                      />
+                      <path
+                        d="M6 1v4M14 1v4M2 8h16"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </div>
+                  <span className={styles.cardTitle}>{t("triGrid.liveCalendar")}</span>
+                </div>
+                <Link href="/calendar" className={styles.allLink}>
+                  {t("signals.all")} →
+                </Link>
+              </div>
+              <div className={styles.calWidgetBody}>
+                <EconomicCalendarWidget theme={theme} />
+              </div>
+            </div>
+          </section>
+
+          {/* ══════════════════════════════
+          Markets Strip
+         ══════════════════════════════ */}
+          {preMarketsBanner && (
+            <ImageAdBanner
+              banner={preMarketsBanner}
+              onDismiss={() => dismissBanner("pre_markets_banner")}
+            />
+          )}
+          <section className={styles.marketsSection}>
+            <div className={styles.stripHeader}>
+              <div className={styles.sectionTitleGroup}>
+                <div className={styles.sectionIcon}>
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                    <polyline
+                      points="2,14 7,8 11,11 18,4"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+                <div className={styles.sectionTitleText}>
+                  <h2>{t("markets.title")}</h2>
+                  <p>{t("markets.subtitle")}</p>
+                </div>
+              </div>
+              <Link href="/markets" className={styles.sectionLink}>
+                {t("copyTrading.viewAll")} →
+              </Link>
+            </div>
+            <div className={styles.marketsStrip}>
               {HOMEPAGE_SYMBOLS.map((s) => (
                 <Link
                   key={s.displayName}
                   href={symbolHref(s.displayName)}
-                  className={styles.priceCard}
+                  className={styles.stripCard}
                 >
                   <div className={styles.tickerWrap}>
                     <SingleTickerWidget tvSymbol={s.tvSymbol} theme={theme} />
@@ -341,405 +722,77 @@ export default function HomePage() {
                 </Link>
               ))}
             </div>
-          )}
-        </section>
-      </div>
+          </section>
 
-      {/* ══════════════════════════════
-          Cashback CTA
-         ══════════════════════════════ */}
-      {preCashbackBanner && (
-        <ImageAdBanner
-          banner={preCashbackBanner}
-          onDismiss={() => dismissBanner("pre_cashback_banner")}
-        />
-      )}
-      <div className={styles.cashbackBanner}>
-        <div className={styles.cashbackLeft}>
-          <div className={styles.cashbackIcon}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-              <rect
-                x="2"
-                y="5"
-                width="20"
-                height="14"
-                rx="3"
-                stroke="white"
-                strokeWidth="1.8"
-              />
-              <path d="M2 10h20" stroke="white" strokeWidth="1.8" />
-              <circle cx="8" cy="16" r="1.5" fill="white" />
-            </svg>
-          </div>
-          <div>
-            <div className={styles.cashbackTitle}>{t("cashback.title")}</div>
-            <div className={styles.cashbackSub}>{t("cashback.subtitle")}</div>
-          </div>
-        </div>
-        <Link href="/cashback" className={styles.cashbackBtn}>
-          {t("cashback.cta")} ↗
-        </Link>
-      </div>
-
-      {/* ══════════════════════════════
-          Copy Trading
-         ══════════════════════════════ */}
-      {preCopytradingBanner && (
-        <ImageAdBanner
-          banner={preCopytradingBanner}
-          onDismiss={() => dismissBanner("pre_copytrading_banner")}
-        />
-      )}
-      <section className={styles.copySection}>
-        <div className={styles.stripHeader}>
-          <div className={styles.sectionTitleGroup}>
-            <div className={styles.sectionIcon}>
-              <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                <path
-                  d="M4 10h12M10 4l6 6-6 6"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-            <div className={styles.sectionTitleText}>
-              <h2>{t("copyTrading.title")}</h2>
-              <p>{t("copyTrading.subtitle")}</p>
-            </div>
-          </div>
-          <Link href="/copy-trading" className={styles.sectionLink}>
-            {t("copyTrading.viewAll")} →
-          </Link>
-        </div>
-        <div className={styles.copyGrid}>
-          {COPY_TRADERS.map((trader) => (
-            <div key={trader.name} className={styles.traderCard}>
-              <div className={styles.traderTop}>
-                <div className={styles.traderAvatar}>{trader.initials}</div>
-                <div>
-                  <div className={styles.traderName}>{trader.name}</div>
-                  <div className={styles.traderFollowers}>
-                    {trader.followers} {t("copyTrading.followers")}
-                  </div>
-                </div>
-              </div>
-              <div className={styles.traderBottom}>
-                <span className={styles.traderRoi}>{trader.roi}</span>
-                <span className={styles.traderRoiLabel}>{t("copyTrading.roiLabel")}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ══════════════════════════════
-          Signals (Plays)  +  Forex News
-         ══════════════════════════════ */}
-      {preSignalsBanner && (
-        <ImageAdBanner
-          banner={preSignalsBanner}
-          onDismiss={() => dismissBanner("pre_signals_banner")}
-        />
-      )}
-      <section className={styles.playsNewsGrid}>
-        {/* Signals */}
-        <div className={styles.playsCard}>
-          <div className={styles.cardHeader}>
-            <div className={styles.sectionTitleGroup}>
-              <div className={styles.sectionIcon}>
-                <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
-                  <polygon
-                    points="4,3 16,10 4,17"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </div>
-              <span className={styles.cardTitle}>{t("signals.title")}</span>
-            </div>
-            <Link href="/plays" className={styles.allLink}>
-              {t("signals.all")} →
-            </Link>
-          </div>
-          <div className={styles.playsList}>
-            {PLAYS.map((p) => (
-              <div key={p.id} className={styles.playRow}>
-                <div className={styles.playLeft}>
-                  <span className={styles.playPair}>{p.pair}</span>
-                  <span
-                    className={`${styles.playDir} ${p.dir === "LONG" ? styles.long : styles.short}`}
-                  >
-                    {p.dir}
-                  </span>
-                </div>
-                <div className={styles.playRight}>
-                  {t("signals.entryTp", { entry: p.entry, tp: p.tp })}
-                </div>
-                <button className={styles.playStar} aria-label={t("signals.star")}>
-                  ☆
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Forex News */}
-        <div className={styles.newsCard}>
-          <div className={styles.cardHeader}>
-            <div className={styles.sectionTitleGroup}>
-              <div className={styles.sectionIcon}>
-                <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
-                  <rect
-                    x="2"
-                    y="3"
-                    width="16"
-                    height="14"
-                    rx="2"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                  />
-                  <path
-                    d="M6 7h8M6 10h8M6 13h5"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </div>
-              <span className={styles.cardTitle}>{t("news.title")}</span>
-            </div>
-            <Link href="/news" className={styles.allLink}>
-              {t("signals.all")} →
-            </Link>
-          </div>
-          <div className={styles.newsWidgetBody}>
-            <MarketNewsWidget theme={theme} />
-          </div>
-        </div>
-      </section>
-
-      {/* ══════════════════════════════
-          Analysis  +  Forum  +  Calendar
-         ══════════════════════════════ */}
-      <section className={styles.triGrid}>
-        {/* Technical Analysis */}
-        <div className={styles.triCard}>
-          <div className={styles.cardHeader}>
-            <div className={styles.sectionTitleGroup}>
-              <div className={styles.sectionIcon}>
-                <svg width="13" height="13" viewBox="0 0 20 20" fill="none">
-                  <polyline
-                    points="2,14 7,8 11,11 18,4"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </div>
-              <span className={styles.cardTitle}>{t("triGrid.technicalAnalysis")}</span>
-            </div>
-            <Link href="/analysis" className={styles.allLink}>
-              {t("signals.all")} →
-            </Link>
-          </div>
-          <div className={styles.analysisList}>
-            {ANALYSIS.map((a) => (
-              <Link key={a.id} href={`/analysis/${a.id}`} className={styles.analysisRow}>
-                {a.symbol && <span className={styles.analysisPair}>{a.symbol}</span>}
-                <span className={styles.analysisTitle}>{a.title}</span>
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        {/* Studies Forum */}
-        <div className={styles.triCard}>
-          <div className={styles.cardHeader}>
-            <div className={styles.sectionTitleGroup}>
-              <div className={styles.sectionIcon}>
-                <svg width="13" height="13" viewBox="0 0 20 20" fill="none">
-                  <path
-                    d="M2 4h16v10H2zM6 17h8"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </div>
-              <span className={styles.cardTitle}>{t("triGrid.studiesForum")}</span>
-            </div>
-            <Link href="/forum" className={styles.allLink}>
-              {t("signals.all")} →
-            </Link>
-          </div>
-          <div className={styles.forumList}>
-            {FORUM_THREADS.map((thread) => (
-              <div key={thread.id} className={styles.forumRow}>
-                <div className={styles.forumTitle}>{thread.title}</div>
-                <div className={styles.forumReplies}>
-                  {thread.replies} {t("triGrid.replies")}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Live Calendar */}
-        <div className={styles.triCard}>
-          <div className={styles.cardHeader}>
-            <div className={styles.sectionTitleGroup}>
-              <div className={styles.sectionIcon}>
-                <svg width="13" height="13" viewBox="0 0 20 20" fill="none">
-                  <rect
-                    x="2"
-                    y="3"
-                    width="16"
-                    height="15"
-                    rx="2"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                  />
-                  <path
-                    d="M6 1v4M14 1v4M2 8h16"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </div>
-              <span className={styles.cardTitle}>{t("triGrid.liveCalendar")}</span>
-            </div>
-            <Link href="/calendar" className={styles.allLink}>
-              {t("signals.all")} →
-            </Link>
-          </div>
-          <div className={styles.calWidgetBody}>
-            <EconomicCalendarWidget theme={theme} />
-          </div>
-        </div>
-      </section>
-
-      {/* ══════════════════════════════
-          Markets Strip
-         ══════════════════════════════ */}
-      {preMarketsBanner && (
-        <ImageAdBanner
-          banner={preMarketsBanner}
-          onDismiss={() => dismissBanner("pre_markets_banner")}
-        />
-      )}
-      <section className={styles.marketsSection}>
-        <div className={styles.stripHeader}>
-          <div className={styles.sectionTitleGroup}>
-            <div className={styles.sectionIcon}>
-              <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                <polyline
-                  points="2,14 7,8 11,11 18,4"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-            <div className={styles.sectionTitleText}>
-              <h2>{t("markets.title")}</h2>
-              <p>{t("markets.subtitle")}</p>
-            </div>
-          </div>
-          <Link href="/markets" className={styles.sectionLink}>
-            {t("copyTrading.viewAll")} →
-          </Link>
-        </div>
-        <div className={styles.marketsStrip}>
-          {HOMEPAGE_SYMBOLS.map((s) => (
-            <Link
-              key={s.displayName}
-              href={symbolHref(s.displayName)}
-              className={styles.stripCard}
-            >
-              <div className={styles.tickerWrap}>
-                <SingleTickerWidget tvSymbol={s.tvSymbol} theme={theme} />
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* ══════════════════════════════
+          {/* ══════════════════════════════
           Featured Brokers
          ══════════════════════════════ */}
-      <section className={styles.section}>
-        <div className={styles.stripHeader}>
-          <div className={styles.sectionTitleGroup}>
-            <div className={styles.sectionIcon}>
-              <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                <path
-                  d="M10 2L12.39 7.26L18 8.18L14 12.08L14.9 18L10 15.27L5.1 18L6 12.08L2 8.18L7.61 7.26L10 2Z"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-            <div className={styles.sectionTitleText}>
-              <h2>{t("featuredBrokers.title")}</h2>
-              <p>{t("featuredBrokers.subtitle")}</p>
-            </div>
-          </div>
-          <Link href="/brokers" className={styles.sectionLink}>
-            {t("featuredBrokers.seeAll")} →
-          </Link>
-        </div>
-        <div className={styles.featuredGrid}>
-          {(data?.broker_sections.featured ?? []).map((b, i) => (
-            <Link href="/brokers" key={b.id} className={styles.featuredCard}>
-              <div className={styles.featuredCardTop}>
-                <span className={styles.featuredTag}>{t("featuredBrokers.tag")}</span>
-                <span className={styles.adBadge}>{t("featuredBrokers.ad")}</span>
-              </div>
-              <div className={styles.featuredCardBody}>
-                {b.img_src ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={b.img_src}
-                    alt=""
-                    className={styles.brokerLogoCircle}
-                    style={{ objectFit: "cover" }}
-                  />
-                ) : (
-                  <div
-                    className={styles.brokerLogoCircle}
-                    style={{ background: FEATURED_COLORS[i % FEATURED_COLORS.length] }}
-                  >
-                    <svg viewBox="0 0 32 32" fill="none" width="20" height="20">
-                      <polyline
-                        points="4,22 10,14 16,18 24,8"
-                        stroke="white"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                )}
-                <div>
-                  <div className={styles.brokerName}>{b.name}</div>
-                  <div className={styles.brokerDesc}>
-                    {t("featuredBrokers.upToCashback", { rate: b.cashback_rate })}
-                  </div>
+          <section className={styles.section}>
+            <div className={styles.stripHeader}>
+              <div className={styles.sectionTitleGroup}>
+                <div className={styles.sectionIcon}>
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                    <path
+                      d="M10 2L12.39 7.26L18 8.18L14 12.08L14.9 18L10 15.27L5.1 18L6 12.08L2 8.18L7.61 7.26L10 2Z"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+                <div className={styles.sectionTitleText}>
+                  <h2>{t("featuredBrokers.title")}</h2>
+                  <p>{t("featuredBrokers.subtitle")}</p>
                 </div>
               </div>
-            </Link>
-          ))}
+              <Link href="/brokers" className={styles.sectionLink}>
+                {t("featuredBrokers.seeAll")} →
+              </Link>
+            </div>
+            <div className={styles.featuredGrid}>
+              {(data?.broker_sections.featured ?? []).map((b, i) => (
+                <Link href="/brokers" key={b.id} className={styles.featuredCard}>
+                  <div className={styles.featuredCardTop}>
+                    <span className={styles.featuredTag}>{t("featuredBrokers.tag")}</span>
+                    <span className={styles.adBadge}>{t("featuredBrokers.ad")}</span>
+                  </div>
+                  <div className={styles.featuredCardBody}>
+                    {b.img_src ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={b.img_src}
+                        alt=""
+                        className={styles.brokerLogoCircle}
+                        style={{ objectFit: "cover" }}
+                      />
+                    ) : (
+                      <div
+                        className={styles.brokerLogoCircle}
+                        style={{ background: FEATURED_COLORS[i % FEATURED_COLORS.length] }}
+                      >
+                        <svg viewBox="0 0 32 32" fill="none" width="20" height="20">
+                          <polyline
+                            points="4,22 10,14 16,18 24,8"
+                            stroke="white"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </div>
+                    )}
+                    <div>
+                      <div className={styles.brokerName}>{b.name}</div>
+                      <div className={styles.brokerDesc}>
+                        {t("featuredBrokers.upToCashback", { rate: b.cashback_rate })}
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
         </div>
-      </section>
-      </div>
       </div>
       <footer className={userStyles.footer}>{t("footer", { year: new Date().getFullYear() })}</footer>
       <LoginModal />
