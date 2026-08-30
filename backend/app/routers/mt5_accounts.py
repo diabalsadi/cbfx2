@@ -54,10 +54,18 @@ def get_active_user_count(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_roles(ADMIN_STATS_ROLES)),
 ):
-    """Site-wide count of users with a MetaApi-verified MT5 account at a
+    """Count of users with a MetaApi-verified MT5 account at a
     cashback-eligible broker — see app/utils/active_users.py. Admin overview
-    dashboard KPI."""
-    return {"active_users": len(active_user_emails(db))}
+    dashboard KPI. Site-wide for super_admin; a "broker" role account only
+    sees users active with the broker listing it owns (see
+    brokers.py's owner_email scoping) — not every other broker's users."""
+    broker_id = None
+    if current_user.role == "broker":
+        broker = db.query(Broker).filter(Broker.owner_email == current_user.email).first()
+        if not broker:
+            return {"active_users": 0}
+        broker_id = broker.id
+    return {"active_users": len(active_user_emails(db, broker_id=broker_id))}
 
 
 @router.get("/me", response_model=List[MT5AccountSchema])

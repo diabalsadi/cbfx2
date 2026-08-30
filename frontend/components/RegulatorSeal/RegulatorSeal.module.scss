@@ -1,0 +1,73 @@
+.seal {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  background: var(--bg-card);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 6px 4px;
+  text-align: center;
+  flex-shrink: 0;
+  transform: rotate(-4deg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 4px;
+    border-radius: 50%;
+    border: 1px dashed var(--accent);
+    opacity: 0.4;
+  }
+
+  &.sm {
+    width: 52px;
+    height: 52px;
+    padding: 4px 2px;
+  }
+}
+
+.sealCheck {
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+
+  .sm & {
+    font-size: 10px;
+  }
+}
+
+.sealCode {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.15;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  .sm & {
+    font-size: 9px;
+  }
+}
+
+.sealJurisdiction {
+  font-size: 8px;
+  color: var(--text-muted);
+  line-height: 1.1;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  .sm & {
+    font-size: 7px;
+  }
+}

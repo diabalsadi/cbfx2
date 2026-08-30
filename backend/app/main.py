@@ -174,6 +174,8 @@ with engine.begin() as connection:
     connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS support_hours VARCHAR"))
     connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS pros JSON DEFAULT '[]'::json"))
     connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS cons JSON DEFAULT '[]'::json"))
+    connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS about TEXT"))
+    connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS regulations JSON DEFAULT '[]'::json"))
 
     # Indexes on FK/filter columns that predate their model's index=True —
     # create_all() only applies index=True to brand-new tables, so existing

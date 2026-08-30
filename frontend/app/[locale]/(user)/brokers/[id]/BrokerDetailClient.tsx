@@ -4,11 +4,17 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLoginModal } from "@/contexts/LoginModalContext";
-import { publicApi, brokerRatingApi, type PublicBrokerOffer } from "@/helpers/api";
+import {
+  publicApi,
+  brokerRatingApi,
+  type PublicBrokerOffer,
+  type BrokerAccountType,
+} from "@/helpers/api";
 import ScoreBadge from "@/components/ScoreBadge";
+import RegulatorSeal from "@/components/RegulatorSeal";
 import { REGION_LABELS } from "@/helpers/regions";
 import { COUNTRY_LABELS } from "@/helpers/countries";
-import { REGULATOR_LABELS } from "@/helpers/regulators";
+import { regulatorInfo } from "@/helpers/regulators";
 import { INSTRUMENT_CATEGORIES, type InstrumentCategory } from "@/helpers/instrumentCategories";
 import styles from "./brokerDetail.module.scss";
 
@@ -23,6 +29,56 @@ function getInitials(name: string) {
     .join("")
     .toUpperCase()
     .slice(0, 2);
+}
+
+function instrumentLabel(
+  entry: { category: string | null; symbol: string | null },
+  t: ReturnType<typeof useTranslations>,
+): string {
+  if (entry.symbol) return entry.symbol;
+  if (entry.category && isInstrumentCategory(entry.category)) return t(`categories.${entry.category}`);
+  return entry.category ?? "—";
+}
+
+// Every account-type name referenced by any spread row, in the order
+// account types were defined — spreads are keyed by name (see SpreadInfo),
+// so a row may be missing a value for a given column if that instrument
+// hasn't been priced for that account type yet.
+function spreadColumns(broker: PublicBrokerOffer): string[] {
+  const names = new Set<string>();
+  broker.account_types.forEach((at) => names.add(at.name));
+  broker.spreads.forEach((s) => Object.keys(s.spreads).forEach((n) => names.add(n)));
+  return broker.account_types.map((at) => at.name).filter((n) => names.has(n));
+}
+
+// The "Cashback per Asset Class" summary: rows are every category actually
+// used in any account type's cashback list, columns are account types, cells
+// are the best ($/lot) rate for that category within that account type — or
+// a flat-rate note when the account type has no structured cashback list at
+// all (falls back to the broker's headline cashback_rate).
+function cashbackSummaryRows(broker: PublicBrokerOffer): InstrumentCategory[] {
+  const present = new Set<string>();
+  broker.account_types.forEach((at) =>
+    at.cashback.forEach((c) => {
+      if (c.category) present.add(c.category);
+    }),
+  );
+  return INSTRUMENT_CATEGORIES.filter((cat) => present.has(cat));
+}
+
+function bestRateForCategory(at: BrokerAccountType, category: string): number | null {
+  const matches = at.cashback.filter((c) => c.category === category);
+  if (matches.length === 0) return null;
+  return Math.max(...matches.map((c) => c.rate));
+}
+
+function SectionEyebrow({ icon, label }: { icon: string; label: string }) {
+  return (
+    <div className={styles.eyebrow}>
+      <span className={styles.eyebrowIcon}>{icon}</span>
+      <span>{label}</span>
+    </div>
+  );
 }
 
 const USER_RATING_VALUES = [1, 2, 3, 4, 5];
@@ -119,10 +175,13 @@ export default function BrokerDetailClient({ params }: { params: Promise<{ id: s
 
   const labels = broker.coverage_type === "country" ? COUNTRY_LABELS : REGION_LABELS;
   const hasSafetyInfo =
-    broker.regulation_badges.length > 0 ||
+    broker.regulations.length > 0 ||
     broker.segregated_funds ||
     broker.negative_balance_protection ||
     !!broker.compensation_scheme;
+  const distinctRegulators = [...new Set(broker.regulations.map((r) => r.regulator))];
+  const spreadCols = spreadColumns(broker);
+  const summaryRows = cashbackSummaryRows(broker);
 
   return (
     <div className={styles.page}>
@@ -137,7 +196,7 @@ export default function BrokerDetailClient({ params }: { params: Promise<{ id: s
         ) : (
           <div className={styles.avatar}>{getInitials(broker.name)}</div>
         )}
-        <div>
+        <div className={styles.headerBody}>
           <h1 className={styles.name}>{broker.name}</h1>
           {broker.tagline && <p className={styles.tagline}>{broker.tagline}</p>}
           <div className={styles.metaRow}>
@@ -170,22 +229,22 @@ export default function BrokerDetailClient({ params }: { params: Promise<{ id: s
             {broker.geo_coverage.map((c) => labels[c] || c).join(" · ") || t("vettedPartner")}
           </div>
         </div>
-        <div className={styles.rateBadge}>
-          {t("flatRate", { rate: broker.cashback_rate })}
-        </div>
+        {distinctRegulators.length > 0 && (
+          <div className={styles.heroSeals}>
+            {distinctRegulators.map((code) => (
+              <RegulatorSeal key={code} code={code} size="sm" />
+            ))}
+          </div>
+        )}
       </div>
 
-      {broker.regulation_badges.length > 0 && (
-        <div className={styles.badgeRow}>
-          {broker.regulation_badges.map((code) => (
-            <span key={code} className={styles.regBadge}>
-              {REGULATOR_LABELS[code] || code}
-            </span>
-          ))}
-        </div>
-      )}
+      {broker.about && <p className={styles.about}>{broker.about}</p>}
 
       <div className={styles.quickFacts}>
+        <div className={styles.quickFact}>
+          <div className={styles.quickFactLabel}>{t("cashbackRate")}</div>
+          <div className={styles.quickFactValue}>{t("flatRate", { rate: broker.cashback_rate })}</div>
+        </div>
         {broker.min_deposit != null && (
           <div className={styles.quickFact}>
             <div className={styles.quickFactLabel}>{t("minDeposit")}</div>
@@ -228,15 +287,33 @@ export default function BrokerDetailClient({ params }: { params: Promise<{ id: s
 
       {hasSafetyInfo && (
         <section className={styles.section}>
+          <SectionEyebrow icon="🛡️" label={t("regulationEyebrow")} />
           <h2 className={styles.sectionTitle}>{t("regulationTitle")}</h2>
-          {broker.regulation_badges.length > 0 && (
-            <div className={styles.badgeRow}>
-              {broker.regulation_badges.map((code) => (
-                <span key={code} className={styles.regBadge}>
-                  {REGULATOR_LABELS[code] || code}
-                </span>
-              ))}
-            </div>
+          {broker.regulations.length > 0 && (
+            <table className={styles.dataTable}>
+              <thead>
+                <tr>
+                  <th>{t("regulator")}</th>
+                  <th>{t("licenseNumber")}</th>
+                  <th>{t("activeSince")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {broker.regulations.map((r, i) => {
+                  const info = regulatorInfo(r.regulator);
+                  return (
+                    <tr key={i}>
+                      <td>
+                        {info.code}
+                        {info.jurisdiction ? ` (${info.jurisdiction})` : ""}
+                      </td>
+                      <td>{r.license_number || "—"}</td>
+                      <td>{r.active_since || "—"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           )}
           <ul className={styles.checklist}>
             {broker.segregated_funds && <li>{t("segregatedFunds")}</li>}
@@ -248,36 +325,44 @@ export default function BrokerDetailClient({ params }: { params: Promise<{ id: s
 
       {broker.spreads.length > 0 && (
         <section className={styles.section}>
+          <SectionEyebrow icon="📊" label={t("tradingConditionsEyebrow")} />
           <h2 className={styles.sectionTitle}>{t("tradingConditionsTitle")}</h2>
-          <table className={styles.dataTable}>
-            <thead>
-              <tr>
-                <th>{t("instrument")}</th>
-                <th>{t("typicalSpread")}</th>
-                <th>{t("commission")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {broker.spreads.map((s, i) => (
-                <tr key={i}>
-                  <td>{s.symbol}</td>
-                  <td>{s.typical_spread || "—"}</td>
-                  <td>{s.commission || "—"}</td>
+          <div className={styles.tableScroll}>
+            <table className={styles.dataTable}>
+              <thead>
+                <tr>
+                  <th>{t("instrument")}</th>
+                  {spreadCols.map((name) => (
+                    <th key={name}>{name}</th>
+                  ))}
+                  <th>{t("commission")}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {broker.spreads.map((s, i) => (
+                  <tr key={i}>
+                    <td>{instrumentLabel(s, t)}</td>
+                    {spreadCols.map((name) => (
+                      <td key={name}>{s.spreads[name] || "—"}</td>
+                    ))}
+                    <td>{s.commission || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
       )}
 
       <section className={styles.section}>
+        <SectionEyebrow icon="💼" label={t("accountTypesEyebrow")} />
         <h2 className={styles.sectionTitle}>{t("accountTypesTitle")}</h2>
         {broker.account_types.length === 0 ? (
           <p className={styles.hint}>{t("noAccountTypes", { rate: broker.cashback_rate })}</p>
         ) : (
           <div className={styles.accountTypeGrid}>
             {broker.account_types.map((at, i) => (
-              <div key={i} className={styles.accountTypeCard}>
+              <div key={i} id={`account-type-${i}`} className={styles.accountTypeCard}>
                 <div className={styles.accountTypeName}>{at.name}</div>
                 {at.description && (
                   <p className={styles.accountTypeDesc}>{at.description}</p>
@@ -299,12 +384,7 @@ export default function BrokerDetailClient({ params }: { params: Promise<{ id: s
                     <tbody>
                       {at.cashback.map((c, j) => (
                         <tr key={j}>
-                          <td>
-                            {c.symbol ||
-                              (c.category && isInstrumentCategory(c.category)
-                                ? t(`categories.${c.category}`)
-                                : c.category)}
-                          </td>
+                          <td>{instrumentLabel(c, t)}</td>
                           <td className={styles.rateValue}>{t("perLotRate", { rate: c.rate })}</td>
                         </tr>
                       ))}
@@ -317,8 +397,47 @@ export default function BrokerDetailClient({ params }: { params: Promise<{ id: s
         )}
       </section>
 
+      {summaryRows.length > 0 && (
+        <section className={styles.section}>
+          <SectionEyebrow icon="💰" label={t("cashbackSummaryEyebrow")} />
+          <h2 className={styles.sectionTitle}>{t("cashbackSummaryTitle")}</h2>
+          <p className={styles.hint}>{t("cashbackSummaryHint")}</p>
+          <div className={styles.tableScroll}>
+            <table className={styles.dataTable}>
+              <thead>
+                <tr>
+                  <th>{t("assetClass")}</th>
+                  {broker.account_types.map((at, i) => (
+                    <th key={i}>
+                      <a href={`#account-type-${i}`} className={styles.accountTypeLink}>
+                        {at.name}
+                      </a>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {summaryRows.map((cat) => (
+                  <tr key={cat}>
+                    <td>{t(`categories.${cat}`)}</td>
+                    {broker.account_types.map((at, i) => {
+                      if (at.cashback.length === 0) {
+                        return <td key={i}>{t("flatRateCell", { rate: broker.cashback_rate })}</td>;
+                      }
+                      const rate = bestRateForCategory(at, cat);
+                      return <td key={i}>{rate != null ? t("upToPerLot", { rate }) : "—"}</td>;
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
       {broker.platforms.length > 0 && (
         <section className={styles.section}>
+          <SectionEyebrow icon="🖥️" label={t("platformsEyebrow")} />
           <h2 className={styles.sectionTitle}>{t("platformsTitle")}</h2>
           <div className={styles.platformGrid}>
             {broker.platforms.map((p, i) => (
@@ -333,6 +452,7 @@ export default function BrokerDetailClient({ params }: { params: Promise<{ id: s
 
       {broker.funding_methods.length > 0 && (
         <section className={styles.section}>
+          <SectionEyebrow icon="🌐" label={t("fundingEyebrow")} />
           <h2 className={styles.sectionTitle}>{t("fundingTitle")}</h2>
           <table className={styles.dataTable}>
             <thead>
@@ -356,6 +476,7 @@ export default function BrokerDetailClient({ params }: { params: Promise<{ id: s
       )}
 
       <section className={styles.section}>
+        <SectionEyebrow icon="✅" label={t("payoutEyebrow")} />
         <h2 className={styles.sectionTitle}>{t("payoutTitle")}</h2>
         <div className={styles.payoutRow}>
           <div>
@@ -379,6 +500,7 @@ export default function BrokerDetailClient({ params }: { params: Promise<{ id: s
         broker.support_languages.length > 0 ||
         broker.support_hours) && (
         <section className={styles.section}>
+          <SectionEyebrow icon="🎧" label={t("supportEyebrow")} />
           <h2 className={styles.sectionTitle}>{t("supportTitle")}</h2>
           <div className={styles.supportGrid}>
             {broker.support_channels.length > 0 && (
@@ -405,6 +527,7 @@ export default function BrokerDetailClient({ params }: { params: Promise<{ id: s
 
       {(broker.pros.length > 0 || broker.cons.length > 0) && (
         <section className={styles.section}>
+          <SectionEyebrow icon="⭐" label={t("prosConsEyebrow")} />
           <h2 className={styles.sectionTitle}>{t("prosConsTitle")}</h2>
           <div className={styles.prosConsGrid}>
             {broker.pros.length > 0 && (

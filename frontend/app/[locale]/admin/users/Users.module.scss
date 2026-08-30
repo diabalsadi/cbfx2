@@ -25,6 +25,33 @@
   margin: 0;
 }
 
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.roleFilter {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 9px 12px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color var(--transition);
+
+  &:focus {
+    border-color: var(--accent);
+  }
+  option {
+    background: var(--bg-card);
+  }
+}
+
 .addBtn {
   background: var(--accent);
   color: #fff;
@@ -81,6 +108,34 @@
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.4px;
+}
+
+.passwordRow {
+  display: flex;
+  gap: 8px;
+
+  .input {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.generateBtn {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition);
+
+  &:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
 }
 
 .input {
@@ -262,4 +317,92 @@
   text-align: center;
   color: var(--text-muted);
   padding: 40px !important;
+}
+
+.brokerLinkCell {
+  position: relative;
+}
+
+.brokerLinkTrigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 12.5px;
+  padding: 5px 8px;
+  cursor: pointer;
+  max-width: 220px;
+  text-align: left;
+
+  &:hover {
+    border-color: var(--accent);
+  }
+}
+
+.caret {
+  color: var(--text-muted);
+  font-size: 10px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.brokerLinkPanel {
+  // Positioned inline via style={} (portaled to <body>, see BrokerLinkCell) —
+  // escapes .tableCard's overflow: hidden / .tableWrapper's scroll clipping,
+  // which is why this used to get cut off instead of floating over the page.
+  z-index: 1000;
+  min-width: 220px;
+  max-height: 240px;
+  overflow-y: auto;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.brokerLinkEmpty {
+  padding: 10px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.brokerLinkOption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--text-primary);
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:hover {
+    background: var(--bg-secondary);
+  }
+
+  input {
+    cursor: pointer;
+  }
+}
+
+.brokerLinkOptionDisabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+
+  input {
+    cursor: not-allowed;
+  }
+
+  &:hover {
+    background: none;
+  }
 }

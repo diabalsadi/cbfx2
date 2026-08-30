@@ -55,6 +55,7 @@ class Broker(Base):
 
     # ── Profile ──────────────────────────────────────────────────────────
     tagline = Column(Text, nullable=True)  # short one-liner shown under the name
+    about = Column(Text, nullable=True)  # longer free-text description/bio
     founded_year = Column(Integer, nullable=True)
     headquarters = Column(String, nullable=True)  # free text, e.g. "Limassol, Cyprus"
     min_deposit = Column(Float, nullable=True)  # headline figure for the quick-facts strip
@@ -62,15 +63,23 @@ class Broker(Base):
     execution_type = Column(String, nullable=True)  # free text, e.g. "ECN/STP"
 
     # ── Regulation & safety ──────────────────────────────────────────────
-    # List of regulator codes from frontend/helpers/regulators.ts, e.g. ["fca", "cysec"].
+    # Superseded by `regulations` below — left as a harmless unused leftover
+    # rather than dropped (see trade_records.rebate_amount for the same
+    # pattern elsewhere in this codebase). Never read; do not resurrect.
     regulation_badges = Column(JSON, nullable=False, default=list)
+    # [{"regulator": str (code from frontend/helpers/regulators.ts), "license_number": str|None,
+    #   "active_since": str|None}, ...] — one row per license; the hero's seal
+    # badges are derived from this list (one seal per distinct regulator).
+    regulations = Column(JSON, nullable=False, default=list)
     segregated_funds = Column(Boolean, nullable=False, default=False)
     negative_balance_protection = Column(Boolean, nullable=False, default=False)
     compensation_scheme = Column(String, nullable=True)  # free text, e.g. "ICF up to €20,000"
 
     # ── Trading conditions ───────────────────────────────────────────────
-    # [{"symbol": str, "typical_spread": str, "commission": str}, ...] — the
-    # broker's actual trading cost per instrument, distinct from the cashback
+    # [{"category": str|None, "symbol": str|None, "spreads": {account_type_name: str},
+    #   "commission": str|None}, ...] — exactly one of category/symbol per row (same
+    # convention as account_types[].cashback's InstrumentCashback), one spread value
+    # per account type since it genuinely varies by tier — distinct from the cashback
     # rebate rates in account_types[].cashback.
     spreads = Column(JSON, nullable=False, default=list)
 

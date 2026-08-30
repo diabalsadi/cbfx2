@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, model_validator
-from typing import Optional, List, Literal
+from typing import Optional, List, Literal, Dict
 from datetime import datetime
 
 from app.utils.countries import COUNTRY_CODES
@@ -58,9 +58,27 @@ class FundingMethod(BaseModel):
 
 
 class SpreadInfo(BaseModel):
-    symbol: str
-    typical_spread: Optional[str] = None
-    commission: Optional[str] = None
+    # Exactly one of category/symbol — same convention as InstrumentCashback.
+    category: Optional[str] = None
+    symbol: Optional[str] = None
+    # Account-type name -> spread value, e.g. {"Standard": "1.0 pips", "ECN": "0.0 pips"}.
+    # Keyed by name rather than index so it survives account_types being reordered
+    # (but goes stale if an account type is renamed — same trade-off admins accept
+    # for InstrumentCashback's symbol strings).
+    spreads: Dict[str, str] = {}
+    commission: Optional[str] = None  # shared across account types for this instrument
+
+    @model_validator(mode="after")
+    def _check_exactly_one(self):
+        if bool(self.category) == bool(self.symbol):
+            raise ValueError("SpreadInfo requires exactly one of category or symbol")
+        return self
+
+
+class RegulationEntry(BaseModel):
+    regulator: str  # code from frontend/helpers/regulators.ts, e.g. "fca"
+    license_number: Optional[str] = None
+    active_since: Optional[str] = None  # free text — a year or full date, admin's choice
 
 
 def _validate_coverage(coverage_type: Optional[str], geo_coverage: Optional[List[str]]):
@@ -99,6 +117,7 @@ class BrokerBase(BaseModel):
 
     # Profile
     tagline: Optional[str] = None
+    about: Optional[str] = None
     founded_year: Optional[int] = None
     headquarters: Optional[str] = None
     min_deposit: Optional[float] = None
@@ -106,7 +125,7 @@ class BrokerBase(BaseModel):
     execution_type: Optional[str] = None
 
     # Regulation & safety — super_admin-only on update, same rationale as rating.
-    regulation_badges: List[str] = []
+    regulations: List[RegulationEntry] = []
     segregated_funds: bool = False
     negative_balance_protection: bool = False
     compensation_scheme: Optional[str] = None
@@ -155,6 +174,7 @@ class BrokerUpdate(BaseModel):
     owner_email: Optional[str] = None
 
     tagline: Optional[str] = None
+    about: Optional[str] = None
     founded_year: Optional[int] = None
     headquarters: Optional[str] = None
     min_deposit: Optional[float] = None
@@ -162,7 +182,7 @@ class BrokerUpdate(BaseModel):
     execution_type: Optional[str] = None
 
     # Super_admin-only on update, same rationale as rating — see update_broker().
-    regulation_badges: Optional[List[str]] = None
+    regulations: Optional[List[RegulationEntry]] = None
     segregated_funds: Optional[bool] = None
     negative_balance_protection: Optional[bool] = None
     compensation_scheme: Optional[str] = None

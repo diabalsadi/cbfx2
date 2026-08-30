@@ -19,8 +19,6 @@ from app.models.user import User
 
 router = APIRouter(prefix="/ad-banners", tags=["ad-banners"])
 
-ALLOWED_ROLES = {"super_admin", "broker"}
-
 
 def require_roles(roles: set):
     def checker(current_user: User = Depends(get_current_user)):
@@ -35,7 +33,9 @@ def list_banners(
     page: Optional[str] = None,
     slot: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles(ALLOWED_ROLES)),
+    # Sitewide ad-slot curation, not scoped to "my own broker" — admin-only,
+    # same reasoning as set_banner/clear_banner below.
+    current_user: User = Depends(require_roles({"super_admin"})),
 ):
     q = db.query(AdBanner)
     if page:

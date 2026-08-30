@@ -33,12 +33,16 @@ def _cashback_eligible_broker_ids(db: Session) -> Set[str]:
     return eligible
 
 
-def active_user_emails(db: Session) -> Set[str]:
+def active_user_emails(db: Session, broker_id: Optional[str] = None) -> Set[str]:
     """Every user with at least one MetaApi-verified MT5 account at a
     cashback-eligible broker. Callers intersect this against whatever
     subset of users they care about (all users, referred users, one
-    client's referrals, ...)."""
+    client's referrals, ...). Pass broker_id to scope to a single broker's
+    users (e.g. a "broker" role account's own overview stats) instead of
+    site-wide."""
     eligible_broker_ids = _cashback_eligible_broker_ids(db)
+    if broker_id is not None:
+        eligible_broker_ids &= {broker_id}
     if not eligible_broker_ids:
         return set()
     rows = (

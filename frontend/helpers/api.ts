@@ -167,9 +167,17 @@ export interface FundingMethod {
 }
 
 export interface SpreadInfo {
-  symbol: string;
-  typical_spread: string | null;
+  category: string | null;
+  symbol: string | null;
+  // Account-type name -> spread value, e.g. { Standard: "1.0 pips", ECN: "0.0 pips" }.
+  spreads: Record<string, string>;
   commission: string | null;
+}
+
+export interface RegulationEntry {
+  regulator: string;
+  license_number: string | null;
+  active_since: string | null;
 }
 
 // One broker's full cashback offer — account types, per-instrument rates,
@@ -191,13 +199,14 @@ export interface PublicBrokerOffer {
   rating: number | null;
 
   tagline: string | null;
+  about: string | null;
   founded_year: number | null;
   headquarters: string | null;
   min_deposit: number | null;
   max_leverage: string | null;
   execution_type: string | null;
 
-  regulation_badges: string[];
+  regulations: RegulationEntry[];
   segregated_funds: boolean;
   negative_balance_protection: boolean;
   compensation_scheme: string | null;

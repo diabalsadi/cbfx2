@@ -16,7 +16,13 @@ from app.schemas.user import (
     ADMIN_ROLES,
 )
 from app.utils.auth import get_current_user, get_password_hash, verify_password, generate_temp_password
-from app.utils.mailer import send_new_credentials_email
+from app.utils.mailer import (
+    send_new_credentials_email,
+    send_super_admin_welcome_email,
+    send_editor_welcome_email,
+    send_broker_account_welcome_email,
+    send_affiliate_welcome_email,
+)
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -24,6 +30,16 @@ router = APIRouter(prefix="/users", tags=["users"])
 # admin-portal roles since client accounts are also admin-managed, even
 # though "client" itself stays on the site portal (not in ADMIN_ROLES).
 VALID_ROLES = ADMIN_ROLES | {"client"}
+
+# Which welcome-credentials email to send from create_user(), keyed by the
+# role being created — "client" maps to the affiliate template since that's
+# this role's user-facing name wherever referrals/cashback show up.
+WELCOME_EMAIL_BY_ROLE = {
+    "super_admin": send_super_admin_welcome_email,
+    "editor": send_editor_welcome_email,
+    "broker": send_broker_account_welcome_email,
+    "client": send_affiliate_welcome_email,
+}
 
 
 def require_super_admin(current_user: User = Depends(get_current_user)):
@@ -64,6 +80,9 @@ def create_user(
 ):
     """Admin-created account (e.g. a client), bypassing the public
     /auth/register flow and its MT5-account requirement."""
+    if payload.role not in VALID_ROLES:
+        raise HTTPException(status_code=400, detail=f"Invalid role. Must be one of: {', '.join(VALID_ROLES)}")
+
     if db.query(User).filter(User.email == payload.email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
 
@@ -74,12 +93,28 @@ def create_user(
     elif payload.role == "client":
         referral_code = _generate_referral_code(db)
 
+    try:
+        # Sent before adding/committing anything — if delivery fails, no
+        # account is left behind with credentials nobody received (see
+        # regenerate_password() below and brokers.create_broker() for the
+        # same pattern).
+        WELCOME_EMAIL_BY_ROLE[payload.role](payload.email, payload.name, payload.password)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Couldn't send the welcome email. Please try again in a moment.",
+        )
+
     user = User(
         email=payload.email,
         name=payload.name,
         role=payload.role,
         referral_code=referral_code,
         hashed_password=get_password_hash(payload.password),
+        # The admin-chosen password was just emailed in plaintext — force a
+        # change on first login instead of trusting it indefinitely (see
+        # User.must_change_password).
+        must_change_password=True,
     )
     db.add(user)
     db.commit()

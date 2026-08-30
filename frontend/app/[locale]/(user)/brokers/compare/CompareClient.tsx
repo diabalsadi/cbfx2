@@ -3,8 +3,13 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { publicApi, type PublicBroker, type PublicBrokerOffer } from "@/helpers/api";
 import ScoreBadge from "@/components/ScoreBadge";
-import { REGULATOR_LABELS } from "@/helpers/regulators";
+import RegulatorSeal from "@/components/RegulatorSeal";
+import { INSTRUMENT_CATEGORIES, type InstrumentCategory } from "@/helpers/instrumentCategories";
 import styles from "./compare.module.scss";
+
+function isInstrumentCategory(value: string): value is InstrumentCategory {
+  return (INSTRUMENT_CATEGORIES as readonly string[]).includes(value);
+}
 
 function initials(name: string) {
   return name
@@ -93,6 +98,7 @@ function BrokerPicker({
 
 function BrokerColumn({ broker }: { broker: PublicBrokerOffer | null }) {
   const t = useTranslations("brokerCompare");
+  const tCat = useTranslations("brokerDetail.categories");
 
   if (!broker) {
     return <div className={styles.column}><p className={styles.empty}>{t("pickToCompare")}</p></div>;
@@ -139,12 +145,10 @@ function BrokerColumn({ broker }: { broker: PublicBrokerOffer | null }) {
         )}
       </div>
 
-      {broker.regulation_badges.length > 0 && (
+      {broker.regulations.length > 0 && (
         <div className={styles.badgeRow}>
-          {broker.regulation_badges.map((code) => (
-            <span key={code} className={styles.badge}>
-              {REGULATOR_LABELS[code] || code}
-            </span>
+          {[...new Set(broker.regulations.map((r) => r.regulator))].map((code) => (
+            <RegulatorSeal key={code} code={code} size="sm" />
           ))}
         </div>
       )}
@@ -152,12 +156,17 @@ function BrokerColumn({ broker }: { broker: PublicBrokerOffer | null }) {
       {broker.spreads.length > 0 && (
         <div className={styles.subsection}>
           <div className={styles.subsectionTitle}>{t("spreads")}</div>
-          {broker.spreads.map((s, i) => (
-            <div key={i} className={styles.subsectionRow}>
-              <span>{s.symbol}</span>
-              <span>{s.typical_spread || "—"}</span>
-            </div>
-          ))}
+          {broker.spreads.map((s, i) => {
+            const label =
+              s.symbol || (s.category && isInstrumentCategory(s.category) ? tCat(s.category) : s.category);
+            const values = Object.values(s.spreads).filter(Boolean);
+            return (
+              <div key={i} className={styles.subsectionRow}>
+                <span>{label}</span>
+                <span>{values.length > 0 ? values.join(" / ") : "—"}</span>
+              </div>
+            );
+          })}
         </div>
       )}
 

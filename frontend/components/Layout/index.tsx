@@ -50,7 +50,7 @@ const navItems = [
     labelKey: "adPlacements",
     href: "/admin/ads-placements",
     icon: "▤",
-    roles: ["super_admin", "broker"],
+    roles: ["super_admin"],
   },
   {
     labelKey: "seo",

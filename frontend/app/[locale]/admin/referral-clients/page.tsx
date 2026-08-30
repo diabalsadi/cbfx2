@@ -8,6 +8,7 @@ import {
   type UserProfile,
   type AdminReferralStats,
 } from "@/helpers/api";
+import { generatePassword } from "@/helpers/generatePassword";
 import Card from "@/components/Card";
 import { chartSx } from "@/helpers/chartTheme";
 import ChartThemeProvider from "@/components/ChartThemeProvider";
@@ -181,14 +182,23 @@ export default function ReferralClientsPage() {
             <div className={styles.formRow}>
               <div className={styles.field}>
                 <label className={styles.label}>{t("password")}</label>
-                <input
-                  className={styles.input}
-                  type="password"
-                  placeholder={t("passwordPlaceholder")}
-                  value={newClient.password}
-                  onChange={(e) => setNewClient((v) => ({ ...v, password: e.target.value }))}
-                  required
-                />
+                <div className={styles.passwordRow}>
+                  <input
+                    className={styles.input}
+                    type="text"
+                    placeholder={t("passwordPlaceholder")}
+                    value={newClient.password}
+                    onChange={(e) => setNewClient((v) => ({ ...v, password: e.target.value }))}
+                    required
+                  />
+                  <button
+                    type="button"
+                    className={styles.generateBtn}
+                    onClick={() => setNewClient((v) => ({ ...v, password: generatePassword() }))}
+                  >
+                    {t("generatePassword")}
+                  </button>
+                </div>
               </div>
               <div className={styles.field}>
                 <label className={styles.label}>{t("referralCode")}</label>

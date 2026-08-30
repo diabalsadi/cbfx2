@@ -125,7 +125,7 @@ def update_broker(
         for admin_only_field in (
             "owner_email",
             "rating",
-            "regulation_badges",
+            "regulations",
             "segregated_funds",
             "negative_balance_protection",
             "compensation_scheme",

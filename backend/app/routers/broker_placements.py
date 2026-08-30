@@ -17,8 +17,6 @@ from app.models.user import User
 
 router = APIRouter(prefix="/broker-placements", tags=["broker-placements"])
 
-ALLOWED_ROLES = {"super_admin", "broker"}
-
 
 def require_roles(roles: set):
     def checker(current_user: User = Depends(get_current_user)):
@@ -33,7 +31,9 @@ def list_placements(
     section: Optional[str] = None,
     region: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles(ALLOWED_ROLES)),
+    # Sitewide layout curation, not scoped to "my own broker" — admin-only,
+    # same reasoning as set_placement/clear_placement below.
+    current_user: User = Depends(require_roles({"super_admin"})),
 ):
     q = db.query(BrokerPlacement)
     if section:

@@ -62,7 +62,7 @@
     justify-content: center;
     width: 48px;
     height: 48px;
-    background: color.$gray-100;
+    background: var(--bg-secondary);
     border-radius: 12px;
     flex-shrink: 0;
     padding: 12px;
@@ -71,7 +71,7 @@
       width: 100%;
       height: 100%;
       display: block;
-      fill: color.$gray-700;
+      fill: var(--text-secondary);
       overflow: visible;
     }
   }
@@ -84,14 +84,14 @@
     h3 {
       font-size: 0.95rem;
       font-weight: 600;
-      color: color.$black-100;
+      color: var(--text-primary);
       transition: color 0.2s ease;
       margin: 0;
     }
 
     p {
       font-size: 0.75rem;
-      color: color.$gray-700;
+      color: var(--text-secondary);
       line-height: 1.2;
       margin: 0;
     }

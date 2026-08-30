@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional, List
 
-from app.schemas.broker import BrokerAccountType, FundingMethod, PlatformInfo, SpreadInfo
+from app.schemas.broker import BrokerAccountType, FundingMethod, PlatformInfo, SpreadInfo, RegulationEntry
 
 
 class PublicBrokerOffer(BaseModel):
@@ -27,13 +27,14 @@ class PublicBrokerOffer(BaseModel):
     rating: Optional[float] = None
 
     tagline: Optional[str] = None
+    about: Optional[str] = None
     founded_year: Optional[int] = None
     headquarters: Optional[str] = None
     min_deposit: Optional[float] = None
     max_leverage: Optional[str] = None
     execution_type: Optional[str] = None
 
-    regulation_badges: List[str] = []
+    regulations: List[RegulationEntry] = []
     segregated_funds: bool = False
     negative_balance_protection: bool = False
     compensation_scheme: Optional[str] = None

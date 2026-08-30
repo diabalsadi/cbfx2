@@ -8,12 +8,13 @@ import {
   type PlatformInfo,
   type FundingMethod,
   type SpreadInfo,
+  type RegulationEntry,
 } from "@/helpers/api";
 import { useAuth } from "@/contexts/AuthContext";
 import ScoreBadge from "@/components/ScoreBadge";
 import { REGIONS } from "@/helpers/regions";
 import { COUNTRIES, COUNTRY_LABELS } from "@/helpers/countries";
-import { REGULATORS, REGULATOR_LABELS } from "@/helpers/regulators";
+import { REGULATORS } from "@/helpers/regulators";
 import { INSTRUMENT_CATEGORIES } from "@/helpers/instrumentCategories";
 import Card from "@/components/Card";
 import styles from "./Brokers.module.scss";
@@ -35,12 +36,13 @@ export interface Broker {
   show_on_cashback: boolean;
   rating: number | null;
   tagline: string | null;
+  about: string | null;
   founded_year: number | null;
   headquarters: string | null;
   min_deposit: number | null;
   max_leverage: string | null;
   execution_type: string | null;
-  regulation_badges: string[];
+  regulations: RegulationEntry[];
   segregated_funds: boolean;
   negative_balance_protection: boolean;
   compensation_scheme: string | null;
@@ -75,12 +77,13 @@ const EMPTY_FORM = {
   rating: "",
   owner_email: "",
   tagline: "",
+  about: "",
   founded_year: "",
   headquarters: "",
   min_deposit: "",
   max_leverage: "",
   execution_type: "",
-  regulation_badges: [] as string[],
+  regulations: [] as RegulationEntry[],
   segregated_funds: false,
   negative_balance_protection: false,
   compensation_scheme: "",
@@ -123,10 +126,6 @@ export default function BrokersAdminPage() {
   const [brokerPickerSearch, setBrokerPickerSearch] = useState("");
   const brokerPickerRef = useRef<HTMLDivElement>(null);
 
-  const [regulatorDropdownOpen, setRegulatorDropdownOpen] = useState(false);
-  const [regulatorSearch, setRegulatorSearch] = useState("");
-  const regulatorDropdownRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     if (!countryDropdownOpen) return;
     const onClickOutside = (e: MouseEvent) => {
@@ -151,20 +150,6 @@ export default function BrokersAdminPage() {
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, [brokerPickerOpen]);
-
-  useEffect(() => {
-    if (!regulatorDropdownOpen) return;
-    const onClickOutside = (e: MouseEvent) => {
-      if (
-        regulatorDropdownRef.current &&
-        !regulatorDropdownRef.current.contains(e.target as Node)
-      ) {
-        setRegulatorDropdownOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
-  }, [regulatorDropdownOpen]);
 
   const fetchBrokers = () => {
     setLoading(true);
@@ -206,12 +191,13 @@ export default function BrokersAdminPage() {
       rating: broker.rating != null ? String(broker.rating) : "",
       owner_email: "",
       tagline: broker.tagline || "",
+      about: broker.about || "",
       founded_year: broker.founded_year != null ? String(broker.founded_year) : "",
       headquarters: broker.headquarters || "",
       min_deposit: broker.min_deposit != null ? String(broker.min_deposit) : "",
       max_leverage: broker.max_leverage || "",
       execution_type: broker.execution_type || "",
-      regulation_badges: broker.regulation_badges || [],
+      regulations: broker.regulations || [],
       segregated_funds: broker.segregated_funds,
       negative_balance_protection: broker.negative_balance_protection,
       compensation_scheme: broker.compensation_scheme || "",
@@ -229,6 +215,19 @@ export default function BrokersAdminPage() {
     setBrokerPickerOpen(false);
     setBrokerPickerSearch("");
   };
+
+  // GET /brokers/ already scopes results to just this account's own listing
+  // for a "broker" role (see backend/app/routers/brokers.py:list_brokers) —
+  // there's nothing to browse/search, so skip the picker/grid entirely and
+  // drop straight into editing that one listing, as if this were a
+  // dedicated "Broker Info" page rather than a management list.
+  useEffect(() => {
+    if (isSuperAdmin || loading) return;
+    if (brokers.length > 0 && editingId !== brokers[0].id) {
+      openEditForm(brokers[0]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSuperAdmin, loading, brokers, editingId]);
 
   const addAccountType = () => {
     setFormData((v) => ({
@@ -314,19 +313,32 @@ export default function BrokersAdminPage() {
     }));
   };
 
-  const toggleRegulator = (code: string) => {
+  const addRegulation = () => {
     setFormData((v) => ({
       ...v,
-      regulation_badges: v.regulation_badges.includes(code)
-        ? v.regulation_badges.filter((r) => r !== code)
-        : [...v.regulation_badges, code],
+      regulations: [
+        ...v.regulations,
+        { regulator: REGULATORS[0].value, license_number: "", active_since: "" },
+      ],
+    }));
+  };
+  const removeRegulation = (index: number) => {
+    setFormData((v) => ({ ...v, regulations: v.regulations.filter((_, i) => i !== index) }));
+  };
+  const updateRegulation = (index: number, patch: Partial<RegulationEntry>) => {
+    setFormData((v) => ({
+      ...v,
+      regulations: v.regulations.map((r, i) => (i === index ? { ...r, ...patch } : r)),
     }));
   };
 
   const addSpread = () => {
     setFormData((v) => ({
       ...v,
-      spreads: [...v.spreads, { symbol: "", typical_spread: "", commission: "" }],
+      spreads: [
+        ...v.spreads,
+        { category: INSTRUMENT_CATEGORIES[0], symbol: null, spreads: {}, commission: "" },
+      ],
     }));
   };
   const removeSpread = (index: number) => {
@@ -336,6 +348,14 @@ export default function BrokersAdminPage() {
     setFormData((v) => ({
       ...v,
       spreads: v.spreads.map((s, i) => (i === index ? { ...s, ...patch } : s)),
+    }));
+  };
+  const updateSpreadValue = (index: number, accountTypeName: string, value: string) => {
+    setFormData((v) => ({
+      ...v,
+      spreads: v.spreads.map((s, i) =>
+        i === index ? { ...s, spreads: { ...s.spreads, [accountTypeName]: value } } : s,
+      ),
     }));
   };
 
@@ -421,10 +441,6 @@ export default function BrokersAdminPage() {
     c.label.toLowerCase().includes(countrySearch.toLowerCase()),
   );
 
-  const filteredRegulators = REGULATORS.filter((r) =>
-    r.label.toLowerCase().includes(regulatorSearch.toLowerCase()),
-  );
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) {
@@ -467,16 +483,17 @@ export default function BrokersAdminPage() {
         show_on_cashback: formData.show_on_cashback,
         rating: formData.rating.trim() ? parseFloat(formData.rating) : null,
         tagline: formData.tagline || null,
+        about: formData.about || null,
         founded_year: formData.founded_year.trim() ? parseInt(formData.founded_year, 10) : null,
         headquarters: formData.headquarters || null,
         min_deposit: formData.min_deposit.trim() ? parseFloat(formData.min_deposit) : null,
         max_leverage: formData.max_leverage || null,
         execution_type: formData.execution_type || null,
-        regulation_badges: formData.regulation_badges,
+        regulations: formData.regulations.filter((r) => r.regulator),
         segregated_funds: formData.segregated_funds,
         negative_balance_protection: formData.negative_balance_protection,
         compensation_scheme: formData.compensation_scheme || null,
-        spreads: formData.spreads.filter((s) => s.symbol.trim()),
+        spreads: formData.spreads.filter((s) => s.category || (s.symbol && s.symbol.trim())),
         platforms: formData.platforms.filter((p) => p.name.trim()),
         funding_methods: formData.funding_methods.filter((f) => f.method.trim()),
         support_channels: formData.support_channels
@@ -499,7 +516,10 @@ export default function BrokersAdminPage() {
           owner_email: isSuperAdmin && formData.owner_email.trim() ? formData.owner_email.trim() : null,
         });
       }
-      closeForm();
+      // A broker account has no picker/grid to return to (see the
+      // auto-open effect above) — closing here would just flash it back
+      // open a moment later, so only super_admin's form closes on save.
+      if (isSuperAdmin) closeForm();
       fetchBrokers();
     } catch (ex: unknown) {
       setFormError(ex instanceof Error ? ex.message : t("saveFailed"));
@@ -532,74 +552,78 @@ export default function BrokersAdminPage() {
     <div className={styles.container}>
       <div className={styles.headerRow}>
         <div>
-          <h2 className={styles.title}>{t("title")}</h2>
-          <p className={styles.subtitle}>{t("subtitle")}</p>
+          <h2 className={styles.title}>{isSuperAdmin ? t("title") : t("titleOwn")}</h2>
+          <p className={styles.subtitle}>{isSuperAdmin ? t("subtitle") : t("subtitleOwn")}</p>
         </div>
-        <div className={styles.headerActions}>
-          <div className={styles.brokerPicker} ref={brokerPickerRef}>
-            <button
-              type="button"
-              className={styles.brokerPickerTrigger}
-              onClick={() => setBrokerPickerOpen((o) => !o)}
-            >
-              {editingId
-                ? brokers.find((b) => b.id === editingId)?.name ?? t("selectBroker")
-                : t("selectBroker")}
-              <span className={styles.countryDropdownCaret}>▾</span>
-            </button>
+        {isSuperAdmin && (
+          <div className={styles.headerActions}>
+            <div className={styles.brokerPicker} ref={brokerPickerRef}>
+              <button
+                type="button"
+                className={styles.brokerPickerTrigger}
+                onClick={() => setBrokerPickerOpen((o) => !o)}
+              >
+                {editingId
+                  ? brokers.find((b) => b.id === editingId)?.name ?? t("selectBroker")
+                  : t("selectBroker")}
+                <span className={styles.countryDropdownCaret}>▾</span>
+              </button>
 
-            {brokerPickerOpen && (
-              <div className={styles.brokerPickerPanel}>
-                <input
-                  className={styles.countryDropdownSearch}
-                  placeholder={t("searchBrokers")}
-                  value={brokerPickerSearch}
-                  onChange={(e) => setBrokerPickerSearch(e.target.value)}
-                  autoFocus
-                />
-                <div className={styles.brokerPickerList}>
-                  {loading ? (
-                    <div className={styles.countryDropdownEmpty}>{t("loading")}</div>
-                  ) : filteredBrokerOptions.length === 0 ? (
-                    <div className={styles.countryDropdownEmpty}>{t("noBrokers")}</div>
-                  ) : (
-                    filteredBrokerOptions.map((b) => (
-                      <button
-                        type="button"
-                        key={b.id}
-                        className={styles.brokerPickerOption}
-                        onClick={() => openEditForm(b)}
-                      >
-                        {b.img_src ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={b.img_src} alt="" className={styles.brokerAvatar} />
-                        ) : (
-                          <div className={styles.brokerAvatarFallback}>{getInitials(b.name)}</div>
-                        )}
-                        <span className={styles.brokerPickerOptionName}>{b.name}</span>
-                        <span className={statusBadge(b.status)}>{statusLabel(b.status)}</span>
-                      </button>
-                    ))
-                  )}
+              {brokerPickerOpen && (
+                <div className={styles.brokerPickerPanel}>
+                  <input
+                    className={styles.countryDropdownSearch}
+                    placeholder={t("searchBrokers")}
+                    value={brokerPickerSearch}
+                    onChange={(e) => setBrokerPickerSearch(e.target.value)}
+                    autoFocus
+                  />
+                  <div className={styles.brokerPickerList}>
+                    {loading ? (
+                      <div className={styles.countryDropdownEmpty}>{t("loading")}</div>
+                    ) : filteredBrokerOptions.length === 0 ? (
+                      <div className={styles.countryDropdownEmpty}>{t("noBrokers")}</div>
+                    ) : (
+                      filteredBrokerOptions.map((b) => (
+                        <button
+                          type="button"
+                          key={b.id}
+                          className={styles.brokerPickerOption}
+                          onClick={() => openEditForm(b)}
+                        >
+                          {b.img_src ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={b.img_src} alt="" className={styles.brokerAvatar} />
+                          ) : (
+                            <div className={styles.brokerAvatarFallback}>{getInitials(b.name)}</div>
+                          )}
+                          <span className={styles.brokerPickerOptionName}>{b.name}</span>
+                          <span className={statusBadge(b.status)}>{statusLabel(b.status)}</span>
+                        </button>
+                      ))
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
 
-          {(isSuperAdmin || showForm) && (
             <button
               className={styles.addBtn}
               onClick={() => (showForm ? closeForm() : openCreateForm())}
             >
               {showForm ? t("cancel") : t("addBroker")}
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {error && <p className={styles.error}>{error}</p>}
 
-      {!showForm && (
+      {!isSuperAdmin && !loading && brokers.length === 0 && (
+        <div className={styles.empty}>{t("noBrokerLinked")}</div>
+      )}
+
+      {isSuperAdmin && !showForm && (
         <div className={styles.brokerGrid}>
           {loading ? (
             <div className={styles.empty}>{t("loading")}</div>
@@ -630,7 +654,7 @@ export default function BrokersAdminPage() {
       {showForm && (
         <Card className={styles.formCard}>
           <h3 className={styles.formTitle}>
-            {editingId ? t("editBroker") : t("newBroker")}
+            {!isSuperAdmin ? t("titleOwn") : editingId ? t("editBroker") : t("newBroker")}
           </h3>
           <form onSubmit={handleSubmit} className={styles.form}>
             <div className={styles.formRow}>
@@ -715,6 +739,17 @@ export default function BrokersAdminPage() {
                 placeholder={t("taglinePlaceholder")}
                 value={formData.tagline}
                 onChange={(e) => setFormData((v) => ({ ...v, tagline: e.target.value }))}
+              />
+            </div>
+
+            <div className={styles.field}>
+              <label className={styles.label}>{t("about")}</label>
+              <textarea
+                className={styles.textarea}
+                placeholder={t("aboutPlaceholder")}
+                rows={4}
+                value={formData.about}
+                onChange={(e) => setFormData((v) => ({ ...v, about: e.target.value }))}
               />
             </div>
 
@@ -1025,35 +1060,82 @@ export default function BrokersAdminPage() {
                 </button>
               </div>
               <p className={styles.hint}>{t("spreadsHint")}</p>
-              {formData.spreads.map((s, i) => (
-                <div key={i} className={styles.cashbackRow}>
-                  <input
-                    className={styles.input}
-                    placeholder={t("spreadSymbolPlaceholder")}
-                    value={s.symbol}
-                    onChange={(e) => updateSpread(i, { symbol: e.target.value })}
-                  />
-                  <input
-                    className={styles.input}
-                    placeholder={t("spreadTypicalPlaceholder")}
-                    value={s.typical_spread ?? ""}
-                    onChange={(e) => updateSpread(i, { typical_spread: e.target.value })}
-                  />
-                  <input
-                    className={styles.input}
-                    placeholder={t("spreadCommissionPlaceholder")}
-                    value={s.commission ?? ""}
-                    onChange={(e) => updateSpread(i, { commission: e.target.value })}
-                  />
-                  <button
-                    type="button"
-                    className={styles.removeSmallBtn}
-                    onClick={() => removeSpread(i)}
-                  >
-                    {t("remove")}
-                  </button>
-                </div>
-              ))}
+              {formData.spreads.map((s, i) => {
+                const mode: "category" | "symbol" = s.symbol != null ? "symbol" : "category";
+                return (
+                  <Card key={i} className={styles.accountTypeCard}>
+                    <div className={styles.cashbackRow}>
+                      <select
+                        className={styles.input}
+                        value={mode}
+                        onChange={(e) =>
+                          updateSpread(
+                            i,
+                            e.target.value === "symbol"
+                              ? { category: null, symbol: "" }
+                              : { category: INSTRUMENT_CATEGORIES[0], symbol: null },
+                          )
+                        }
+                      >
+                        <option value="category">{t("byCategory")}</option>
+                        <option value="symbol">{t("bySymbolOverride")}</option>
+                      </select>
+                      {mode === "category" ? (
+                        <select
+                          className={styles.input}
+                          value={s.category ?? INSTRUMENT_CATEGORIES[0]}
+                          onChange={(e) => updateSpread(i, { category: e.target.value })}
+                        >
+                          {INSTRUMENT_CATEGORIES.map((cat) => (
+                            <option key={cat} value={cat}>
+                              {t(`categories.${cat}`)}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          className={styles.input}
+                          placeholder={t("spreadSymbolPlaceholder")}
+                          value={s.symbol ?? ""}
+                          onChange={(e) => updateSpread(i, { symbol: e.target.value })}
+                        />
+                      )}
+                      <input
+                        className={styles.input}
+                        placeholder={t("spreadCommissionPlaceholder")}
+                        value={s.commission ?? ""}
+                        onChange={(e) => updateSpread(i, { commission: e.target.value })}
+                      />
+                      <button
+                        type="button"
+                        className={styles.removeSmallBtn}
+                        onClick={() => removeSpread(i)}
+                      >
+                        {t("remove")}
+                      </button>
+                    </div>
+                    {formData.account_types.filter((at) => at.name.trim()).length > 0 ? (
+                      <div className={styles.accountTypeSpecsRow}>
+                        {formData.account_types
+                          .filter((at) => at.name.trim())
+                          .map((at) => (
+                            <div key={at.name} className={styles.field}>
+                              <label className={styles.label}>{at.name}</label>
+                              <input
+                                className={styles.input}
+                                placeholder={t("spreadTypicalPlaceholder")}
+                                value={s.spreads[at.name] ?? ""}
+                                onChange={(e) => updateSpreadValue(i, at.name, e.target.value)}
+                              />
+                            </div>
+                          ))}
+                      </div>
+                    ) : (
+                      <p className={styles.hint}>{t("spreadsNoAccountTypesHint")}</p>
+                    )}
+                  </Card>
+                );
+              })}
             </div>
 
             <div className={styles.field}>
@@ -1315,63 +1397,46 @@ export default function BrokersAdminPage() {
 
             {isSuperAdmin && (
               <div className={styles.field}>
-                <label className={styles.label}>{t("regulationBadges")}</label>
-                <div className={styles.countryPicker} ref={regulatorDropdownRef}>
-                  <button
-                    type="button"
-                    className={styles.countryDropdownTrigger}
-                    onClick={() => setRegulatorDropdownOpen((o) => !o)}
-                  >
-                    {formData.regulation_badges.length
-                      ? t("regulatorsSelected", { count: formData.regulation_badges.length })
-                      : t("selectRegulators")}
-                    <span className={styles.countryDropdownCaret}>▾</span>
+                <div className={styles.accountTypesHeader}>
+                  <label className={styles.label}>{t("regulations")}</label>
+                  <button type="button" className={styles.addSmallBtn} onClick={addRegulation}>
+                    {t("addRegulation")}
                   </button>
-
-                  {regulatorDropdownOpen && (
-                    <div className={styles.countryDropdownPanel}>
-                      <input
-                        className={styles.countryDropdownSearch}
-                        placeholder={t("searchRegulators")}
-                        value={regulatorSearch}
-                        onChange={(e) => setRegulatorSearch(e.target.value)}
-                        autoFocus
-                      />
-                      <div className={styles.countryDropdownList}>
-                        {filteredRegulators.length === 0 ? (
-                          <div className={styles.countryDropdownEmpty}>{t("noMatches")}</div>
-                        ) : (
-                          filteredRegulators.map((r) => (
-                            <label key={r.value} className={styles.countryOption}>
-                              <input
-                                type="checkbox"
-                                checked={formData.regulation_badges.includes(r.value)}
-                                onChange={() => toggleRegulator(r.value)}
-                              />
-                              {r.label}
-                            </label>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {formData.regulation_badges.length > 0 && (
-                    <div className={styles.regionChips}>
-                      {formData.regulation_badges.map((code) => (
-                        <button
-                          type="button"
-                          key={code}
-                          className={`${styles.regionChip} ${styles.regionChipActive}`}
-                          onClick={() => toggleRegulator(code)}
-                          title={t("remove")}
-                        >
-                          {REGULATOR_LABELS[code] || code} ✕
-                        </button>
-                      ))}
-                    </div>
-                  )}
                 </div>
+                {formData.regulations.map((r, i) => (
+                  <div key={i} className={styles.cashbackRow}>
+                    <select
+                      className={styles.input}
+                      value={r.regulator}
+                      onChange={(e) => updateRegulation(i, { regulator: e.target.value })}
+                    >
+                      {REGULATORS.map((reg) => (
+                        <option key={reg.value} value={reg.value}>
+                          {reg.code} ({reg.jurisdiction})
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      className={styles.input}
+                      placeholder={t("licenseNumberPlaceholder")}
+                      value={r.license_number ?? ""}
+                      onChange={(e) => updateRegulation(i, { license_number: e.target.value })}
+                    />
+                    <input
+                      className={styles.input}
+                      placeholder={t("activeSincePlaceholder")}
+                      value={r.active_since ?? ""}
+                      onChange={(e) => updateRegulation(i, { active_since: e.target.value })}
+                    />
+                    <button
+                      type="button"
+                      className={styles.removeSmallBtn}
+                      onClick={() => removeRegulation(i)}
+                    >
+                      {t("remove")}
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
 
