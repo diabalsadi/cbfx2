@@ -745,13 +745,13 @@ export default function HomePage() {
                   <p>{t("featuredBrokers.subtitle")}</p>
                 </div>
               </div>
-              <Link href="/brokers" className={styles.sectionLink}>
+              <Link href="/cashback" className={styles.sectionLink}>
                 {t("featuredBrokers.seeAll")} →
               </Link>
             </div>
             <div className={styles.featuredGrid}>
               {(data?.broker_sections.featured ?? []).map((b, i) => (
-                <Link href="/brokers" key={b.id} className={styles.featuredCard}>
+                <Link href={`/brokers/${b.id}`} key={b.id} className={styles.featuredCard}>
                   <div className={styles.featuredCardTop}>
                     <span className={styles.featuredTag}>{t("featuredBrokers.tag")}</span>
                     <span className={styles.adBadge}>{t("featuredBrokers.ad")}</span>

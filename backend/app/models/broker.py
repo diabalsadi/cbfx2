@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Float, Integer, Text, DateTime, JSON, ForeignKey
+from sqlalchemy import Column, String, Float, Integer, Text, DateTime, JSON, ForeignKey, Boolean
 from sqlalchemy.sql import func
 from app.database import Base
 import uuid
@@ -42,5 +42,13 @@ class Broker(Base):
     payout_destination = Column(String, nullable=False, default="wallet")
     payout_duration_days = Column(Integer, nullable=True)  # e.g. 7 = paid out weekly
     status = Column(String, default="active")  # active, inactive
+    # Whether this broker appears in the cashback page's auto-scrolling broker
+    # strip. Independent of `status` — a broker can stay active (bookable,
+    # editable) while opting out of just this one placement.
+    show_on_cashback = Column(Boolean, nullable=False, default=True)
+    # 0-5 star rating shown on the cashback strip and the broker's detail
+    # page. Editorial/super_admin-only judgment call (not a user-submitted
+    # average) — None means no rating has been set yet, so nothing renders.
+    rating = Column(Float, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

@@ -15,7 +15,7 @@ from app.schemas.user import (
     AdminUserUpdate,
     ADMIN_ROLES,
 )
-from app.utils.auth import get_current_user, get_password_hash, verify_password
+from app.utils.auth import get_current_user, get_password_hash, verify_password, generate_temp_password
 from app.utils.mailer import send_new_credentials_email
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -42,18 +42,6 @@ def _generate_referral_code(db: Session) -> str:
         code = "".join(secrets.choice(alphabet) for _ in range(8))
         if not db.query(User).filter(User.referral_code == code).first():
             return code
-
-
-def _generate_temp_password() -> str:
-    """Guarantees at least one of each character class validate_password_strength
-    requires — a plain random pick over a combined alphabet could (rarely)
-    land on e.g. all-lowercase and fail that check when the recipient logs in."""
-    lower, upper, digits, special = string.ascii_lowercase, string.ascii_uppercase, string.digits, "!@#$%^&*"
-    required = [secrets.choice(lower), secrets.choice(upper), secrets.choice(digits), secrets.choice(special)]
-    alphabet = lower + upper + digits + special
-    pool = required + [secrets.choice(alphabet) for _ in range(10)]
-    secrets.SystemRandom().shuffle(pool)
-    return "".join(pool)
 
 
 @router.get("/", response_model=List[UserSchema])
@@ -203,7 +191,7 @@ def regenerate_password(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    temp_password = _generate_temp_password()
+    temp_password = generate_temp_password()
     try:
         # Sent before committing — if delivery fails, the account's existing
         # password stays valid instead of silently locking them out of a

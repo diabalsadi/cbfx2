@@ -134,3 +134,38 @@ def send_new_credentials_email(to: str, name: str, temp_password: str) -> None:
     </div>
     """
     send_email(to, f"Your new {SITE_NAME} admin password", body)
+
+
+def send_broker_welcome_email(to: str, broker_name: str, temp_password: str) -> None:
+    """A super_admin created a broker listing and linked it to a new broker-role
+    login (see brokers.create_broker()) — the account holder never chose or saw
+    the password themselves, so it has to be delivered somewhere, and this is
+    it. Recipient is required to set their own password on next login (see
+    User.must_change_password)."""
+    safe_broker_name = html.escape(broker_name)
+    body = f"""
+    <div style="background:#0f0f0f;padding:32px 16px;font-family:Arial,Helvetica,sans-serif;">
+      <div style="max-width:420px;margin:0 auto;background:#161616;border:1px solid #2a2a2a;
+                  border-radius:18px;padding:36px 28px;text-align:center;">
+        <div style="font-size:24px;font-weight:800;letter-spacing:0.5px;color:#ffffff;margin-bottom:24px;">
+          {SITE_NAME}
+        </div>
+        <h1 style="font-size:19px;color:#ffffff;margin:0 0 8px;">Welcome to {SITE_NAME}</h1>
+        <p style="font-size:14px;color:#9a9a9a;margin:0 0 24px;line-height:1.5;">
+          Your listing for <strong style="color:#ccc;">{safe_broker_name}</strong> is live. Use this
+          temporary password to sign in at the admin portal — you'll be asked to set your own right
+          away. From there you can manage your listing's details, cashback rates, and offer page.
+        </p>
+        <div style="font-size:24px;font-weight:800;letter-spacing:2px;color:{BRAND_COLOR};
+                    background:#0f0f0f;border:1px solid #2a2a2a;border-radius:12px;
+                    padding:18px 12px;margin:0 0 20px;word-break:break-all;">
+          {html.escape(temp_password)}
+        </div>
+        <p style="font-size:13px;color:#777;margin:0;line-height:1.5;">
+          Sign in with this email address (<strong style="color:#ccc;">{html.escape(to)}</strong>).
+          If you weren't expecting this, contact an administrator.
+        </p>
+      </div>
+    </div>
+    """
+    send_email(to, f"Welcome to {SITE_NAME} — your broker account is ready", body)

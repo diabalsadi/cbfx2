@@ -19,6 +19,7 @@ from typing import List, Optional
 from app.database import get_db
 from app.models.forum_thread import ForumThread as ForumThreadModel
 from app.models.forum_reply import ForumReply as ForumReplyModel
+from app.utils.cache import purge_public_cache
 from app.schemas.forum import (
     ForumThread,
     ForumThreadCreate,
@@ -177,6 +178,7 @@ def create_thread(
     db.add(thread)
     db.commit()
     db.refresh(thread)
+    purge_public_cache()
     return thread
 
 
@@ -197,6 +199,7 @@ def update_thread(
         setattr(thread, field, value)
     db.commit()
     db.refresh(thread)
+    purge_public_cache()
     return thread
 
 
@@ -217,6 +220,7 @@ def pin_thread(
     thread.is_pinned = data.is_pinned
     db.commit()
     db.refresh(thread)
+    purge_public_cache()
     return thread
 
 
@@ -235,6 +239,7 @@ def delete_thread(
     # Replies cascade-delete via FK ondelete=CASCADE
     db.delete(thread)
     db.commit()
+    purge_public_cache()
 
 
 # ── Replies ────────────────────────────────────────────────────────────────────
@@ -273,6 +278,7 @@ def create_reply(
     )
     db.commit()
     db.refresh(thread)
+    purge_public_cache()
     return reply
 
 
@@ -303,3 +309,4 @@ def delete_reply(
         )
         db.commit()
         db.refresh(thread)
+    purge_public_cache()

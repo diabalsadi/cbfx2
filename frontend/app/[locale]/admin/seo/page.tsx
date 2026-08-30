@@ -31,7 +31,6 @@ type RouteLabelKey =
   | "routeLogin"
   | "routeRegister"
   | "routeAccount"
-  | "routeBrokers"
   | "routeCalendar"
   | "routeCashback"
   | "routeCopyTrading"
@@ -48,7 +47,6 @@ const ROUTE_META: { value: SeoRoute; labelKey: RouteLabelKey; path: string; toke
   { value: "login", labelKey: "routeLogin", path: "/login" },
   { value: "register", labelKey: "routeRegister", path: "/register" },
   { value: "account", labelKey: "routeAccount", path: "/account" },
-  { value: "brokers", labelKey: "routeBrokers", path: "/brokers" },
   { value: "calendar", labelKey: "routeCalendar", path: "/calendar" },
   { value: "cashback", labelKey: "routeCashback", path: "/cashback" },
   { value: "copy_trading", labelKey: "routeCopyTrading", path: "/copy-trading" },

@@ -1,8 +1,10 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLoginModal } from "@/contexts/LoginModalContext";
+import StarRating from "@/components/StarRating";
 import {
   mt5AccountsApi,
   publicApi,
@@ -62,6 +64,75 @@ const MOCK_TRANSACTIONS: WalletTransaction[] = [
   { id: "mock-t4", mt5_account_id: "mock-1", broker_name: "IC Markets", mt5_number: "50219384", type: "credit", amount: 38.90, description: "Cashback rebate", created_at: daysAgoISO(16) },
   { id: "mock-t5", mt5_account_id: "mock-1", broker_name: "IC Markets", mt5_number: "50219384", type: "debit", amount: 60.00, description: "Withdrawal to bank account", created_at: daysAgoISO(30) },
 ];
+
+// Below this many brokers, duplicating the list to loop the scroll
+// seamlessly (see below) just reads as the same handful of brokers shown
+// twice — not enough content for the repeat to look like a continuous
+// ticker rather than a glitch. Render them once, statically, instead.
+const MARQUEE_MIN_BROKERS = 8;
+
+function BrokerCashbackStrip() {
+  const t = useTranslations("cashback.brokersStrip");
+  const [brokers, setBrokers] = useState<PublicBroker[]>([]);
+
+  useEffect(() => {
+    publicApi
+      .brokers()
+      .then((all) => setBrokers(all.filter((b) => b.show_on_cashback)))
+      .catch(() => setBrokers([]));
+  }, []);
+
+  if (brokers.length === 0) return null;
+
+  const shouldScroll = brokers.length > MARQUEE_MIN_BROKERS;
+  // Rendered twice back to back so the CSS animation can loop seamlessly by
+  // translating exactly one copy's width, then snapping back unnoticed —
+  // only worth doing once there's enough unique content for that repeat to
+  // go unnoticed (see MARQUEE_MIN_BROKERS above).
+  const track = shouldScroll ? [...brokers, ...brokers] : brokers;
+
+  return (
+    <div className={styles.brokerStrip}>
+      <div className={styles.brokerStripLabel}>
+        <span className={styles.brokerStripSpark}>🔥</span>
+        {t("title")}
+      </div>
+      <div className={styles.brokerStripBand}>
+        <div
+          className={
+            shouldScroll ? styles.brokerStripViewport : styles.brokerStripViewportStatic
+          }
+        >
+          <div className={shouldScroll ? styles.brokerStripTrack : styles.brokerStripTrackStatic}>
+            {track.map((b, i) => (
+              <Link
+                key={`${b.id}-${i}`}
+                href={`/brokers/${b.id}`}
+                className={styles.brokerStripItem}
+              >
+                {b.img_src ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={b.img_src} alt="" className={styles.brokerStripIconImg} />
+                ) : (
+                  <div className={styles.brokerStripIcon}>{initials(b.name)}</div>
+                )}
+                <div className={styles.brokerStripBody}>
+                  <span className={styles.brokerStripName}>{b.name}</span>
+                  {b.cashback_rate > 0 && (
+                    <span className={styles.brokerStripDesc}>
+                      {t("upToCashback", { rate: b.cashback_rate })}
+                    </span>
+                  )}
+                  <StarRating rating={b.rating} size="sm" />
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function AddAccountModal({
   onClose,
@@ -261,6 +332,8 @@ export default function CashbackPage() {
       <div className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>{t("title")}</h1>
       </div>
+
+      <BrokerCashbackStrip />
 
       {isPreview && (
         <div className={styles.previewBanner}>

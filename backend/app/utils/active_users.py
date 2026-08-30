@@ -5,7 +5,7 @@ a broker that has real cashback pricing configured, not just added to the
 platform. Used by both the referral stats (commission eligibility) and the
 admin overview dashboard KPI.
 """
-from typing import Set
+from typing import Dict, Optional, Set
 
 from sqlalchemy.orm import Session
 
@@ -51,3 +51,26 @@ def active_user_emails(db: Session) -> Set[str]:
         .all()
     )
     return {r[0] for r in rows}
+
+
+def active_account_counts(db: Session, user_emails: Optional[Set[str]] = None) -> Dict[str, int]:
+    """Count of MetaApi-verified MT5 accounts per user email, at a
+    cashback-eligible broker. Unlike active_user_emails (one bit per user —
+    "do they have at least one?"), this counts every qualifying account, so a
+    user with two verified accounts contributes 2 — used where the number of
+    active accounts itself is the metric (e.g. per-affiliate account counts),
+    not just whether the user counts as active at all."""
+    eligible_broker_ids = _cashback_eligible_broker_ids(db)
+    if not eligible_broker_ids:
+        return {}
+    query = db.query(MT5Account.user_email).filter(
+        MT5Account.broker_id.in_(eligible_broker_ids),
+        MT5Account.metaapi_connection_status.in_(VERIFIED_STATUSES),
+    )
+    if user_emails is not None:
+        query = query.filter(MT5Account.user_email.in_(user_emails))
+
+    counts: Dict[str, int] = {}
+    for (email,) in query.all():
+        counts[email] = counts.get(email, 0) + 1
+    return counts

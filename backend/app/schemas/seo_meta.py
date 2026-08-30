@@ -12,7 +12,6 @@ SEO_ROUTES = {
     "account",
     "analysis",
     "analysis_detail",
-    "brokers",
     "brokers_detail",
     "calendar",
     "cashback",

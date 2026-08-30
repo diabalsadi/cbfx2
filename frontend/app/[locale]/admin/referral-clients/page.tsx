@@ -123,6 +123,12 @@ export default function ReferralClientsPage() {
     return map;
   }, [stats]);
 
+  const activeAccountsByEmail = useMemo(() => {
+    const map = new Map<string, number>();
+    stats?.by_client.forEach((c) => map.set(c.client_email, c.active_accounts));
+    return map;
+  }, [stats]);
+
   const countryData = useMemo(
     () =>
       Object.entries(stats?.by_country || {}).map(([country, count], i) => ({
@@ -281,6 +287,7 @@ export default function ReferralClientsPage() {
                 <th>{t("referralCodeHeader")}</th>
                 <th>{t("referred")}</th>
                 <th>{t("active")}</th>
+                <th>{t("activeAccounts")}</th>
                 <th>{t("joined")}</th>
                 <th>{t("actions")}</th>
               </tr>
@@ -288,13 +295,13 @@ export default function ReferralClientsPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} className={styles.empty}>
+                  <td colSpan={8} className={styles.empty}>
                     {t("loading")}
                   </td>
                 </tr>
               ) : clients.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className={styles.empty}>
+                  <td colSpan={8} className={styles.empty}>
                     {t("noClientAccounts")}
                   </td>
                 </tr>
@@ -331,6 +338,7 @@ export default function ReferralClientsPage() {
                     </td>
                     <td>{referralCountByEmail.get(c.email) ?? 0}</td>
                     <td>{activeCountByEmail.get(c.email) ?? 0}</td>
+                    <td>{activeAccountsByEmail.get(c.email) ?? 0}</td>
                     <td className={styles.date}>
                       {new Date(c.created_at).toLocaleDateString(locale, {
                         month: "short",

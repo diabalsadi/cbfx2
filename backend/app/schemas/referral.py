@@ -28,6 +28,10 @@ class ClientReferralSummary(BaseModel):
     referral_code: Optional[str] = None
     total: int
     active: int
+    # Count of that client's referred users' MetaApi-verified MT5 accounts —
+    # not deduplicated per user like `active` is, so a referred user with two
+    # verified accounts contributes 2 here.
+    active_accounts: int
 
 
 class AdminReferralStats(ReferralStats):

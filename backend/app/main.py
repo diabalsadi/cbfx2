@@ -153,6 +153,8 @@ with engine.begin() as connection:
     connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_customer_id VARCHAR"))
     connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_subscription_id VARCHAR"))
     connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_status VARCHAR NOT NULL DEFAULT 'inactive'"))
+    connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS show_on_cashback BOOLEAN NOT NULL DEFAULT TRUE"))
+    connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS rating FLOAT"))
 
     # Indexes on FK/filter columns that predate their model's index=True —
     # create_all() only applies index=True to brand-new tables, so existing

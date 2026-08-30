@@ -169,6 +169,8 @@ def list_brokers(request: Request, db: Session = Depends(get_db)):
                 "cashback_rate": b.cashback_rate,
                 "account_types_count": len(b.account_types or []),
                 "status": b.status,
+                "show_on_cashback": b.show_on_cashback,
+                "rating": b.rating,
             }
             for b in brokers
             if _visible_to_visitor(b, country_code, region)
@@ -201,6 +203,7 @@ def get_broker_offer(broker_id: str, request: Request, db: Session = Depends(get
         payout_destination=broker.payout_destination,
         payout_duration_days=broker.payout_duration_days,
         referral_url=referral_url(broker.signup_url, broker.id, broker.referral_id),
+        rating=broker.rating,
     )
 
 

@@ -3,6 +3,7 @@ import { use, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { publicApi, type PublicBrokerOffer } from "@/helpers/api";
+import StarRating from "@/components/StarRating";
 import { REGION_LABELS } from "@/helpers/regions";
 import { COUNTRY_LABELS } from "@/helpers/countries";
 import { INSTRUMENT_CATEGORIES, type InstrumentCategory } from "@/helpers/instrumentCategories";
@@ -55,7 +56,7 @@ export default function BrokerDetailClient({ params }: { params: Promise<{ id: s
 
   return (
     <div className={styles.page}>
-      <Link href="/brokers" className={styles.backLink}>
+      <Link href="/cashback" className={styles.backLink}>
         {t("backToBrokers")}
       </Link>
 
@@ -68,6 +69,11 @@ export default function BrokerDetailClient({ params }: { params: Promise<{ id: s
         )}
         <div>
           <h1 className={styles.name}>{broker.name}</h1>
+          {broker.rating != null && (
+            <div className={styles.ratingRow}>
+              <StarRating rating={broker.rating} />
+            </div>
+          )}
           <div className={styles.coverage}>
             {broker.geo_coverage.map((c) => labels[c] || c).join(" · ") || t("vettedPartner")}
           </div>

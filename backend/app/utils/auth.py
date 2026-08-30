@@ -1,4 +1,6 @@
 import os
+import secrets
+import string
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
@@ -28,6 +30,18 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def get_password_hash(password: str) -> str:
     """Hash a password."""
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+
+def generate_temp_password() -> str:
+    """Guarantees at least one of each character class validate_password_strength
+    requires — a plain random pick over a combined alphabet could (rarely)
+    land on e.g. all-lowercase and fail that check when the recipient logs in."""
+    lower, upper, digits, special = string.ascii_lowercase, string.ascii_uppercase, string.digits, "!@#$%^&*"
+    required = [secrets.choice(lower), secrets.choice(upper), secrets.choice(digits), secrets.choice(special)]
+    alphabet = lower + upper + digits + special
+    pool = required + [secrets.choice(alphabet) for _ in range(10)]
+    secrets.SystemRandom().shuffle(pool)
+    return "".join(pool)
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:

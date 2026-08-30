@@ -12,7 +12,6 @@ import { useState } from "react";
 const navItems = [
   { labelKey: "home", href: "/" },
   { labelKey: "markets", href: "/markets" },
-  { labelKey: "brokers", href: "/brokers" },
   { labelKey: "copyTrading", href: "/copy-trading" },
   { labelKey: "plays", href: "/plays" },
   { labelKey: "analysis", href: "/analysis" },

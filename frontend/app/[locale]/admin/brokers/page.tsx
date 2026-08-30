@@ -1,8 +1,10 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { api, type BrokerAccountType, type InstrumentCashback } from "@/helpers/api";
-import { REGIONS, REGION_LABELS } from "@/helpers/regions";
+import { useAuth } from "@/contexts/AuthContext";
+import StarRating from "@/components/StarRating";
+import { REGIONS } from "@/helpers/regions";
 import { COUNTRIES, COUNTRY_LABELS } from "@/helpers/countries";
 import { INSTRUMENT_CATEGORIES } from "@/helpers/instrumentCategories";
 import Card from "@/components/Card";
@@ -22,6 +24,8 @@ export interface Broker {
   payout_destination: "wallet" | "trading_account";
   payout_duration_days: number | null;
   status: string;
+  show_on_cashback: boolean;
+  rating: number | null;
   created_at: string;
 }
 
@@ -41,13 +45,10 @@ const EMPTY_FORM = {
   payout_destination: "wallet" as "wallet" | "trading_account",
   payout_duration_days: "",
   status: "active",
+  show_on_cashback: true,
+  rating: "",
+  owner_email: "",
 };
-
-function coverageLabel(coverageType: string, code: string) {
-  return coverageType === "country"
-    ? COUNTRY_LABELS[code] || code
-    : REGION_LABELS[code] || code;
-}
 
 function getInitials(name: string) {
   return name
@@ -60,7 +61,8 @@ function getInitials(name: string) {
 
 export default function BrokersAdminPage() {
   const t = useTranslations("adminBrokers");
-  const locale = useLocale();
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === "super_admin";
   const [brokers, setBrokers] = useState<Broker[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -72,6 +74,10 @@ export default function BrokersAdminPage() {
   const [countryDropdownOpen, setCountryDropdownOpen] = useState(false);
   const [countrySearch, setCountrySearch] = useState("");
   const countryDropdownRef = useRef<HTMLDivElement>(null);
+
+  const [brokerPickerOpen, setBrokerPickerOpen] = useState(false);
+  const [brokerPickerSearch, setBrokerPickerSearch] = useState("");
+  const brokerPickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!countryDropdownOpen) return;
@@ -86,6 +92,17 @@ export default function BrokersAdminPage() {
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, [countryDropdownOpen]);
+
+  useEffect(() => {
+    if (!brokerPickerOpen) return;
+    const onClickOutside = (e: MouseEvent) => {
+      if (brokerPickerRef.current && !brokerPickerRef.current.contains(e.target as Node)) {
+        setBrokerPickerOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [brokerPickerOpen]);
 
   const fetchBrokers = () => {
     setLoading(true);
@@ -123,9 +140,14 @@ export default function BrokersAdminPage() {
       payout_duration_days:
         broker.payout_duration_days != null ? String(broker.payout_duration_days) : "",
       status: broker.status,
+      show_on_cashback: broker.show_on_cashback,
+      rating: broker.rating != null ? String(broker.rating) : "",
+      owner_email: "",
     });
     setFormError("");
     setShowForm(true);
+    setBrokerPickerOpen(false);
+    setBrokerPickerSearch("");
   };
 
   const addAccountType = () => {
@@ -149,21 +171,38 @@ export default function BrokersAdminPage() {
     }));
   };
 
+  // These three derive the new cashback array entirely from the setFormData
+  // updater's own `v` parameter rather than the outer `formData` closure —
+  // reading `formData` directly here (as this used to, via updateAccountType)
+  // risked computing the patch from a render that predates a very recent
+  // change to the same row (e.g. switching a row to "By Symbol Override" and
+  // then immediately editing its $/lot rate), silently reverting that change.
   const addInstrumentRate = (accountTypeIndex: number) => {
-    updateAccountType(accountTypeIndex, {
-      cashback: [
-        ...formData.account_types[accountTypeIndex].cashback,
-        { category: INSTRUMENT_CATEGORIES[0], symbol: null, rate: 0 },
-      ],
-    });
+    setFormData((v) => ({
+      ...v,
+      account_types: v.account_types.map((at, i) =>
+        i === accountTypeIndex
+          ? {
+              ...at,
+              cashback: [
+                ...at.cashback,
+                { category: INSTRUMENT_CATEGORIES[0], symbol: null, rate: 0 },
+              ],
+            }
+          : at,
+      ),
+    }));
   };
 
   const removeInstrumentRate = (accountTypeIndex: number, rateIndex: number) => {
-    updateAccountType(accountTypeIndex, {
-      cashback: formData.account_types[accountTypeIndex].cashback.filter(
-        (_, i) => i !== rateIndex,
+    setFormData((v) => ({
+      ...v,
+      account_types: v.account_types.map((at, i) =>
+        i === accountTypeIndex
+          ? { ...at, cashback: at.cashback.filter((_, ci) => ci !== rateIndex) }
+          : at,
       ),
-    });
+    }));
   };
 
   const updateInstrumentRate = (
@@ -171,11 +210,17 @@ export default function BrokersAdminPage() {
     rateIndex: number,
     patch: Partial<InstrumentCashback>,
   ) => {
-    updateAccountType(accountTypeIndex, {
-      cashback: formData.account_types[accountTypeIndex].cashback.map((c, i) =>
-        i === rateIndex ? { ...c, ...patch } : c,
+    setFormData((v) => ({
+      ...v,
+      account_types: v.account_types.map((at, i) =>
+        i === accountTypeIndex
+          ? {
+              ...at,
+              cashback: at.cashback.map((c, ci) => (ci === rateIndex ? { ...c, ...patch } : c)),
+            }
+          : at,
       ),
-    });
+    }));
   };
 
   const closeForm = () => {
@@ -254,11 +299,16 @@ export default function BrokersAdminPage() {
           ? parseInt(formData.payout_duration_days, 10)
           : null,
         status: formData.status,
+        show_on_cashback: formData.show_on_cashback,
+        rating: formData.rating.trim() ? parseFloat(formData.rating) : null,
       };
       if (editingId) {
         await api.put(`/brokers/${editingId}`, payload);
       } else {
-        await api.post("/brokers/", payload);
+        await api.post("/brokers/", {
+          ...payload,
+          owner_email: isSuperAdmin && formData.owner_email.trim() ? formData.owner_email.trim() : null,
+        });
       }
       closeForm();
       fetchBrokers();
@@ -274,6 +324,7 @@ export default function BrokersAdminPage() {
     try {
       await api.delete(`/brokers/${id}`);
       setBrokers((prev) => prev.filter((b) => b.id !== id));
+      closeForm();
     } catch (e: unknown) {
       alert(e instanceof Error ? e.message : t("deleteFailed"));
     }
@@ -284,6 +335,10 @@ export default function BrokersAdminPage() {
 
   const statusLabel = (s: string) => (s === "active" ? t("statusActive") : t("statusInactive"));
 
+  const filteredBrokerOptions = brokers.filter((b) =>
+    b.name.toLowerCase().includes(brokerPickerSearch.toLowerCase()),
+  );
+
   return (
     <div className={styles.container}>
       <div className={styles.headerRow}>
@@ -291,13 +346,97 @@ export default function BrokersAdminPage() {
           <h2 className={styles.title}>{t("title")}</h2>
           <p className={styles.subtitle}>{t("subtitle")}</p>
         </div>
-        <button
-          className={styles.addBtn}
-          onClick={() => (showForm ? closeForm() : openCreateForm())}
-        >
-          {showForm ? t("cancel") : t("addBroker")}
-        </button>
+        <div className={styles.headerActions}>
+          <div className={styles.brokerPicker} ref={brokerPickerRef}>
+            <button
+              type="button"
+              className={styles.brokerPickerTrigger}
+              onClick={() => setBrokerPickerOpen((o) => !o)}
+            >
+              {editingId
+                ? brokers.find((b) => b.id === editingId)?.name ?? t("selectBroker")
+                : t("selectBroker")}
+              <span className={styles.countryDropdownCaret}>▾</span>
+            </button>
+
+            {brokerPickerOpen && (
+              <div className={styles.brokerPickerPanel}>
+                <input
+                  className={styles.countryDropdownSearch}
+                  placeholder={t("searchBrokers")}
+                  value={brokerPickerSearch}
+                  onChange={(e) => setBrokerPickerSearch(e.target.value)}
+                  autoFocus
+                />
+                <div className={styles.brokerPickerList}>
+                  {loading ? (
+                    <div className={styles.countryDropdownEmpty}>{t("loading")}</div>
+                  ) : filteredBrokerOptions.length === 0 ? (
+                    <div className={styles.countryDropdownEmpty}>{t("noBrokers")}</div>
+                  ) : (
+                    filteredBrokerOptions.map((b) => (
+                      <button
+                        type="button"
+                        key={b.id}
+                        className={styles.brokerPickerOption}
+                        onClick={() => openEditForm(b)}
+                      >
+                        {b.img_src ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={b.img_src} alt="" className={styles.brokerAvatar} />
+                        ) : (
+                          <div className={styles.brokerAvatarFallback}>{getInitials(b.name)}</div>
+                        )}
+                        <span className={styles.brokerPickerOptionName}>{b.name}</span>
+                        <span className={statusBadge(b.status)}>{statusLabel(b.status)}</span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {(isSuperAdmin || showForm) && (
+            <button
+              className={styles.addBtn}
+              onClick={() => (showForm ? closeForm() : openCreateForm())}
+            >
+              {showForm ? t("cancel") : t("addBroker")}
+            </button>
+          )}
+        </div>
       </div>
+
+      {error && <p className={styles.error}>{error}</p>}
+
+      {!showForm && (
+        <div className={styles.brokerGrid}>
+          {loading ? (
+            <div className={styles.empty}>{t("loading")}</div>
+          ) : brokers.length === 0 ? (
+            <div className={styles.empty}>{t("noBrokers")}</div>
+          ) : (
+            brokers.map((b) => (
+              <button
+                type="button"
+                key={b.id}
+                className={styles.brokerCard}
+                onClick={() => openEditForm(b)}
+              >
+                {b.img_src ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={b.img_src} alt="" className={styles.brokerCardImg} />
+                ) : (
+                  <div className={styles.brokerCardImgFallback}>{getInitials(b.name)}</div>
+                )}
+                <span className={styles.brokerCardName}>{b.name}</span>
+                <span className={statusBadge(b.status)}>{statusLabel(b.status)}</span>
+              </button>
+            ))
+          )}
+        </div>
+      )}
 
       {showForm && (
         <Card className={styles.formCard}>
@@ -340,6 +479,22 @@ export default function BrokersAdminPage() {
                 </div>
               </div>
             </div>
+
+            {!editingId && isSuperAdmin && (
+              <div className={styles.field}>
+                <label className={styles.label}>{t("brokerEmail")}</label>
+                <input
+                  className={styles.input}
+                  type="email"
+                  placeholder={t("brokerEmailPlaceholder")}
+                  value={formData.owner_email}
+                  onChange={(e) =>
+                    setFormData((v) => ({ ...v, owner_email: e.target.value }))
+                  }
+                />
+                <p className={styles.hint}>{t("brokerEmailHint")}</p>
+              </div>
+            )}
 
             <div className={styles.field}>
               <label className={styles.label}>{t("imageUrl")}</label>
@@ -474,7 +629,15 @@ export default function BrokersAdminPage() {
 
                   <div className={styles.cashbackList}>
                     {at.cashback.map((c, cIndex) => {
-                      const mode: "category" | "symbol" = c.symbol ? "symbol" : "category";
+                      // Symbol mode sets symbol to "" while the admin hasn't typed one
+                      // in yet (see the mode <select>'s onChange below) — checking
+                      // truthiness here treated that empty string the same as null
+                      // (no override), snapping the row back to "By Category" the
+                      // instant it was switched to symbol mode, before anything
+                      // could be typed. Checking for null/undefined instead of
+                      // truthiness distinguishes "symbol mode, empty so far" from
+                      // "category mode, no symbol at all".
+                      const mode: "category" | "symbol" = c.symbol != null ? "symbol" : "category";
                       return (
                         <div key={cIndex} className={styles.cashbackRow}>
                           <select
@@ -654,22 +817,70 @@ export default function BrokersAdminPage() {
               )}
             </div>
 
+            {isSuperAdmin && (
+              <div className={styles.field}>
+                <label className={styles.label}>{t("status")}</label>
+                <select
+                  className={styles.input}
+                  value={formData.status}
+                  onChange={(e) =>
+                    setFormData((v) => ({ ...v, status: e.target.value }))
+                  }
+                >
+                  {STATUS_OPTIONS.map((s) => (
+                    <option key={s} value={s}>
+                      {statusLabel(s)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div className={styles.field}>
-              <label className={styles.label}>{t("status")}</label>
-              <select
-                className={styles.input}
-                value={formData.status}
-                onChange={(e) =>
-                  setFormData((v) => ({ ...v, status: e.target.value }))
-                }
-              >
-                {STATUS_OPTIONS.map((s) => (
-                  <option key={s} value={s}>
-                    {statusLabel(s)}
-                  </option>
-                ))}
-              </select>
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  checked={formData.show_on_cashback}
+                  onChange={(e) =>
+                    setFormData((v) => ({ ...v, show_on_cashback: e.target.checked }))
+                  }
+                />
+                {t("showOnCashback")}
+              </label>
+              <p className={styles.hint}>{t("showOnCashbackHint")}</p>
             </div>
+
+            {isSuperAdmin && (
+              <div className={styles.field}>
+                <label className={styles.label}>{t("rating")}</label>
+                <div className={styles.ratingRow}>
+                  <input
+                    className={styles.input}
+                    type="number"
+                    min="0"
+                    max="5"
+                    step="0.5"
+                    placeholder="0-5"
+                    value={formData.rating}
+                    onChange={(e) =>
+                      setFormData((v) => ({ ...v, rating: e.target.value }))
+                    }
+                    style={{ maxWidth: 100 }}
+                  />
+                  <StarRating rating={formData.rating.trim() ? parseFloat(formData.rating) : null} />
+                  {formData.rating.trim() && (
+                    <button
+                      type="button"
+                      className={styles.removeSmallBtn}
+                      onClick={() => setFormData((v) => ({ ...v, rating: "" }))}
+                    >
+                      {t("clearRating")}
+                    </button>
+                  )}
+                </div>
+                <p className={styles.hint}>{t("ratingHint")}</p>
+              </div>
+            )}
 
             {formError && <p className={styles.error}>{formError}</p>}
             <div className={styles.formActions}>
@@ -691,108 +902,19 @@ export default function BrokersAdminPage() {
               >
                 {t("cancel")}
               </button>
+              {editingId && isSuperAdmin && (
+                <button
+                  type="button"
+                  className={styles.deleteBtn}
+                  onClick={() => handleDelete(editingId)}
+                >
+                  {t("delete")}
+                </button>
+              )}
             </div>
           </form>
         </Card>
       )}
-
-      {error && <p className={styles.error}>{error}</p>}
-
-      <Card className={styles.tableCard}>
-        <div className={styles.tableWrapper}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>{t("broker")}</th>
-                <th>{t("coverage")}</th>
-                <th>{t("cashback")}</th>
-                <th>{t("referralId")}</th>
-                <th>{t("status")}</th>
-                <th>{t("added")}</th>
-                <th>{t("actions")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={7} className={styles.empty}>
-                    {t("loading")}
-                  </td>
-                </tr>
-              ) : brokers.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className={styles.empty}>
-                    {t("noBrokers")}
-                  </td>
-                </tr>
-              ) : (
-                brokers.map((b) => (
-                  <tr key={b.id}>
-                    <td>
-                      <div className={styles.brokerCell}>
-                        {b.img_src ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={b.img_src}
-                            alt=""
-                            className={styles.brokerAvatar}
-                          />
-                        ) : (
-                          <div className={styles.brokerAvatarFallback}>
-                            {getInitials(b.name)}
-                          </div>
-                        )}
-                        <span className={styles.brokerName}>{b.name}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <div className={styles.regionList}>
-                        {b.geo_coverage.map((r) => (
-                          <span key={r} className={styles.regionTag}>
-                            {coverageLabel(b.coverage_type, r)}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    <td className={styles.rate}>{b.cashback_rate}%</td>
-                    <td className={styles.referralId}>
-                      {b.referral_id || "—"}
-                    </td>
-                    <td>
-                      <span className={statusBadge(b.status)}>
-                        {statusLabel(b.status)}
-                      </span>
-                    </td>
-                    <td className={styles.date}>
-                      {new Date(b.created_at).toLocaleDateString(locale, {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </td>
-                    <td>
-                      <div className={styles.actions}>
-                        <button
-                          className={styles.editBtn}
-                          onClick={() => openEditForm(b)}
-                        >
-                          {t("edit")}
-                        </button>
-                        <button
-                          className={styles.deleteBtn}
-                          onClick={() => handleDelete(b.id)}
-                        >
-                          {t("delete")}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Card>
     </div>
   );
 }

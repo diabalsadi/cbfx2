@@ -5,8 +5,9 @@ from typing import List
 from app.database import get_db
 from app.models.broker import Broker
 from app.schemas.broker import BrokerCreate, BrokerUpdate, Broker as BrokerSchema
-from app.utils.auth import get_current_user
+from app.utils.auth import get_current_user, get_password_hash, generate_temp_password
 from app.utils.cache import purge_public_cache
+from app.utils.mailer import send_broker_welcome_email
 from app.models.user import User
 
 router = APIRouter(prefix="/brokers", tags=["brokers"])
@@ -59,6 +60,41 @@ def create_broker(
     current_user: User = Depends(require_roles({"super_admin"})),
 ):
     broker = Broker(**payload.model_dump())
+
+    new_user = None
+    if payload.owner_email:
+        existing = db.query(User).filter(User.email == payload.owner_email).first()
+        if existing:
+            # Re-linking an existing broker-role account to a (new) listing is
+            # fine; hijacking some other role's account by typing its email
+            # into this form is not.
+            if existing.role != "broker":
+                raise HTTPException(
+                    status_code=400,
+                    detail="This email belongs to an existing non-broker account",
+                )
+        else:
+            temp_password = generate_temp_password()
+            try:
+                # Sent before adding/committing anything — if delivery fails,
+                # no half-provisioned broker+login is left behind with
+                # credentials nobody received (see users.regenerate_password()
+                # for the same pattern).
+                send_broker_welcome_email(payload.owner_email, broker.name, temp_password)
+            except Exception:
+                raise HTTPException(
+                    status_code=status.HTTP_502_BAD_GATEWAY,
+                    detail="Couldn't send the welcome email. Please try again in a moment.",
+                )
+            new_user = User(
+                email=payload.owner_email,
+                name=broker.name,
+                role="broker",
+                hashed_password=get_password_hash(temp_password),
+                must_change_password=True,
+            )
+            db.add(new_user)
+
     db.add(broker)
     db.commit()
     db.refresh(broker)
@@ -81,8 +117,10 @@ def update_broker(
 
     updates = payload.model_dump(exclude_unset=True)
     if current_user.role != "super_admin":
-        # Only a super_admin may reassign who owns a broker listing.
+        # Only a super_admin may reassign who owns a broker listing, or set
+        # its editorial star rating.
         updates.pop("owner_email", None)
+        updates.pop("rating", None)
     for field, value in updates.items():
         setattr(broker, field, value)
     db.commit()

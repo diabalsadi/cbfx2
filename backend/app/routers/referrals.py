@@ -12,7 +12,7 @@ from app.schemas.referral import (
     ReferralInfo,
     ReferralStats,
 )
-from app.utils.active_users import active_user_emails
+from app.utils.active_users import active_account_counts, active_user_emails
 from app.utils.auth import get_current_user
 from app.utils.time_buckets import bucket_counts
 
@@ -70,11 +70,17 @@ def get_admin_referral_stats(
 
     stats = _build_stats(all_referred, active_emails)
 
+    account_counts = active_account_counts(db, {u.email for u in all_referred})
+
     referred_by_client_email = Counter(u.referred_by for u in all_referred if u.referred_by)
     active_by_client_email: Counter = Counter()
+    active_accounts_by_client_email: Counter = Counter()
     for u in all_referred:
-        if u.referred_by and u.email in active_emails:
+        if not u.referred_by:
+            continue
+        if u.email in active_emails:
             active_by_client_email[u.referred_by] += 1
+        active_accounts_by_client_email[u.referred_by] += account_counts.get(u.email, 0)
 
     by_client = [
         ClientReferralSummary(
@@ -83,6 +89,7 @@ def get_admin_referral_stats(
             referral_code=c.referral_code,
             total=referred_by_client_email.get(c.email, 0),
             active=active_by_client_email.get(c.email, 0),
+            active_accounts=active_accounts_by_client_email.get(c.email, 0),
         )
         for c in clients
     ]

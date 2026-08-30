@@ -21,3 +21,6 @@ class PublicBrokerOffer(BaseModel):
     # None when the broker has no signup_url configured yet — nothing to
     # link the visitor through to.
     referral_url: Optional[str] = None
+    # None when no super_admin has set a rating yet — the detail page hides
+    # the star display in that case rather than showing an empty/zero rating.
+    rating: Optional[float] = None

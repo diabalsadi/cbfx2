@@ -360,6 +360,28 @@
   flex-direction: column;
 }
 
+.ratingRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+  }
+}
+
 .countryOption {
   display: flex;
   align-items: center;
@@ -439,51 +461,87 @@
   }
 }
 
-.tableCard {
-  padding: 0 !important;
-  overflow: hidden;
-}
-.tableWrapper {
-  overflow-x: auto;
-}
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-
-  th {
-    text-align: left;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--text-muted);
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--border);
-    white-space: nowrap;
-    background: var(--bg-secondary);
-  }
-
-  td {
-    padding: 13px 16px;
-    font-size: 14px;
-    color: var(--text-primary);
-    border-bottom: 1px solid var(--border-subtle);
-    vertical-align: middle;
-  }
-
-  tr:last-child td {
-    border-bottom: none;
-  }
-  tr:hover td {
-    background: var(--bg-secondary);
-  }
-}
-
-.brokerCell {
+.headerActions {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
+}
+
+.brokerPicker {
+  position: relative;
+}
+
+.brokerPickerTrigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 220px;
+  text-align: left;
+
+  &:hover {
+    border-color: var(--accent);
+  }
+}
+
+.brokerPickerPanel {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 280px;
+  z-index: 20;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.brokerPickerList {
+  max-height: 320px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.brokerPickerOption {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border: none;
+  background: none;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+
+  &:hover {
+    background: var(--bg-secondary);
+  }
+}
+
+.brokerPickerOptionName {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .brokerAvatar {
@@ -510,45 +568,6 @@
   flex-shrink: 0;
 }
 
-.brokerName {
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.regionList {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  max-width: 260px;
-}
-
-.regionTag {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  background: var(--bg-secondary);
-  padding: 2px 8px;
-  border-radius: 10px;
-  white-space: nowrap;
-}
-
-.rate {
-  font-weight: 700;
-  color: var(--accent);
-}
-
-.referralId {
-  font-family: monospace;
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.date {
-  color: var(--text-muted);
-  font-size: 13px;
-  white-space: nowrap;
-}
-
 .badge {
   font-size: 11px;
   font-weight: 700;
@@ -567,28 +586,6 @@
   color: #ef4444;
 }
 
-.actions {
-  display: flex;
-  gap: 8px;
-}
-
-.editBtn {
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text-secondary);
-  font-size: 12px;
-  font-weight: 600;
-  padding: 5px 10px;
-  cursor: pointer;
-  transition: all var(--transition);
-
-  &:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-}
-
 .deleteBtn {
   background: none;
   border: 1px solid rgba(239, 68, 68, 0.3);
@@ -596,6 +593,8 @@
   color: #ef4444;
   font-size: 12px;
   font-weight: 600;
+  align-self: flex-start;
+  margin-left: auto;
   padding: 5px 10px;
   cursor: pointer;
   transition: all var(--transition);
@@ -610,4 +609,62 @@
   text-align: center;
   color: var(--text-muted);
   padding: 40px !important;
+}
+
+.brokerGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.brokerCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  padding: 20px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: border-color var(--transition), box-shadow var(--transition);
+
+  &:hover {
+    border-color: var(--accent);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.brokerCardImg {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+}
+
+.brokerCardImgFallback {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  background: var(--accent-light);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.brokerCardName {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }

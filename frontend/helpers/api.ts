@@ -130,6 +130,8 @@ export interface PublicBroker {
   cashback_rate: number;
   account_types_count: number;
   status: string;
+  show_on_cashback: boolean;
+  rating: number | null;
 }
 
 // Exactly one of category/symbol — a category-level rate, or an exact-symbol
@@ -162,6 +164,7 @@ export interface PublicBrokerOffer {
   payout_destination: 'wallet' | 'trading_account';
   payout_duration_days: number | null;
   referral_url: string | null;
+  rating: number | null;
 }
 
 // One linked MT5 account and its cashback wallet. A user can have several —
@@ -556,6 +559,7 @@ export interface ClientReferralSummary {
   referral_code: string | null;
   total: number;
   active: number;
+  active_accounts: number;
 }
 
 export interface AdminReferralStats extends ReferralStats {

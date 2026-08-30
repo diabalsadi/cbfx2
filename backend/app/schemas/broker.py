@@ -1,4 +1,4 @@
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 from typing import Optional, List, Literal
 from datetime import datetime
 
@@ -64,6 +64,13 @@ class BrokerBase(BaseModel):
     payout_destination: Literal["wallet", "trading_account"] = "wallet"
     payout_duration_days: Optional[int] = None
     status: Optional[str] = "active"
+    # Whether this broker appears in the cashback page's auto-scrolling broker
+    # strip. Independent of status — see Broker model.
+    show_on_cashback: bool = True
+    # Only a super_admin caller's value for this field is honored on update —
+    # see update_broker(). Present on BrokerBase (not update_broker-only)
+    # because create_broker's whole endpoint is already super_admin-gated.
+    rating: Optional[float] = Field(default=None, ge=0, le=5)
 
     @model_validator(mode="after")
     def _check_geo_coverage(self):
@@ -91,6 +98,8 @@ class BrokerUpdate(BaseModel):
     payout_destination: Optional[Literal["wallet", "trading_account"]] = None
     payout_duration_days: Optional[int] = None
     status: Optional[str] = None
+    show_on_cashback: Optional[bool] = None
+    rating: Optional[float] = Field(default=None, ge=0, le=5)
     # Only a super_admin caller's value for this field is honored — see
     # update_broker(); present here so the same schema/endpoint can be used
     # by both roles without a super_admin-only duplicate.
