@@ -279,6 +279,13 @@ export interface CopyTrader {
   pairs: string[];
   is_featured: boolean;
   is_active: boolean;
+  // Real MetaApi/CopyFactory master-account link — see
+  // METAAPI_INTEGRATION_ARCHITECTURE.md §10 step 6. is_live=false means this
+  // trader is still curated stats only, not real copy trading.
+  is_live: boolean;
+  broker_id: string | null;
+  mt5_number: string | null;
+  metaapi_connection_status: string;
   created_at: string;
   updated_at: string;
 }
@@ -454,6 +461,22 @@ export const marketPricesApi = {
   list: () => api.get<MarketPrice[]>('/market-prices'),
 };
 
+export interface CopyTraderCreate {
+  name: string;
+  avatar_initials: string;
+  bio?: string;
+  roi_12m?: number;
+  roi_3m?: number;
+  roi_1m?: number;
+  followers?: number;
+  win_rate?: number;
+  drawdown?: number;
+  strategy?: 'Scalping' | 'Swing' | 'Position';
+  pairs?: string[];
+  is_featured?: boolean;
+  is_active?: boolean;
+}
+
 export const copyTradersApi = {
   list: (params?: { strategy?: string; pair?: string; sort_by?: string }) => {
     const qs = new URLSearchParams();
@@ -464,6 +487,37 @@ export const copyTradersApi = {
     return api.get<CopyTrader[]>(`/copy-traders${query}`);
   },
   get: (id: string) => api.get<CopyTrader>(`/copy-traders/${id}`),
+  create: (payload: CopyTraderCreate) => api.post<CopyTrader>('/copy-traders', payload),
+  remove: (id: string) => api.delete<void>(`/copy-traders/${id}`),
+  connectLive: (
+    id: string,
+    payload: { broker_id: string; mt5_number: string; server: string; platform: 'mt4' | 'mt5'; investor_password: string },
+  ) => api.post<CopyTrader>(`/copy-traders/${id}/connect-live`, payload),
+};
+
+// Real copy-trading subscriptions (follower side) — see
+// METAAPI_INTEGRATION_ARCHITECTURE.md §10 step 6. Requires an active
+// Signals + Copy Trading subscription (billingApi) to create; listing your
+// own stays visible even if that lapses.
+export interface CopySubscription {
+  id: string;
+  copy_trader_id: string;
+  copy_trader_name: string;
+  mt5_account_id: string;
+  broker_name: string;
+  mt5_number: string;
+  multiplier: number;
+  // "pending" | "active" | "paused" | "stopped" | "error"
+  status: string;
+  metaapi_connection_status: string;
+  created_at: string;
+}
+
+export const copySubscriptionsApi = {
+  listMine: () => api.get<CopySubscription[]>('/copy-subscriptions/me'),
+  create: (payload: { copy_trader_id: string; mt5_account_id: string; trading_password: string; multiplier: number }) =>
+    api.post<CopySubscription>('/copy-subscriptions', payload),
+  stop: (id: string) => api.delete<void>(`/copy-subscriptions/${id}`),
 };
 
 export const playsApi = {
@@ -676,6 +730,24 @@ export const mt5AccountsApi = {
   }) => api.post<MT5Account>('/mt5-accounts/', payload),
   listTransactions: () => api.get<WalletTransaction[]>('/mt5-accounts/me/transactions'),
   activeCount: () => api.get<{ active_users: number }>('/mt5-accounts/active-count'),
+};
+
+// Admin visibility into every linked MT5 account's MetaApi connection health
+// — gap-analysis item 3.2 / METAAPI_INTEGRATION_ARCHITECTURE.md §10 step 5.
+export interface AdminMT5Account {
+  id: string;
+  user_email: string;
+  broker_id: string;
+  broker_name: string;
+  mt5_number: string;
+  account_type: string | null;
+  metaapi_connection_status: string;
+  metaapi_last_synced_at: string | null;
+  created_at: string;
+}
+
+export const mt5AccountsAdminApi = {
+  list: () => api.get<AdminMT5Account[]>('/mt5-accounts/admin'),
 };
 
 // Admin-managed symbol -> instrument-category mapping, used by the

@@ -20,6 +20,7 @@ from app.models.notification import Notification
 from app.models.symbol_category import SymbolCategory
 from app.models.trade_record import TradeRecord
 from app.models.rebate_payout import RebatePayout
+from app.models.copy_subscription import CopySubscription
 
 __all__ = [
     "User",
@@ -45,4 +46,5 @@ __all__ = [
     "SymbolCategory",
     "TradeRecord",
     "RebatePayout",
+    "CopySubscription",
 ]

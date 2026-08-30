@@ -9,6 +9,7 @@ from app.routers import articles, clients, campaigns, users, public
 from app.routers import market_prices, copy_traders, plays, analysis, forum
 from app.routers import brokers, geo, broker_placements, ad_banners, mt5_accounts, seo_meta
 from app.routers import referrals, visits, notifications, media, broker_reports, symbol_categories, internal, rebate_payouts, billing
+from app.routers import copy_subscriptions
 
 # Import all models so SQLAlchemy creates their tables
 import app.models.user
@@ -37,6 +38,7 @@ import app.models.translation
 import app.models.symbol_category
 import app.models.trade_record
 import app.models.rebate_payout
+import app.models.copy_subscription
 
 Base.metadata.create_all(bind=engine)
 
@@ -176,6 +178,15 @@ with engine.begin() as connection:
     connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS cons JSON DEFAULT '[]'::json"))
     connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS about TEXT"))
     connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS regulations JSON DEFAULT '[]'::json"))
+    connection.execute(text("ALTER TABLE copy_traders ADD COLUMN IF NOT EXISTS is_live BOOLEAN DEFAULT FALSE"))
+    connection.execute(text("ALTER TABLE copy_traders ADD COLUMN IF NOT EXISTS broker_id VARCHAR"))
+    connection.execute(text("ALTER TABLE copy_traders ADD COLUMN IF NOT EXISTS mt5_number VARCHAR"))
+    connection.execute(text("ALTER TABLE copy_traders ADD COLUMN IF NOT EXISTS server VARCHAR"))
+    connection.execute(text("ALTER TABLE copy_traders ADD COLUMN IF NOT EXISTS platform VARCHAR"))
+    connection.execute(text("ALTER TABLE copy_traders ADD COLUMN IF NOT EXISTS investor_password_encrypted VARCHAR"))
+    connection.execute(text("ALTER TABLE copy_traders ADD COLUMN IF NOT EXISTS metaapi_account_id VARCHAR"))
+    connection.execute(text("ALTER TABLE copy_traders ADD COLUMN IF NOT EXISTS metaapi_connection_status VARCHAR NOT NULL DEFAULT 'not_connected'"))
+    connection.execute(text("ALTER TABLE copy_traders ADD COLUMN IF NOT EXISTS copyfactory_strategy_id VARCHAR"))
 
     # Indexes on FK/filter columns that predate their model's index=True —
     # create_all() only applies index=True to brand-new tables, so existing
@@ -244,6 +255,7 @@ app.include_router(symbol_categories.router)
 app.include_router(internal.router)
 app.include_router(rebate_payouts.router)
 app.include_router(billing.router)
+app.include_router(copy_subscriptions.router)
 
 
 @app.get("/")

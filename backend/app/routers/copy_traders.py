@@ -1,13 +1,20 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
 from app.database import get_db
+from app.models.broker import Broker
 from app.models.copy_trader import CopyTrader as CopyTraderModel
-from app.schemas.copy_trader import CopyTrader, CopyTraderCreate, CopyTraderUpdate
+from app.schemas.copy_trader import CopyTrader, CopyTraderCreate, CopyTraderUpdate, CopyTraderConnectLive
 from app.utils.auth import get_current_user
 from app.utils.cache import purge_public_cache
+from app.utils.encryption import encrypt_field
 from app.models.user import User
+from app.services import metaapi_client, copyfactory_client
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/copy-traders", tags=["copy-traders"])
 
@@ -111,3 +118,76 @@ def delete_copy_trader(
     db.delete(trader)
     db.commit()
     purge_public_cache()
+
+
+@router.post("/{trader_id}/connect-live", response_model=CopyTrader)
+async def connect_live_account(
+    trader_id: str,
+    payload: CopyTraderConnectLive,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(ALLOWED_ROLES)),
+):
+    """Admin-only — links a curated trader's real MT5 account so their
+    trades are actually mirrored via MetaApi CopyFactory instead of being
+    curated stats. Only the trader's own read-only investor password is
+    needed: CopyFactory only reads this account's trades to build the
+    strategy feed, it never places trades on it (see copyfactory_client.py).
+
+    Idempotent/retryable: if this trader already has a metaapi_account_id,
+    reuses it (checks status, doesn't re-provision) rather than creating a
+    duplicate MetaApi account on a retry — provisioning can take minutes to
+    reach "connected", and MetaApi bills per registered account."""
+    trader = db.query(CopyTraderModel).filter(CopyTraderModel.id == trader_id).first()
+    if not trader:
+        raise HTTPException(status_code=404, detail="Trader not found")
+
+    platform = (payload.platform or "").strip().lower()
+    if platform not in ("mt4", "mt5"):
+        raise HTTPException(status_code=400, detail="Platform must be mt4 or mt5")
+
+    broker = db.query(Broker).filter(Broker.id == payload.broker_id, Broker.status == "active").first()
+    if not broker:
+        raise HTTPException(status_code=400, detail="Invalid broker selected")
+
+    if not metaapi_client.configured():
+        raise HTTPException(status_code=503, detail="MetaApi is not configured")
+
+    if not trader.metaapi_account_id:
+        trader.broker_id = broker.id
+        trader.mt5_number = payload.mt5_number.strip()
+        trader.server = payload.server.strip()
+        trader.platform = platform
+        trader.investor_password_encrypted = encrypt_field(payload.investor_password)
+        try:
+            result = await metaapi_client.provision_account(
+                login=trader.mt5_number,
+                server=trader.server,
+                platform=platform,
+                investor_password=payload.investor_password,
+                name=f"strategy · {trader.name} · {trader.mt5_number}",
+            )
+            trader.metaapi_account_id = result["metaapi_account_id"]
+            trader.metaapi_connection_status = result["status"]
+        except Exception:
+            logger.exception("MetaApi provisioning failed for copy trader %s", trader.id)
+            trader.metaapi_connection_status = "error"
+    else:
+        try:
+            trader.metaapi_connection_status = await metaapi_client.check_account_status(trader.metaapi_account_id)
+        except Exception:
+            logger.exception("MetaApi status check failed for copy trader %s", trader.id)
+            trader.metaapi_connection_status = "error"
+
+    if trader.metaapi_connection_status == "connected" and not trader.copyfactory_strategy_id:
+        try:
+            trader.copyfactory_strategy_id = await copyfactory_client.create_strategy(
+                trader.metaapi_account_id, trader.name
+            )
+            trader.is_live = True
+        except Exception:
+            logger.exception("CopyFactory strategy creation failed for copy trader %s", trader.id)
+
+    db.commit()
+    db.refresh(trader)
+    purge_public_cache()
+    return trader

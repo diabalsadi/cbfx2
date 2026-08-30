@@ -29,6 +29,18 @@ class MT5Account(BaseModel):
     created_at: datetime
 
 
+class AdminMT5Account(BaseModel):
+    id: str
+    user_email: str
+    broker_id: str
+    broker_name: str
+    mt5_number: str
+    account_type: Optional[str] = None
+    metaapi_connection_status: str
+    metaapi_last_synced_at: Optional[datetime] = None
+    created_at: datetime
+
+
 class WalletTransaction(BaseModel):
     id: str
     mt5_account_id: str

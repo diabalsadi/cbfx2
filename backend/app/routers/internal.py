@@ -17,6 +17,7 @@ from app.database import get_db
 from app.models.mt5_account import MT5Account
 from app.services.metaapi_sync import sync_accounts
 from app.services.rebate_calculation import calculate_rebates
+from app.services.copyfactory_sync import ensure_copytrading_deployed, stop_lapsed_subscriptions
 from app.services import stripe_client
 from app.utils.otp import secure_compare
 
@@ -70,8 +71,21 @@ async def sync_metaapi(
     }
 
 
+@router.post("/keep-alive-copytrading")
+async def keep_alive_copytrading(
+    db: Session = Depends(get_db),
+    _auth: None = Depends(_require_sync_auth),
+):
+    """Keeps live CopyTrader master accounts and active/pending
+    CopySubscription follower accounts continuously deployed — a separate,
+    more frequent cron than /sync-metaapi's once-daily cycle, since
+    CopyFactory needs both sides connected at all times to mirror trades
+    live (see app/services/copyfactory_sync.py)."""
+    return await ensure_copytrading_deployed(db)
+
+
 @router.post("/sync-subscriptions")
-def sync_subscriptions(
+async def sync_subscriptions(
     db: Session = Depends(get_db),
     _auth: None = Depends(_require_sync_auth),
 ):
@@ -79,7 +93,14 @@ def sync_subscriptions(
     re-fetches every subscribed user's status directly from Stripe in case a
     webhook was missed, so a lapsed/failed payment never leaves someone with
     stale "active" access past the end of the day it happened. The webhook
-    handler (POST /billing/webhook) is still the primary, real-time path."""
+    handler (POST /billing/webhook) is still the primary, real-time path.
+
+    Also sweeps every user (not just the ones whose status just changed) for
+    copy trading that should have already been stopped — the same
+    belt-and-suspenders reasoning applied to copy-trading access, not just
+    the subscription_status field itself."""
     if not stripe_client.configured():
         raise HTTPException(status_code=503, detail="Billing is not configured")
-    return stripe_client.sync_subscription_statuses(db)
+    status_result = stripe_client.sync_subscription_statuses(db)
+    stop_result = await stop_lapsed_subscriptions(db)
+    return {**status_result, "copy_trading_stopped": stop_result["stopped"]}

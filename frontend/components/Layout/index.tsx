@@ -83,6 +83,18 @@ const navItems = [
     roles: ["super_admin"],
   },
   {
+    labelKey: "mt5Accounts",
+    href: "/admin/mt5-accounts",
+    icon: "⎋",
+    roles: ["super_admin", "broker"],
+  },
+  {
+    labelKey: "copyTraders",
+    href: "/admin/copy-traders",
+    icon: "⇉",
+    roles: ["super_admin", "editor"],
+  },
+  {
     labelKey: "referrals",
     href: "/admin/referrals",
     icon: "⇄",

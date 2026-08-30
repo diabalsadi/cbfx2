@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.user import User
 from app.services import stripe_client
+from app.services.copyfactory_sync import stop_lapsed_subscriptions
 from app.utils.auth import get_current_user
 
 router = APIRouter(prefix="/billing", tags=["billing"])
@@ -53,5 +54,10 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid webhook signature")
 
-    stripe_client.handle_webhook_event(db, event)
+    affected_email = stripe_client.handle_webhook_event(db, event)
+    if affected_email:
+        # If this event dropped the user out of active/trialing, stop any
+        # copy trading they have running immediately rather than waiting for
+        # the next daily /internal/sync-subscriptions sweep.
+        await stop_lapsed_subscriptions(db, user_email=affected_email)
     return {"received": True}

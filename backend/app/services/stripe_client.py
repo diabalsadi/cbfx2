@@ -84,10 +84,15 @@ def construct_webhook_event(payload: bytes, sig_header: str) -> Event:
     return sc.construct_event(payload, sig_header, webhook_secret)
 
 
-def handle_webhook_event(db: Session, event: Event) -> None:
+def handle_webhook_event(db: Session, event: Event) -> Optional[str]:
     """Applies a verified Stripe event to the matching User row. Unknown/
     irrelevant event types are ignored, not errors — Stripe sends many event
-    types we don't act on."""
+    types we don't act on.
+
+    Returns the affected user's email when their subscription_status may
+    have changed, else None — routers/billing.py uses this to scope
+    copyfactory_sync.stop_lapsed_subscriptions() to just that user right
+    away, instead of waiting for the next daily reconciliation sweep."""
     obj = event["data"]["object"]
 
     if event["type"] == "checkout.session.completed":
@@ -97,7 +102,7 @@ def handle_webhook_event(db: Session, event: Event) -> None:
         if user and subscription_id:
             user.stripe_subscription_id = subscription_id
             db.commit()
-        return
+        return None
 
     if event["type"] in ("customer.subscription.updated", "customer.subscription.created"):
         customer_id = obj["customer"]
@@ -106,7 +111,8 @@ def handle_webhook_event(db: Session, event: Event) -> None:
             user.stripe_subscription_id = obj["id"]
             user.subscription_status = obj["status"]
             db.commit()
-        return
+            return user.email
+        return None
 
     if event["type"] == "customer.subscription.deleted":
         customer_id = obj["customer"]
@@ -114,9 +120,11 @@ def handle_webhook_event(db: Session, event: Event) -> None:
         if user:
             user.subscription_status = "canceled"
             db.commit()
-        return
+            return user.email
+        return None
 
     logger.info("Unhandled Stripe webhook event type: %s", event["type"])
+    return None
 
 
 def _pick_relevant_subscription(subscriptions: list):

@@ -40,8 +40,21 @@ class CopyTraderUpdate(BaseModel):
 
 class CopyTrader(CopyTraderBase):
     id: str
+    # Live MetaApi/CopyFactory link — never includes the encrypted password.
+    is_live: bool = False
+    broker_id: Optional[str] = None
+    mt5_number: Optional[str] = None
+    metaapi_connection_status: str = "not_connected"
     created_at: datetime
     updated_at: datetime
 
     class Config:
         from_attributes = True
+
+
+class CopyTraderConnectLive(BaseModel):
+    broker_id: str
+    mt5_number: str
+    server: str
+    platform: str  # "mt4" | "mt5"
+    investor_password: str
