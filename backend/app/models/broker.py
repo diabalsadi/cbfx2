@@ -46,9 +46,44 @@ class Broker(Base):
     # strip. Independent of `status` — a broker can stay active (bookable,
     # editable) while opting out of just this one placement.
     show_on_cashback = Column(Boolean, nullable=False, default=True)
-    # 0-5 star rating shown on the cashback strip and the broker's detail
-    # page. Editorial/super_admin-only judgment call (not a user-submitted
-    # average) — None means no rating has been set yet, so nothing renders.
+    # 0-10 editorial trust score shown on the cashback strip and the broker's
+    # detail page. Editorial/super_admin-only judgment call — distinct from
+    # the 1-5 user-submitted ratings in BrokerRating, which are averaged and
+    # shown alongside this rather than replacing it. None means no score has
+    # been set yet, so nothing renders.
     rating = Column(Float, nullable=True)
+
+    # ── Profile ──────────────────────────────────────────────────────────
+    tagline = Column(Text, nullable=True)  # short one-liner shown under the name
+    founded_year = Column(Integer, nullable=True)
+    headquarters = Column(String, nullable=True)  # free text, e.g. "Limassol, Cyprus"
+    min_deposit = Column(Float, nullable=True)  # headline figure for the quick-facts strip
+    max_leverage = Column(String, nullable=True)  # free text, e.g. "1:500"
+    execution_type = Column(String, nullable=True)  # free text, e.g. "ECN/STP"
+
+    # ── Regulation & safety ──────────────────────────────────────────────
+    # List of regulator codes from frontend/helpers/regulators.ts, e.g. ["fca", "cysec"].
+    regulation_badges = Column(JSON, nullable=False, default=list)
+    segregated_funds = Column(Boolean, nullable=False, default=False)
+    negative_balance_protection = Column(Boolean, nullable=False, default=False)
+    compensation_scheme = Column(String, nullable=True)  # free text, e.g. "ICF up to €20,000"
+
+    # ── Trading conditions ───────────────────────────────────────────────
+    # [{"symbol": str, "typical_spread": str, "commission": str}, ...] — the
+    # broker's actual trading cost per instrument, distinct from the cashback
+    # rebate rates in account_types[].cashback.
+    spreads = Column(JSON, nullable=False, default=list)
+
+    # ── Platforms, funding, support ──────────────────────────────────────
+    platforms = Column(JSON, nullable=False, default=list)  # [{"name": str, "description": str}, ...]
+    funding_methods = Column(JSON, nullable=False, default=list)  # [{"method","processing_time","fee"}, ...]
+    support_channels = Column(JSON, nullable=False, default=list)  # ["Live chat", "Phone", ...]
+    support_languages = Column(JSON, nullable=False, default=list)  # ["English", "Arabic", ...]
+    support_hours = Column(String, nullable=True)  # free text, e.g. "24/5, market hours"
+
+    # ── Pros & cons ──────────────────────────────────────────────────────
+    pros = Column(JSON, nullable=False, default=list)  # list of strings
+    cons = Column(JSON, nullable=False, default=list)  # list of strings
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

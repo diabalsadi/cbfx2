@@ -4,7 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLoginModal } from "@/contexts/LoginModalContext";
-import StarRating from "@/components/StarRating";
+import ScoreBadge from "@/components/ScoreBadge";
 import {
   mt5AccountsApi,
   publicApi,
@@ -123,7 +123,7 @@ function BrokerCashbackStrip() {
                       {t("upToCashback", { rate: b.cashback_rate })}
                     </span>
                   )}
-                  <StarRating rating={b.rating} size="sm" />
+                  <ScoreBadge score={b.rating} size="sm" />
                 </div>
               </Link>
             ))}

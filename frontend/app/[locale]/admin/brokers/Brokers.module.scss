@@ -191,6 +191,18 @@
   }
 }
 
+.accountTypeSpecsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+
+  .input {
+    flex: 1;
+    min-width: 120px;
+  }
+}
+
 .cashbackList {
   display: flex;
   flex-direction: column;

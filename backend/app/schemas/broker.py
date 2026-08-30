@@ -37,6 +37,30 @@ class BrokerAccountType(BaseModel):
     description: Optional[str] = None
     # Empty means this account type just uses the broker's flat cashback_rate.
     cashback: List[InstrumentCashback] = []
+    # Specs shown in the account types table on the broker detail page —
+    # independent of cashback (our rebate to the customer); these describe
+    # the account's own trading terms at the broker.
+    min_deposit: Optional[float] = None
+    spread_from: Optional[str] = None  # free text, e.g. "0.0 pips"
+    commission: Optional[str] = None  # free text, e.g. "$3.50/lot"
+    swap_free: bool = False
+
+
+class PlatformInfo(BaseModel):
+    name: str
+    description: Optional[str] = None
+
+
+class FundingMethod(BaseModel):
+    method: str
+    processing_time: Optional[str] = None
+    fee: Optional[str] = None
+
+
+class SpreadInfo(BaseModel):
+    symbol: str
+    typical_spread: Optional[str] = None
+    commission: Optional[str] = None
 
 
 def _validate_coverage(coverage_type: Optional[str], geo_coverage: Optional[List[str]]):
@@ -70,7 +94,32 @@ class BrokerBase(BaseModel):
     # Only a super_admin caller's value for this field is honored on update —
     # see update_broker(). Present on BrokerBase (not update_broker-only)
     # because create_broker's whole endpoint is already super_admin-gated.
-    rating: Optional[float] = Field(default=None, ge=0, le=5)
+    # 0-10 editorial score — distinct from BrokerRating's 1-5 user ratings.
+    rating: Optional[float] = Field(default=None, ge=0, le=10)
+
+    # Profile
+    tagline: Optional[str] = None
+    founded_year: Optional[int] = None
+    headquarters: Optional[str] = None
+    min_deposit: Optional[float] = None
+    max_leverage: Optional[str] = None
+    execution_type: Optional[str] = None
+
+    # Regulation & safety — super_admin-only on update, same rationale as rating.
+    regulation_badges: List[str] = []
+    segregated_funds: bool = False
+    negative_balance_protection: bool = False
+    compensation_scheme: Optional[str] = None
+
+    # Trading conditions, platforms, funding, support, pros & cons
+    spreads: List[SpreadInfo] = []
+    platforms: List[PlatformInfo] = []
+    funding_methods: List[FundingMethod] = []
+    support_channels: List[str] = []
+    support_languages: List[str] = []
+    support_hours: Optional[str] = None
+    pros: List[str] = []
+    cons: List[str] = []
 
     @model_validator(mode="after")
     def _check_geo_coverage(self):
@@ -99,11 +148,33 @@ class BrokerUpdate(BaseModel):
     payout_duration_days: Optional[int] = None
     status: Optional[str] = None
     show_on_cashback: Optional[bool] = None
-    rating: Optional[float] = Field(default=None, ge=0, le=5)
+    rating: Optional[float] = Field(default=None, ge=0, le=10)
     # Only a super_admin caller's value for this field is honored — see
     # update_broker(); present here so the same schema/endpoint can be used
     # by both roles without a super_admin-only duplicate.
     owner_email: Optional[str] = None
+
+    tagline: Optional[str] = None
+    founded_year: Optional[int] = None
+    headquarters: Optional[str] = None
+    min_deposit: Optional[float] = None
+    max_leverage: Optional[str] = None
+    execution_type: Optional[str] = None
+
+    # Super_admin-only on update, same rationale as rating — see update_broker().
+    regulation_badges: Optional[List[str]] = None
+    segregated_funds: Optional[bool] = None
+    negative_balance_protection: Optional[bool] = None
+    compensation_scheme: Optional[str] = None
+
+    spreads: Optional[List[SpreadInfo]] = None
+    platforms: Optional[List[PlatformInfo]] = None
+    funding_methods: Optional[List[FundingMethod]] = None
+    support_channels: Optional[List[str]] = None
+    support_languages: Optional[List[str]] = None
+    support_hours: Optional[str] = None
+    pros: Optional[List[str]] = None
+    cons: Optional[List[str]] = None
 
     @model_validator(mode="after")
     def _check_geo_coverage(self):

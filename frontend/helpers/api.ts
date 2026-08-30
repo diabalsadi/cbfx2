@@ -147,6 +147,29 @@ export interface BrokerAccountType {
   name: string;
   description: string | null;
   cashback: InstrumentCashback[];
+  // Specs shown in the account types table — independent of cashback (our
+  // rebate); these describe the account's own trading terms at the broker.
+  min_deposit: number | null;
+  spread_from: string | null;
+  commission: string | null;
+  swap_free: boolean;
+}
+
+export interface PlatformInfo {
+  name: string;
+  description: string | null;
+}
+
+export interface FundingMethod {
+  method: string;
+  processing_time: string | null;
+  fee: string | null;
+}
+
+export interface SpreadInfo {
+  symbol: string;
+  typical_spread: string | null;
+  commission: string | null;
 }
 
 // One broker's full cashback offer — account types, per-instrument rates,
@@ -164,7 +187,33 @@ export interface PublicBrokerOffer {
   payout_destination: 'wallet' | 'trading_account';
   payout_duration_days: number | null;
   referral_url: string | null;
+  // 0-10 editorial score — distinct from user_rating_avg below.
   rating: number | null;
+
+  tagline: string | null;
+  founded_year: number | null;
+  headquarters: string | null;
+  min_deposit: number | null;
+  max_leverage: string | null;
+  execution_type: string | null;
+
+  regulation_badges: string[];
+  segregated_funds: boolean;
+  negative_balance_protection: boolean;
+  compensation_scheme: string | null;
+
+  spreads: SpreadInfo[];
+  platforms: PlatformInfo[];
+  funding_methods: FundingMethod[];
+  support_channels: string[];
+  support_languages: string[];
+  support_hours: string | null;
+  pros: string[];
+  cons: string[];
+
+  // Aggregate of other users' 1-5 ratings — null/0 when nobody has rated yet.
+  user_rating_avg: number | null;
+  user_rating_count: number;
 }
 
 // One linked MT5 account and its cashback wallet. A user can have several —
@@ -455,6 +504,19 @@ export const publicApi = {
   // One broker's full offer (account types, per-instrument rates, terms,
   // payout details, referral link) — the /brokers/[id] detail page.
   brokerOffer: (id: string) => api.get<PublicBrokerOffer>(`/public/brokers/${id}`),
+};
+
+// A signed-in user's own 1-5 rating of one broker — distinct from the
+// broker's editorial `rating` (0-10), which only a super_admin sets.
+export interface BrokerRating {
+  rating: number;
+  updated_at: string;
+}
+
+export const brokerRatingApi = {
+  mine: (brokerId: string) => api.get<BrokerRating | null>(`/brokers/${brokerId}/rating/me`),
+  submit: (brokerId: string, rating: number) =>
+    api.post<BrokerRating>(`/brokers/${brokerId}/rating`, { rating }),
 };
 
 export const usersApi = {

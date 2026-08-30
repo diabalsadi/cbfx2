@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 from app.database import get_db
 from app.models.broker import Broker
+from app.models.broker_rating import BrokerRating
 from app.schemas.broker import BrokerCreate, BrokerUpdate, Broker as BrokerSchema
+from app.schemas.broker_rating import BrokerRatingSubmit, BrokerRatingOut
 from app.utils.auth import get_current_user, get_password_hash, generate_temp_password
 from app.utils.cache import purge_public_cache
 from app.utils.mailer import send_broker_welcome_email
@@ -118,9 +120,17 @@ def update_broker(
     updates = payload.model_dump(exclude_unset=True)
     if current_user.role != "super_admin":
         # Only a super_admin may reassign who owns a broker listing, or set
-        # its editorial star rating.
-        updates.pop("owner_email", None)
-        updates.pop("rating", None)
+        # its editorial score / regulation & safety info — trust judgment
+        # calls, not the broker's own content.
+        for admin_only_field in (
+            "owner_email",
+            "rating",
+            "regulation_badges",
+            "segregated_funds",
+            "negative_balance_protection",
+            "compensation_scheme",
+        ):
+            updates.pop(admin_only_field, None)
     for field, value in updates.items():
         setattr(broker, field, value)
     db.commit()
@@ -141,3 +151,56 @@ def delete_broker(
     db.delete(broker)
     db.commit()
     purge_public_cache()
+
+
+# ── User-submitted ratings (1-5) ─────────────────────────────────────────
+# Distinct from the super_admin-only `rating` field above (0-10 editorial
+# score) — this is any signed-in visitor's own opinion, averaged and shown
+# alongside the editorial score rather than replacing it.
+
+
+@router.post("/{broker_id}/rating", response_model=BrokerRatingOut)
+def submit_broker_rating(
+    broker_id: str,
+    payload: BrokerRatingSubmit,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Any signed-in user may rate any broker — upserts their own rating
+    rather than allowing duplicates (see uq_broker_rating_broker_user)."""
+    broker = db.query(Broker).filter(Broker.id == broker_id).first()
+    if not broker:
+        raise HTTPException(status_code=404, detail="Broker not found")
+
+    existing = (
+        db.query(BrokerRating)
+        .filter(BrokerRating.broker_id == broker_id, BrokerRating.user_email == current_user.email)
+        .first()
+    )
+    if existing:
+        existing.rating = payload.rating
+    else:
+        existing = BrokerRating(
+            broker_id=broker_id, user_email=current_user.email, rating=payload.rating
+        )
+        db.add(existing)
+    db.commit()
+    db.refresh(existing)
+    # The public aggregate (user_rating_avg/count on PublicBrokerOffer) just changed.
+    purge_public_cache()
+    return existing
+
+
+@router.get("/{broker_id}/rating/me", response_model=Optional[BrokerRatingOut])
+def get_my_broker_rating(
+    broker_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """None when this user hasn't rated this broker yet — lets the detail
+    page distinguish "no rating yet" from an actual 1-5 value to pre-fill."""
+    return (
+        db.query(BrokerRating)
+        .filter(BrokerRating.broker_id == broker_id, BrokerRating.user_email == current_user.email)
+        .first()
+    )

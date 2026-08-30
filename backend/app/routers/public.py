@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlalchemy import func as sql_func
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
 from app.database import get_db
 from app.models.article import Article
 from app.models.broker import Broker
+from app.models.broker_rating import BrokerRating
 from app.models.broker_placement import BrokerPlacement
 from app.schemas.broker_placement import SECTIONS as PLACEMENT_SECTIONS
 from app.models.ad_banner import AdBanner
@@ -191,6 +193,12 @@ def get_broker_offer(broker_id: str, request: Request, db: Session = Depends(get
     if not broker or not _visible_to_visitor(broker, country_code, region):
         raise HTTPException(status_code=404, detail="Broker not found")
 
+    avg_rating, rating_count = (
+        db.query(sql_func.avg(BrokerRating.rating), sql_func.count(BrokerRating.id))
+        .filter(BrokerRating.broker_id == broker_id)
+        .one()
+    )
+
     return PublicBrokerOffer(
         id=broker.id,
         name=broker.name,
@@ -204,6 +212,26 @@ def get_broker_offer(broker_id: str, request: Request, db: Session = Depends(get
         payout_duration_days=broker.payout_duration_days,
         referral_url=referral_url(broker.signup_url, broker.id, broker.referral_id),
         rating=broker.rating,
+        tagline=broker.tagline,
+        founded_year=broker.founded_year,
+        headquarters=broker.headquarters,
+        min_deposit=broker.min_deposit,
+        max_leverage=broker.max_leverage,
+        execution_type=broker.execution_type,
+        regulation_badges=broker.regulation_badges or [],
+        segregated_funds=broker.segregated_funds,
+        negative_balance_protection=broker.negative_balance_protection,
+        compensation_scheme=broker.compensation_scheme,
+        spreads=broker.spreads or [],
+        platforms=broker.platforms or [],
+        funding_methods=broker.funding_methods or [],
+        support_channels=broker.support_channels or [],
+        support_languages=broker.support_languages or [],
+        support_hours=broker.support_hours,
+        pros=broker.pros or [],
+        cons=broker.cons or [],
+        user_rating_avg=round(avg_rating, 1) if avg_rating is not None else None,
+        user_rating_count=rating_count or 0,
     )
 
 

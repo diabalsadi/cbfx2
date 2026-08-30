@@ -1,11 +1,19 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
-import { api, type BrokerAccountType, type InstrumentCashback } from "@/helpers/api";
+import {
+  api,
+  type BrokerAccountType,
+  type InstrumentCashback,
+  type PlatformInfo,
+  type FundingMethod,
+  type SpreadInfo,
+} from "@/helpers/api";
 import { useAuth } from "@/contexts/AuthContext";
-import StarRating from "@/components/StarRating";
+import ScoreBadge from "@/components/ScoreBadge";
 import { REGIONS } from "@/helpers/regions";
 import { COUNTRIES, COUNTRY_LABELS } from "@/helpers/countries";
+import { REGULATORS, REGULATOR_LABELS } from "@/helpers/regulators";
 import { INSTRUMENT_CATEGORIES } from "@/helpers/instrumentCategories";
 import Card from "@/components/Card";
 import styles from "./Brokers.module.scss";
@@ -26,6 +34,24 @@ export interface Broker {
   status: string;
   show_on_cashback: boolean;
   rating: number | null;
+  tagline: string | null;
+  founded_year: number | null;
+  headquarters: string | null;
+  min_deposit: number | null;
+  max_leverage: string | null;
+  execution_type: string | null;
+  regulation_badges: string[];
+  segregated_funds: boolean;
+  negative_balance_protection: boolean;
+  compensation_scheme: string | null;
+  spreads: SpreadInfo[];
+  platforms: PlatformInfo[];
+  funding_methods: FundingMethod[];
+  support_channels: string[];
+  support_languages: string[];
+  support_hours: string | null;
+  pros: string[];
+  cons: string[];
   created_at: string;
 }
 
@@ -48,6 +74,24 @@ const EMPTY_FORM = {
   show_on_cashback: true,
   rating: "",
   owner_email: "",
+  tagline: "",
+  founded_year: "",
+  headquarters: "",
+  min_deposit: "",
+  max_leverage: "",
+  execution_type: "",
+  regulation_badges: [] as string[],
+  segregated_funds: false,
+  negative_balance_protection: false,
+  compensation_scheme: "",
+  spreads: [] as SpreadInfo[],
+  platforms: [] as PlatformInfo[],
+  funding_methods: [] as FundingMethod[],
+  support_channels: "",
+  support_languages: "",
+  support_hours: "",
+  pros: [] as string[],
+  cons: [] as string[],
 };
 
 function getInitials(name: string) {
@@ -79,6 +123,10 @@ export default function BrokersAdminPage() {
   const [brokerPickerSearch, setBrokerPickerSearch] = useState("");
   const brokerPickerRef = useRef<HTMLDivElement>(null);
 
+  const [regulatorDropdownOpen, setRegulatorDropdownOpen] = useState(false);
+  const [regulatorSearch, setRegulatorSearch] = useState("");
+  const regulatorDropdownRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (!countryDropdownOpen) return;
     const onClickOutside = (e: MouseEvent) => {
@@ -103,6 +151,20 @@ export default function BrokersAdminPage() {
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, [brokerPickerOpen]);
+
+  useEffect(() => {
+    if (!regulatorDropdownOpen) return;
+    const onClickOutside = (e: MouseEvent) => {
+      if (
+        regulatorDropdownRef.current &&
+        !regulatorDropdownRef.current.contains(e.target as Node)
+      ) {
+        setRegulatorDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [regulatorDropdownOpen]);
 
   const fetchBrokers = () => {
     setLoading(true);
@@ -143,6 +205,24 @@ export default function BrokersAdminPage() {
       show_on_cashback: broker.show_on_cashback,
       rating: broker.rating != null ? String(broker.rating) : "",
       owner_email: "",
+      tagline: broker.tagline || "",
+      founded_year: broker.founded_year != null ? String(broker.founded_year) : "",
+      headquarters: broker.headquarters || "",
+      min_deposit: broker.min_deposit != null ? String(broker.min_deposit) : "",
+      max_leverage: broker.max_leverage || "",
+      execution_type: broker.execution_type || "",
+      regulation_badges: broker.regulation_badges || [],
+      segregated_funds: broker.segregated_funds,
+      negative_balance_protection: broker.negative_balance_protection,
+      compensation_scheme: broker.compensation_scheme || "",
+      spreads: broker.spreads || [],
+      platforms: broker.platforms || [],
+      funding_methods: broker.funding_methods || [],
+      support_channels: (broker.support_channels || []).join(", "),
+      support_languages: (broker.support_languages || []).join(", "),
+      support_hours: broker.support_hours || "",
+      pros: broker.pros || [],
+      cons: broker.cons || [],
     });
     setFormError("");
     setShowForm(true);
@@ -153,7 +233,18 @@ export default function BrokersAdminPage() {
   const addAccountType = () => {
     setFormData((v) => ({
       ...v,
-      account_types: [...v.account_types, { name: "", description: null, cashback: [] }],
+      account_types: [
+        ...v.account_types,
+        {
+          name: "",
+          description: null,
+          cashback: [],
+          min_deposit: null,
+          spread_from: null,
+          commission: null,
+          swap_free: false,
+        },
+      ],
     }));
   };
 
@@ -223,6 +314,76 @@ export default function BrokersAdminPage() {
     }));
   };
 
+  const toggleRegulator = (code: string) => {
+    setFormData((v) => ({
+      ...v,
+      regulation_badges: v.regulation_badges.includes(code)
+        ? v.regulation_badges.filter((r) => r !== code)
+        : [...v.regulation_badges, code],
+    }));
+  };
+
+  const addSpread = () => {
+    setFormData((v) => ({
+      ...v,
+      spreads: [...v.spreads, { symbol: "", typical_spread: "", commission: "" }],
+    }));
+  };
+  const removeSpread = (index: number) => {
+    setFormData((v) => ({ ...v, spreads: v.spreads.filter((_, i) => i !== index) }));
+  };
+  const updateSpread = (index: number, patch: Partial<SpreadInfo>) => {
+    setFormData((v) => ({
+      ...v,
+      spreads: v.spreads.map((s, i) => (i === index ? { ...s, ...patch } : s)),
+    }));
+  };
+
+  const addPlatform = () => {
+    setFormData((v) => ({ ...v, platforms: [...v.platforms, { name: "", description: "" }] }));
+  };
+  const removePlatform = (index: number) => {
+    setFormData((v) => ({ ...v, platforms: v.platforms.filter((_, i) => i !== index) }));
+  };
+  const updatePlatform = (index: number, patch: Partial<PlatformInfo>) => {
+    setFormData((v) => ({
+      ...v,
+      platforms: v.platforms.map((p, i) => (i === index ? { ...p, ...patch } : p)),
+    }));
+  };
+
+  const addFundingMethod = () => {
+    setFormData((v) => ({
+      ...v,
+      funding_methods: [...v.funding_methods, { method: "", processing_time: "", fee: "" }],
+    }));
+  };
+  const removeFundingMethod = (index: number) => {
+    setFormData((v) => ({
+      ...v,
+      funding_methods: v.funding_methods.filter((_, i) => i !== index),
+    }));
+  };
+  const updateFundingMethod = (index: number, patch: Partial<FundingMethod>) => {
+    setFormData((v) => ({
+      ...v,
+      funding_methods: v.funding_methods.map((f, i) => (i === index ? { ...f, ...patch } : f)),
+    }));
+  };
+
+  const addListItem = (field: "pros" | "cons") => {
+    setFormData((v) => ({ ...v, [field]: [...v[field], ""] }));
+  };
+  const removeListItem = (field: "pros" | "cons", index: number) => {
+    setFormData((v) => ({ ...v, [field]: v[field].filter((_, i) => i !== index) }));
+  };
+  const updateListItem = (field: "pros" | "cons", index: number, value: string) => {
+    setFormData((v) => ({
+      ...v,
+      [field]: v[field].map((item, i) => (i === index ? value : item)),
+    }));
+  };
+
   const closeForm = () => {
     setShowForm(false);
     setEditingId(null);
@@ -258,6 +419,10 @@ export default function BrokersAdminPage() {
 
   const filteredCountries = COUNTRIES.filter((c) =>
     c.label.toLowerCase().includes(countrySearch.toLowerCase()),
+  );
+
+  const filteredRegulators = REGULATORS.filter((r) =>
+    r.label.toLowerCase().includes(regulatorSearch.toLowerCase()),
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -301,6 +466,30 @@ export default function BrokersAdminPage() {
         status: formData.status,
         show_on_cashback: formData.show_on_cashback,
         rating: formData.rating.trim() ? parseFloat(formData.rating) : null,
+        tagline: formData.tagline || null,
+        founded_year: formData.founded_year.trim() ? parseInt(formData.founded_year, 10) : null,
+        headquarters: formData.headquarters || null,
+        min_deposit: formData.min_deposit.trim() ? parseFloat(formData.min_deposit) : null,
+        max_leverage: formData.max_leverage || null,
+        execution_type: formData.execution_type || null,
+        regulation_badges: formData.regulation_badges,
+        segregated_funds: formData.segregated_funds,
+        negative_balance_protection: formData.negative_balance_protection,
+        compensation_scheme: formData.compensation_scheme || null,
+        spreads: formData.spreads.filter((s) => s.symbol.trim()),
+        platforms: formData.platforms.filter((p) => p.name.trim()),
+        funding_methods: formData.funding_methods.filter((f) => f.method.trim()),
+        support_channels: formData.support_channels
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        support_languages: formData.support_languages
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        support_hours: formData.support_hours || null,
+        pros: formData.pros.map((s) => s.trim()).filter(Boolean),
+        cons: formData.cons.map((s) => s.trim()).filter(Boolean),
       };
       if (editingId) {
         await api.put(`/brokers/${editingId}`, payload);
@@ -519,6 +708,78 @@ export default function BrokersAdminPage() {
               </div>
             </div>
 
+            <div className={styles.field}>
+              <label className={styles.label}>{t("tagline")}</label>
+              <input
+                className={styles.input}
+                placeholder={t("taglinePlaceholder")}
+                value={formData.tagline}
+                onChange={(e) => setFormData((v) => ({ ...v, tagline: e.target.value }))}
+              />
+            </div>
+
+            <div className={styles.formRow}>
+              <div className={styles.field}>
+                <label className={styles.label}>{t("foundedYear")}</label>
+                <input
+                  className={styles.input}
+                  type="number"
+                  placeholder={t("foundedYearPlaceholder")}
+                  value={formData.founded_year}
+                  onChange={(e) =>
+                    setFormData((v) => ({ ...v, founded_year: e.target.value }))
+                  }
+                />
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label}>{t("headquarters")}</label>
+                <input
+                  className={styles.input}
+                  placeholder={t("headquartersPlaceholder")}
+                  value={formData.headquarters}
+                  onChange={(e) =>
+                    setFormData((v) => ({ ...v, headquarters: e.target.value }))
+                  }
+                />
+              </div>
+            </div>
+
+            <div className={styles.formRow}>
+              <div className={styles.field}>
+                <label className={styles.label}>{t("minDeposit")}</label>
+                <input
+                  className={styles.input}
+                  placeholder={t("minDepositPlaceholder")}
+                  value={formData.min_deposit}
+                  onChange={(e) =>
+                    setFormData((v) => ({ ...v, min_deposit: e.target.value }))
+                  }
+                />
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label}>{t("maxLeverage")}</label>
+                <input
+                  className={styles.input}
+                  placeholder={t("maxLeveragePlaceholder")}
+                  value={formData.max_leverage}
+                  onChange={(e) =>
+                    setFormData((v) => ({ ...v, max_leverage: e.target.value }))
+                  }
+                />
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label}>{t("executionType")}</label>
+                <input
+                  className={styles.input}
+                  placeholder={t("executionTypePlaceholder")}
+                  value={formData.execution_type}
+                  onChange={(e) =>
+                    setFormData((v) => ({ ...v, execution_type: e.target.value }))
+                  }
+                />
+              </div>
+            </div>
+
             <div className={styles.formRow}>
               <div className={styles.field}>
                 <label className={styles.label}>{t("referralId")}</label>
@@ -627,6 +888,45 @@ export default function BrokersAdminPage() {
                     }
                   />
 
+                  <div className={styles.accountTypeSpecsRow}>
+                    <input
+                      className={styles.input}
+                      placeholder={t("accountTypeMinDepositPlaceholder")}
+                      value={at.min_deposit ?? ""}
+                      onChange={(e) =>
+                        updateAccountType(atIndex, {
+                          min_deposit: e.target.value ? parseFloat(e.target.value) : null,
+                        })
+                      }
+                    />
+                    <input
+                      className={styles.input}
+                      placeholder={t("accountTypeSpreadFromPlaceholder")}
+                      value={at.spread_from ?? ""}
+                      onChange={(e) =>
+                        updateAccountType(atIndex, { spread_from: e.target.value || null })
+                      }
+                    />
+                    <input
+                      className={styles.input}
+                      placeholder={t("accountTypeCommissionPlaceholder")}
+                      value={at.commission ?? ""}
+                      onChange={(e) =>
+                        updateAccountType(atIndex, { commission: e.target.value || null })
+                      }
+                    />
+                    <label className={styles.checkboxLabel}>
+                      <input
+                        type="checkbox"
+                        checked={at.swap_free}
+                        onChange={(e) =>
+                          updateAccountType(atIndex, { swap_free: e.target.checked })
+                        }
+                      />
+                      {t("accountTypeSwapFree")}
+                    </label>
+                  </div>
+
                   <div className={styles.cashbackList}>
                     {at.cashback.map((c, cIndex) => {
                       // Symbol mode sets symbol to "" while the admin hasn't typed one
@@ -715,6 +1015,202 @@ export default function BrokersAdminPage() {
                   </div>
                 </Card>
               ))}
+            </div>
+
+            <div className={styles.field}>
+              <div className={styles.accountTypesHeader}>
+                <label className={styles.label}>{t("spreads")}</label>
+                <button type="button" className={styles.addSmallBtn} onClick={addSpread}>
+                  {t("addSpread")}
+                </button>
+              </div>
+              <p className={styles.hint}>{t("spreadsHint")}</p>
+              {formData.spreads.map((s, i) => (
+                <div key={i} className={styles.cashbackRow}>
+                  <input
+                    className={styles.input}
+                    placeholder={t("spreadSymbolPlaceholder")}
+                    value={s.symbol}
+                    onChange={(e) => updateSpread(i, { symbol: e.target.value })}
+                  />
+                  <input
+                    className={styles.input}
+                    placeholder={t("spreadTypicalPlaceholder")}
+                    value={s.typical_spread ?? ""}
+                    onChange={(e) => updateSpread(i, { typical_spread: e.target.value })}
+                  />
+                  <input
+                    className={styles.input}
+                    placeholder={t("spreadCommissionPlaceholder")}
+                    value={s.commission ?? ""}
+                    onChange={(e) => updateSpread(i, { commission: e.target.value })}
+                  />
+                  <button
+                    type="button"
+                    className={styles.removeSmallBtn}
+                    onClick={() => removeSpread(i)}
+                  >
+                    {t("remove")}
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div className={styles.field}>
+              <div className={styles.accountTypesHeader}>
+                <label className={styles.label}>{t("platforms")}</label>
+                <button type="button" className={styles.addSmallBtn} onClick={addPlatform}>
+                  {t("addPlatform")}
+                </button>
+              </div>
+              {formData.platforms.map((p, i) => (
+                <div key={i} className={styles.cashbackRow}>
+                  <input
+                    className={styles.input}
+                    placeholder={t("platformNamePlaceholder")}
+                    value={p.name}
+                    onChange={(e) => updatePlatform(i, { name: e.target.value })}
+                  />
+                  <input
+                    className={styles.input}
+                    placeholder={t("platformDescriptionPlaceholder")}
+                    value={p.description ?? ""}
+                    onChange={(e) => updatePlatform(i, { description: e.target.value })}
+                  />
+                  <button
+                    type="button"
+                    className={styles.removeSmallBtn}
+                    onClick={() => removePlatform(i)}
+                  >
+                    {t("remove")}
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div className={styles.field}>
+              <div className={styles.accountTypesHeader}>
+                <label className={styles.label}>{t("fundingMethods")}</label>
+                <button type="button" className={styles.addSmallBtn} onClick={addFundingMethod}>
+                  {t("addFundingMethod")}
+                </button>
+              </div>
+              {formData.funding_methods.map((f, i) => (
+                <div key={i} className={styles.cashbackRow}>
+                  <input
+                    className={styles.input}
+                    placeholder={t("fundingMethodPlaceholder")}
+                    value={f.method}
+                    onChange={(e) => updateFundingMethod(i, { method: e.target.value })}
+                  />
+                  <input
+                    className={styles.input}
+                    placeholder={t("fundingProcessingTimePlaceholder")}
+                    value={f.processing_time ?? ""}
+                    onChange={(e) => updateFundingMethod(i, { processing_time: e.target.value })}
+                  />
+                  <input
+                    className={styles.input}
+                    placeholder={t("fundingFeePlaceholder")}
+                    value={f.fee ?? ""}
+                    onChange={(e) => updateFundingMethod(i, { fee: e.target.value })}
+                  />
+                  <button
+                    type="button"
+                    className={styles.removeSmallBtn}
+                    onClick={() => removeFundingMethod(i)}
+                  >
+                    {t("remove")}
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div className={styles.formRow}>
+              <div className={styles.field}>
+                <label className={styles.label}>{t("supportChannels")}</label>
+                <input
+                  className={styles.input}
+                  placeholder={t("supportChannelsPlaceholder")}
+                  value={formData.support_channels}
+                  onChange={(e) =>
+                    setFormData((v) => ({ ...v, support_channels: e.target.value }))
+                  }
+                />
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label}>{t("supportLanguages")}</label>
+                <input
+                  className={styles.input}
+                  placeholder={t("supportLanguagesPlaceholder")}
+                  value={formData.support_languages}
+                  onChange={(e) =>
+                    setFormData((v) => ({ ...v, support_languages: e.target.value }))
+                  }
+                />
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label}>{t("supportHours")}</label>
+                <input
+                  className={styles.input}
+                  placeholder={t("supportHoursPlaceholder")}
+                  value={formData.support_hours}
+                  onChange={(e) =>
+                    setFormData((v) => ({ ...v, support_hours: e.target.value }))
+                  }
+                />
+              </div>
+            </div>
+
+            <div className={styles.formRow}>
+              <div className={styles.field}>
+                <div className={styles.accountTypesHeader}>
+                  <label className={styles.label}>{t("pros")}</label>
+                  <button type="button" className={styles.addSmallBtn} onClick={() => addListItem("pros")}>
+                    {t("addBullet")}
+                  </button>
+                </div>
+                {formData.pros.map((text, i) => (
+                  <div key={i} className={styles.accountTypeRow}>
+                    <input
+                      className={styles.input}
+                      value={text}
+                      onChange={(e) => updateListItem("pros", i, e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      className={styles.removeSmallBtn}
+                      onClick={() => removeListItem("pros", i)}
+                    >
+                      {t("remove")}
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div className={styles.field}>
+                <div className={styles.accountTypesHeader}>
+                  <label className={styles.label}>{t("cons")}</label>
+                  <button type="button" className={styles.addSmallBtn} onClick={() => addListItem("cons")}>
+                    {t("addBullet")}
+                  </button>
+                </div>
+                {formData.cons.map((text, i) => (
+                  <div key={i} className={styles.accountTypeRow}>
+                    <input
+                      className={styles.input}
+                      value={text}
+                      onChange={(e) => updateListItem("cons", i, e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      className={styles.removeSmallBtn}
+                      onClick={() => removeListItem("cons", i)}
+                    >
+                      {t("remove")}
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className={styles.field}>
@@ -819,6 +1315,110 @@ export default function BrokersAdminPage() {
 
             {isSuperAdmin && (
               <div className={styles.field}>
+                <label className={styles.label}>{t("regulationBadges")}</label>
+                <div className={styles.countryPicker} ref={regulatorDropdownRef}>
+                  <button
+                    type="button"
+                    className={styles.countryDropdownTrigger}
+                    onClick={() => setRegulatorDropdownOpen((o) => !o)}
+                  >
+                    {formData.regulation_badges.length
+                      ? t("regulatorsSelected", { count: formData.regulation_badges.length })
+                      : t("selectRegulators")}
+                    <span className={styles.countryDropdownCaret}>▾</span>
+                  </button>
+
+                  {regulatorDropdownOpen && (
+                    <div className={styles.countryDropdownPanel}>
+                      <input
+                        className={styles.countryDropdownSearch}
+                        placeholder={t("searchRegulators")}
+                        value={regulatorSearch}
+                        onChange={(e) => setRegulatorSearch(e.target.value)}
+                        autoFocus
+                      />
+                      <div className={styles.countryDropdownList}>
+                        {filteredRegulators.length === 0 ? (
+                          <div className={styles.countryDropdownEmpty}>{t("noMatches")}</div>
+                        ) : (
+                          filteredRegulators.map((r) => (
+                            <label key={r.value} className={styles.countryOption}>
+                              <input
+                                type="checkbox"
+                                checked={formData.regulation_badges.includes(r.value)}
+                                onChange={() => toggleRegulator(r.value)}
+                              />
+                              {r.label}
+                            </label>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {formData.regulation_badges.length > 0 && (
+                    <div className={styles.regionChips}>
+                      {formData.regulation_badges.map((code) => (
+                        <button
+                          type="button"
+                          key={code}
+                          className={`${styles.regionChip} ${styles.regionChipActive}`}
+                          onClick={() => toggleRegulator(code)}
+                          title={t("remove")}
+                        >
+                          {REGULATOR_LABELS[code] || code} ✕
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {isSuperAdmin && (
+              <div className={styles.formRow}>
+                <label className={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={formData.segregated_funds}
+                    onChange={(e) =>
+                      setFormData((v) => ({ ...v, segregated_funds: e.target.checked }))
+                    }
+                  />
+                  {t("segregatedFunds")}
+                </label>
+                <label className={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={formData.negative_balance_protection}
+                    onChange={(e) =>
+                      setFormData((v) => ({
+                        ...v,
+                        negative_balance_protection: e.target.checked,
+                      }))
+                    }
+                  />
+                  {t("negativeBalanceProtection")}
+                </label>
+              </div>
+            )}
+
+            {isSuperAdmin && (
+              <div className={styles.field}>
+                <label className={styles.label}>{t("compensationScheme")}</label>
+                <input
+                  className={styles.input}
+                  placeholder={t("compensationSchemePlaceholder")}
+                  value={formData.compensation_scheme}
+                  onChange={(e) =>
+                    setFormData((v) => ({ ...v, compensation_scheme: e.target.value }))
+                  }
+                />
+              </div>
+            )}
+
+            {isSuperAdmin && (
+              <div className={styles.field}>
                 <label className={styles.label}>{t("status")}</label>
                 <select
                   className={styles.input}
@@ -858,16 +1458,16 @@ export default function BrokersAdminPage() {
                     className={styles.input}
                     type="number"
                     min="0"
-                    max="5"
-                    step="0.5"
-                    placeholder="0-5"
+                    max="10"
+                    step="0.1"
+                    placeholder="0-10"
                     value={formData.rating}
                     onChange={(e) =>
                       setFormData((v) => ({ ...v, rating: e.target.value }))
                     }
                     style={{ maxWidth: 100 }}
                   />
-                  <StarRating rating={formData.rating.trim() ? parseFloat(formData.rating) : null} />
+                  <ScoreBadge score={formData.rating.trim() ? parseFloat(formData.rating) : null} />
                   {formData.rating.trim() && (
                     <button
                       type="button"

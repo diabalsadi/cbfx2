@@ -24,6 +24,7 @@ import app.models.analysis
 import app.models.forum_thread
 import app.models.forum_reply
 import app.models.broker
+import app.models.broker_rating
 import app.models.broker_placement
 import app.models.ad_banner
 import app.models.mt5_account
@@ -155,6 +156,24 @@ with engine.begin() as connection:
     connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_status VARCHAR NOT NULL DEFAULT 'inactive'"))
     connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS show_on_cashback BOOLEAN NOT NULL DEFAULT TRUE"))
     connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS rating FLOAT"))
+    connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS tagline TEXT"))
+    connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS founded_year INTEGER"))
+    connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS headquarters VARCHAR"))
+    connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS min_deposit FLOAT"))
+    connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS max_leverage VARCHAR"))
+    connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS execution_type VARCHAR"))
+    connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS regulation_badges JSON DEFAULT '[]'::json"))
+    connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS segregated_funds BOOLEAN NOT NULL DEFAULT FALSE"))
+    connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS negative_balance_protection BOOLEAN NOT NULL DEFAULT FALSE"))
+    connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS compensation_scheme VARCHAR"))
+    connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS spreads JSON DEFAULT '[]'::json"))
+    connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS platforms JSON DEFAULT '[]'::json"))
+    connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS funding_methods JSON DEFAULT '[]'::json"))
+    connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS support_channels JSON DEFAULT '[]'::json"))
+    connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS support_languages JSON DEFAULT '[]'::json"))
+    connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS support_hours VARCHAR"))
+    connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS pros JSON DEFAULT '[]'::json"))
+    connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS cons JSON DEFAULT '[]'::json"))
 
     # Indexes on FK/filter columns that predate their model's index=True —
     # create_all() only applies index=True to brand-new tables, so existing
