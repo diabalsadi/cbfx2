@@ -105,7 +105,7 @@ function RateBrokerPrompt({ brokerId }: { brokerId: string }) {
     brokerRatingApi
       .submit(brokerId, value)
       .then(() => setMyRating(value))
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setSaving(false));
   };
 
@@ -499,31 +499,31 @@ export default function BrokerDetailClient({ params }: { params: Promise<{ id: s
       {(broker.support_channels.length > 0 ||
         broker.support_languages.length > 0 ||
         broker.support_hours) && (
-        <section className={styles.section}>
-          <SectionEyebrow icon="🎧" label={t("supportEyebrow")} />
-          <h2 className={styles.sectionTitle}>{t("supportTitle")}</h2>
-          <div className={styles.supportGrid}>
-            {broker.support_channels.length > 0 && (
-              <div>
-                <div className={styles.payoutLabel}>{t("supportChannels")}</div>
-                <div className={styles.payoutValue}>{broker.support_channels.join(", ")}</div>
-              </div>
-            )}
-            {broker.support_languages.length > 0 && (
-              <div>
-                <div className={styles.payoutLabel}>{t("supportLanguages")}</div>
-                <div className={styles.payoutValue}>{broker.support_languages.join(", ")}</div>
-              </div>
-            )}
-            {broker.support_hours && (
-              <div>
-                <div className={styles.payoutLabel}>{t("supportHours")}</div>
-                <div className={styles.payoutValue}>{broker.support_hours}</div>
-              </div>
-            )}
-          </div>
-        </section>
-      )}
+          <section className={styles.section}>
+            <SectionEyebrow icon="🎧" label={t("supportEyebrow")} />
+            <h2 className={styles.sectionTitle}>{t("supportTitle")}</h2>
+            <div className={styles.supportGrid}>
+              {broker.support_channels.length > 0 && (
+                <div>
+                  <div className={styles.payoutLabel}>{t("supportChannels")}</div>
+                  <div className={styles.payoutValue}>{broker.support_channels.join(", ")}</div>
+                </div>
+              )}
+              {broker.support_languages.length > 0 && (
+                <div>
+                  <div className={styles.payoutLabel}>{t("supportLanguages")}</div>
+                  <div className={styles.payoutValue}>{broker.support_languages.join(", ")}</div>
+                </div>
+              )}
+              {broker.support_hours && (
+                <div>
+                  <div className={styles.payoutLabel}>{t("supportHours")}</div>
+                  <div className={styles.payoutValue}>{broker.support_hours}</div>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
 
       {(broker.pros.length > 0 || broker.cons.length > 0) && (
         <section className={styles.section}>

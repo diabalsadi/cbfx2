@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { useRouter, usePathname } from "@/i18n/navigation";
 import { publicApi, type PublicBroker, type PublicBrokerOffer } from "@/helpers/api";
 import ScoreBadge from "@/components/ScoreBadge";
 import RegulatorSeal from "@/components/RegulatorSeal";
@@ -214,23 +216,20 @@ function BrokerColumn({ broker }: { broker: PublicBrokerOffer | null }) {
   );
 }
 
-// Reads ?a=/?b= (e.g. a broker page's "Compare with another broker" link)
-// as a lazy useState initializer — runs synchronously during the first
-// client render rather than in an effect, so there's no effect-to-effect
-// setState cascade into the broker-fetch effects below. Guarded for SSR,
-// where window isn't available yet; harmless since aId/bId only drive which
-// fetch runs next; they're never rendered as text themselves.
-function initialIdFromQuery(key: string): string | null {
-  if (typeof window === "undefined") return null;
-  return new URLSearchParams(window.location.search).get(key);
-}
-
 export default function CompareClient() {
   const t = useTranslations("brokerCompare");
+  const router = useRouter();
+  const pathname = usePathname();
+  // Reactive to the URL, unlike a one-time useState initializer — the compare
+  // page stays mounted across e.g. one broker's "Compare" link to another's
+  // (same route, only the query changes), so a snapshot read at mount would
+  // keep showing whichever broker was picked during an earlier visit instead
+  // of picking up the new default.
+  const searchParams = useSearchParams();
+  const aId = searchParams.get("a");
+  const bId = searchParams.get("b");
 
   const [brokers, setBrokers] = useState<PublicBroker[]>([]);
-  const [aId, setAId] = useState<string | null>(() => initialIdFromQuery("a"));
-  const [bId, setBId] = useState<string | null>(() => initialIdFromQuery("b"));
   const [brokerA, setBrokerA] = useState<PublicBrokerOffer | null>(null);
   const [brokerB, setBrokerB] = useState<PublicBrokerOffer | null>(null);
 
@@ -271,14 +270,12 @@ export default function CompareClient() {
   }, [bId]);
 
   const select = (which: "a" | "b", id: string) => {
-    if (which === "a") setAId(id);
-    else setBId(id);
-
-    // Keep the URL shareable/bookmarkable without a full navigation —
-    // same rationale as reading it back with window.location above.
-    const params = new URLSearchParams(window.location.search);
+    // Routed through the router (not a raw history.replaceState) so
+    // useSearchParams() above actually re-renders with the new value —
+    // also keeps the URL shareable/bookmarkable without a full navigation.
+    const params = new URLSearchParams(searchParams.toString());
     params.set(which, id);
-    window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
   return (
