@@ -91,12 +91,16 @@ def _google_translate_cache_key(texts: list, target_locale: str, fmt: str) -> st
     return f"translate:google:{target_locale}:{fmt}:{digest}"
 
 
-def _call_google_translate(texts: list, target_locale: str, fmt: str) -> list:
+def _call_google_translate(texts: list, target_locale: str, fmt: str) -> Optional[list]:
     """Best-effort batched call to Google Cloud Translation API v2 (Basic),
     authenticated with a plain API key (form field, no OAuth/SDK). Fails open
     on ANY problem — missing key, network error, timeout, non-200, unexpected
-    response shape — returning `texts` unchanged so a Google outage or
-    misconfiguration never turns a public response into a 500.
+    response shape — returning None so a Google outage or misconfiguration
+    never turns a public response into a 500. None (not `texts` unchanged) is
+    deliberate: it lets `_translate_many` show the visitor the original text
+    for *this* response without permanently caching that fallback as if it
+    were a real translation — see its docstring for why that distinction
+    matters.
 
     The actual Google response for a given (texts, target_locale, fmt) batch
     is cached in Cloudflare KV for PUBLIC_CACHE_TTL_SECONDS — this sits in
@@ -104,8 +108,11 @@ def _call_google_translate(texts: list, target_locale: str, fmt: str) -> list:
     above it is still the permanent store, so a KV miss/expiry never re-bills
     Google for text it has already translated before."""
     api_key = os.getenv("GOOGLE_TRANSLATE_API_KEY")
-    if not api_key or not texts:
-        return texts
+    if not texts:
+        return []
+    if not api_key:
+        logger.warning("GOOGLE_TRANSLATE_API_KEY is not set; returning untranslated text")
+        return None
 
     cache_key = _google_translate_cache_key(texts, target_locale, fmt)
     cached = cloudflare_kv.get(cache_key)
@@ -144,19 +151,27 @@ def _call_google_translate(texts: list, target_locale: str, fmt: str) -> list:
             "Google Translate API call failed for locale=%s (%d texts): HTTP %s — %s; returning untranslated text",
             target_locale, len(texts), e.code, detail,
         )
-        return texts
+        return None
     except Exception:
         logger.warning(
             "Google Translate API call failed for locale=%s (%d texts); returning untranslated text",
             target_locale, len(texts), exc_info=True,
         )
-        return texts
+        return None
 
 
 def _translate_many(db: Session, texts: list, target_locale: str, fmt: str = "text") -> list:
     """DB-cache-or-call-Google for a batch of strings sharing one format.
     Never raises — any DB or network failure falls back to the original text
-    for the affected items."""
+    for the affected items in *this* response.
+
+    Critically, a fallback is never written to the Translation cache table —
+    only genuine translations are. Caching a failure would be permanent
+    (nothing ever re-checks a cache hit), so a single transient Google
+    outage would otherwise poison that exact text/locale/format combination
+    with the untranslated English forever, even after the outage or a
+    misconfigured API key gets fixed. Leaving misses uncached means they
+    simply get retried on the next request instead."""
     hashes = [_hash_text(t) for t in texts]
     try:
         rows = (
@@ -175,6 +190,14 @@ def _translate_many(db: Session, texts: list, target_locale: str, fmt: str = "te
 
     miss_texts = [texts[i] for i in miss_idx]
     translated = _call_google_translate(miss_texts, target_locale, fmt)
+
+    if translated is None:
+        # Total failure for this batch — fall back to the original text for
+        # this response only, without caching that fallback (see docstring).
+        for i in miss_idx:
+            results[i] = texts[i]
+        return results
+
     for i, new_text in zip(miss_idx, translated):
         results[i] = new_text
 
