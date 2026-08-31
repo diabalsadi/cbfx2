@@ -110,3 +110,30 @@ async def check_account_status(metaapi_account_id: str) -> str:
     if account.state == "DEPLOYED" and account.connection_status == "CONNECTED":
         return "connected"
     return _STATE_TO_STATUS.get(account.state, "error")
+
+
+async def redeploy_and_check_status(metaapi_account_id: str) -> str:
+    """Deploys the account only if it isn't already, then returns its fresh
+    status — the shared "make sure this is up" primitive used both by
+    copyfactory_sync.py's keep-alive job (accounts that must stay
+    continuously deployed) and by mt5_accounts.py's customer-facing
+    reconnect endpoint (a one-off retry for a broken/never-connected
+    account)."""
+    api = _get_client()
+    account = await api.metatrader_account_api.get_account(metaapi_account_id)
+    if account.state != "DEPLOYED":
+        await account.deploy()
+    return await check_account_status(metaapi_account_id)
+
+
+async def remove_account(metaapi_account_id: str) -> None:
+    """Deletes a registered account on MetaApi's own side — used when a
+    customer removes a never-connected/failed MT5Account row (see
+    routers/mt5_accounts.py) so the account doesn't keep existing (and
+    billing) on MetaApi with nothing in our DB pointing at it anymore.
+    Callers should treat failures here as non-blocking — the DB row is the
+    source of truth for what the customer sees, and provision_account()
+    already accepts creating a fresh account if this one is ever retried."""
+    api = _get_client()
+    account = await api.metatrader_account_api.get_account(metaapi_account_id)
+    await account.remove()

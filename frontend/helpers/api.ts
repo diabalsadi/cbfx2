@@ -236,6 +236,11 @@ export interface MT5Account {
   account_type: string | null;
   balance: number;
   lifetime_earned: number;
+  // Sum of unsettled, priced trades' expected_amount — the system's own
+  // automatic calculation, not yet credited to balance. Shown to the
+  // customer as "System Estimate", not "pending" (see Account page's Wallet
+  // tab) — an evaluation, not a queued payment.
+  pending_expected_amount: number;
   // "not_connected" | "pending" | "deployed" | "connected" | "error"
   metaapi_connection_status: string;
   created_at: string;
@@ -730,6 +735,13 @@ export const mt5AccountsApi = {
   }) => api.post<MT5Account>('/mt5-accounts/', payload),
   listTransactions: () => api.get<WalletTransaction[]>('/mt5-accounts/me/transactions'),
   activeCount: () => api.get<{ active_users: number }>('/mt5-accounts/active-count'),
+  // Only succeeds for a never-connected/failed account with no cashback
+  // history or live copy subscription — see backend/app/routers/
+  // mt5_accounts.py:remove_my_account for the full eligibility rules.
+  remove: (accountId: string) => api.delete<void>(`/mt5-accounts/${accountId}`),
+  // Retries MetaApi provisioning/deployment for a not_connected/pending/error
+  // account — see mt5_accounts.py:reconnect_my_account.
+  reconnect: (accountId: string) => api.post<MT5Account>(`/mt5-accounts/${accountId}/reconnect`, {}),
 };
 
 // Admin visibility into every linked MT5 account's MetaApi connection health

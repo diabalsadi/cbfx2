@@ -27,17 +27,9 @@ logger = logging.getLogger(__name__)
 _UNLOCKED_STATUSES = {"active", "trialing"}
 
 
-async def _redeploy_and_status(metaapi_account_id: str) -> str:
-    api = metaapi_client.get_client()
-    meta_account = await api.metatrader_account_api.get_account(metaapi_account_id)
-    if meta_account.state != "DEPLOYED":
-        await meta_account.deploy()
-    return await metaapi_client.check_account_status(metaapi_account_id)
-
-
 async def _ensure_master_deployed(db: Session, trader: CopyTrader) -> str:
     try:
-        new_status = await _redeploy_and_status(trader.metaapi_account_id)
+        new_status = await metaapi_client.redeploy_and_check_status(trader.metaapi_account_id)
         trader.metaapi_connection_status = new_status
         db.commit()
         return new_status
@@ -51,7 +43,7 @@ async def _ensure_master_deployed(db: Session, trader: CopyTrader) -> str:
 
 async def _ensure_subscriber_deployed(db: Session, sub: CopySubscription, trader: CopyTrader) -> str:
     try:
-        new_status = await _redeploy_and_status(sub.metaapi_account_id)
+        new_status = await metaapi_client.redeploy_and_check_status(sub.metaapi_account_id)
         sub.metaapi_connection_status = new_status
 
         # First time this account reaches "connected", finish the

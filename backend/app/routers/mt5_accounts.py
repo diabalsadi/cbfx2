@@ -6,6 +6,7 @@ from typing import List
 
 from app.database import get_db
 from app.models.broker import Broker
+from app.models.copy_subscription import CopySubscription
 from app.models.mt5_account import MT5Account
 from app.models.wallet_transaction import WalletTransaction
 from app.models.user import User
@@ -17,8 +18,9 @@ from app.schemas.mt5_account import (
 )
 from app.utils.active_users import active_user_emails
 from app.utils.auth import get_current_user
-from app.utils.encryption import encrypt_field
+from app.utils.encryption import encrypt_field, decrypt_field
 from app.services import metaapi_client
+from app.services.rebate_calculation import pending_amount_by_account
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +37,7 @@ def require_roles(roles: set):
     return checker
 
 
-def _to_schema(account: MT5Account, broker: Broker) -> MT5AccountSchema:
+def _to_schema(account: MT5Account, broker: Broker, pending: float = 0.0) -> MT5AccountSchema:
     return MT5AccountSchema(
         id=account.id,
         broker_id=broker.id,
@@ -45,6 +47,7 @@ def _to_schema(account: MT5Account, broker: Broker) -> MT5AccountSchema:
         account_type=account.account_type,
         balance=account.balance,
         lifetime_earned=account.lifetime_earned,
+        pending_expected_amount=pending,
         metaapi_connection_status=account.metaapi_connection_status,
         created_at=account.created_at,
     )
@@ -118,8 +121,8 @@ def list_my_accounts(
     current_user: User = Depends(get_current_user),
 ):
     """The signed-in user's linked MT5 accounts, each with its own cashback
-    wallet (balance / lifetime_earned). A user can have several accounts,
-    including more than one with the same broker."""
+    wallet (balance / lifetime_earned / pending_expected_amount). A user can
+    have several accounts, including more than one with the same broker."""
     accounts = (
         db.query(MT5Account)
         .filter(MT5Account.user_email == current_user.email)
@@ -130,13 +133,14 @@ def list_my_accounts(
         b.id: b
         for b in db.query(Broker).filter(Broker.id.in_({a.broker_id for a in accounts})).all()
     } if accounts else {}
+    pending_by_account = pending_amount_by_account(db, {a.id for a in accounts})
 
     result = []
     for a in accounts:
         broker = brokers.get(a.broker_id)
         if not broker:
             continue
-        result.append(_to_schema(a, broker))
+        result.append(_to_schema(a, broker, pending=pending_by_account.get(a.id, 0.0)))
     return result
 
 
@@ -261,3 +265,142 @@ async def add_account(
     db.commit()
     db.refresh(account)
     return _to_schema(account, broker)
+
+
+# Shared eligibility for both the reconnect and remove endpoints below. An
+# account in one of these statuses has either never worked (not_connected),
+# is still mid-provisioning and might still resolve on its own (pending), or
+# has definitively failed (error) — connected/deployed/idle are excluded
+# since those represent (or recently represented) a working link, and
+# neither retrying nor removing makes sense for those.
+_BROKEN_LINK_STATUSES = {"not_connected", "pending", "error"}
+
+
+@router.post("/{account_id}/reconnect", response_model=MT5AccountSchema)
+async def reconnect_my_account(
+    account_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Retries MetaApi provisioning/deployment for a broken/never-connected
+    account (see _BROKEN_LINK_STATUSES) — the customer-facing alternative to
+    Remove, for when the account is worth another try instead of deleting
+    (MetaApi just got configured, a transient error, etc).
+
+    Idempotent/retryable like copy_traders.py's connect-live: if a prior
+    attempt already got as far as creating a MetaApi account
+    (provision_account can succeed even when its own deploy() call fails —
+    see that function's docstring), this reuses that metaapi_account_id and
+    just redeploys it, rather than registering a second duplicate account
+    with MetaApi (which bills per registered account)."""
+    account = (
+        db.query(MT5Account)
+        .filter(MT5Account.id == account_id, MT5Account.user_email == current_user.email)
+        .first()
+    )
+    if not account:
+        raise HTTPException(status_code=404, detail="MT5 account not found")
+
+    if account.metaapi_connection_status not in _BROKEN_LINK_STATUSES:
+        raise HTTPException(status_code=400, detail="This account doesn't need reconnecting")
+
+    if not metaapi_client.configured():
+        raise HTTPException(status_code=503, detail="MetaApi is not configured")
+
+    broker = db.query(Broker).filter(Broker.id == account.broker_id).first()
+    if not broker:
+        raise HTTPException(status_code=400, detail="Invalid MT5 account")
+
+    if not account.metaapi_account_id:
+        investor_password = decrypt_field(account.investor_password_encrypted)
+        if not investor_password:
+            raise HTTPException(
+                status_code=400, detail="Missing investor password — remove and re-add this account"
+            )
+        try:
+            result = await metaapi_client.provision_account(
+                login=account.mt5_number,
+                server=account.server,
+                platform=account.platform,
+                investor_password=investor_password,
+                name=f"{current_user.email} · {broker.name} · {account.mt5_number}",
+            )
+            account.metaapi_account_id = result["metaapi_account_id"]
+            account.metaapi_connection_status = result["status"]
+        except Exception:
+            logger.exception("MetaApi reconnect provisioning failed for %s", account.id)
+            account.metaapi_connection_status = "error"
+    else:
+        try:
+            account.metaapi_connection_status = await metaapi_client.redeploy_and_check_status(
+                account.metaapi_account_id
+            )
+        except Exception:
+            logger.exception("MetaApi reconnect redeploy failed for %s", account.id)
+            account.metaapi_connection_status = "error"
+
+    db.commit()
+    db.refresh(account)
+    pending = pending_amount_by_account(db, {account.id}).get(account.id, 0.0)
+    return _to_schema(account, broker, pending=pending)
+
+
+@router.delete("/{account_id}", status_code=204)
+async def remove_my_account(
+    account_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Lets a customer remove their own MT5 account link — but only ever a
+    broken/unproven one (see _BROKEN_LINK_STATUSES). Blocked
+    entirely if the account has any real financial history or a live copy
+    subscription riding on it, since MT5Account cascades to
+    WalletTransaction/TradeRecord/CopySubscription on delete
+    (ON DELETE CASCADE) — this endpoint is for clearing out dead links, not
+    for erasing a paper trail or silently orphaning a CopyFactory
+    subscription. A connected/idle account isn't deletable here at all —
+    contact support for that."""
+    account = (
+        db.query(MT5Account)
+        .filter(MT5Account.id == account_id, MT5Account.user_email == current_user.email)
+        .first()
+    )
+    if not account:
+        raise HTTPException(status_code=404, detail="MT5 account not found")
+
+    if account.metaapi_connection_status not in _BROKEN_LINK_STATUSES:
+        raise HTTPException(
+            status_code=400,
+            detail="Only accounts that never connected or failed to connect can be removed this way",
+        )
+
+    has_transactions = (
+        db.query(WalletTransaction).filter(WalletTransaction.mt5_account_id == account.id).first()
+        is not None
+    )
+    if account.lifetime_earned > 0 or has_transactions:
+        raise HTTPException(
+            status_code=400,
+            detail="This account has cashback history and can't be removed — contact support",
+        )
+
+    has_live_subscription = (
+        db.query(CopySubscription)
+        .filter(CopySubscription.mt5_account_id == account.id, CopySubscription.status != "stopped")
+        .first()
+        is not None
+    )
+    if has_live_subscription:
+        raise HTTPException(
+            status_code=400,
+            detail="This account has an active copy-trading subscription — stop copying first",
+        )
+
+    if account.metaapi_account_id and metaapi_client.configured():
+        try:
+            await metaapi_client.remove_account(account.metaapi_account_id)
+        except Exception:
+            logger.exception("MetaApi account removal failed for %s", account.id)
+
+    db.delete(account)
+    db.commit()

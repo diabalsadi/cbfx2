@@ -515,7 +515,37 @@
     "passwordMismatch": "رمز عبور جدید و تأیید آن مطابقت ندارند",
     "passwordUpdateFailed": "به‌روزرسانی رمز عبور ممکن نیست",
     "passwordUpdated": "رمز عبور به‌روزرسانی شد.",
-    "updatePassword": "به‌روزرسانی رمز عبور"
+    "updatePassword": "به‌روزرسانی رمز عبور",
+    "tabs": {
+      "personal": "Personal Info",
+      "security": "Security",
+      "wallet": "Wallet",
+      "history": "History",
+      "manage": "Manage Accounts"
+    },
+    "wallet": {
+      "subtitle": "Your cashback per MT5 account.",
+      "statActual": "Actual balance",
+      "statEstimate": "System estimate",
+      "statLifetime": "Lifetime earned",
+      "statAccounts": "MT5 accounts",
+      "actualLabel": "Actual",
+      "estimateLabel": "System Estimate",
+      "estimateHint": "System Estimate is calculated automatically from your trades — it's the system's own evaluation, not yet credited to your Actual balance."
+    },
+    "history": {
+      "subtitle": "Every credit and debit across your linked accounts."
+    },
+    "manage": {
+      "subtitle": "Link additional MT5 accounts to start earning cashback on them too.",
+      "remove": "Remove",
+      "removing": "Removing…",
+      "removeConfirm": "Remove {broker} MT5 #{mt5Number}? This can't be undone.",
+      "removeFailed": "Failed to remove account",
+      "reconnect": "Reconnect",
+      "reconnecting": "Reconnecting…",
+      "reconnectFailed": "Failed to reconnect account"
+    }
   },
   "referrals": {
     "title": "معرفی‌ها",

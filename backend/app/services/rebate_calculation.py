@@ -96,6 +96,31 @@ def calculate_rebates(db: Session) -> dict:
     return {"processed": len(pending), "priced": priced, "unresolved": unresolved}
 
 
+def pending_amount_by_account(db: Session, account_ids: set) -> dict:
+    """Sum of unsettled, priced TradeRecord.expected_amount per account,
+    scoped to the given account_ids — the customer-facing counterpart to
+    pending_payout_summary() below (same definition, no user/broker join,
+    since the caller already knows whose accounts these are). Surfaced to
+    the account owner as a "System Estimate" figure on their own wallet,
+    not just to admins. Never touches WalletTransaction/balance — see this
+    module's docstring."""
+    if not account_ids:
+        return {}
+    rows = (
+        db.query(TradeRecord)
+        .filter(
+            TradeRecord.mt5_account_id.in_(account_ids),
+            TradeRecord.expected_amount.isnot(None),
+            TradeRecord.payout_id.is_(None),
+        )
+        .all()
+    )
+    totals: dict = {}
+    for t in rows:
+        totals[t.mt5_account_id] = totals.get(t.mt5_account_id, 0.0) + t.expected_amount
+    return totals
+
+
 def pending_payout_summary(db: Session) -> List[dict]:
     """One row per MT5 account with at least one unsettled, priced
     TradeRecord (expected_amount set, payout_id still null) — what the admin

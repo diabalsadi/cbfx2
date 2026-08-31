@@ -25,6 +25,12 @@ class MT5Account(BaseModel):
     account_type: Optional[str] = None
     balance: float
     lifetime_earned: float
+    # Sum of unsettled, priced TradeRecord.expected_amount for this account —
+    # the system's own automatic calculation, not yet credited to balance.
+    # Shown to the customer as "System Estimate" (see rebate_calculation.py:
+    # pending_amount_by_account) — deliberately not called "pending" so it
+    # doesn't read as a queued/delayed payment.
+    pending_expected_amount: float = 0.0
     metaapi_connection_status: str
     created_at: datetime
 
