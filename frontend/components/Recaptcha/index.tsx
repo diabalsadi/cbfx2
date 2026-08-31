@@ -14,7 +14,7 @@ declare global {
   }
 }
 
-const SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+const SITE_KEY = process.env.RECAPTCHA_SITE_KEY_PUBLIC;
 
 export interface RecaptchaHandle {
   // Every submit attempt consumes the token (the backend calls Google's
@@ -93,7 +93,7 @@ const Recaptcha = forwardRef<RecaptchaHandle, RecaptchaProps>(function Recaptcha
     // Fails loud in dev rather than silently letting forms submit without a
     // captcha_token — the backend rejects that anyway once RECAPTCHA_SECRET_KEY
     // is set, so surface the missing config here instead.
-    return <p className={styles.missingConfig}>Captcha isn&apos;t configured (NEXT_PUBLIC_RECAPTCHA_SITE_KEY missing).</p>;
+    return <p className={styles.missingConfig}>Captcha isn&apos;t configured (RECAPTCHA_SITE_KEY_PUBLIC missing).</p>;
   }
 
   return (
