@@ -348,7 +348,9 @@
     "stopLossAbbrev": "Cắt Lỗ (SL)",
     "analysisNotes": "Ghi Chú Phân Tích",
     "status": "Trạng thái:",
-    "publishedBy": "Đăng bởi:"
+    "publishedBy": "Đăng bởi:",
+    "createdAt": "Đã tạo:",
+    "updatedAt": "Đã đóng:"
   },
   "articleReader": {
     "backTo": "← Quay lại {section}",

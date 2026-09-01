@@ -19,6 +19,7 @@ from app.services.metaapi_sync import sync_accounts
 from app.services.rebate_calculation import calculate_rebates
 from app.services.copyfactory_sync import ensure_copytrading_deployed, stop_lapsed_subscriptions
 from app.services import stripe_client
+from app.utils.cache import purge_public_cache
 from app.utils.otp import secure_compare
 
 router = APIRouter(prefix="/internal", tags=["internal"])
@@ -104,3 +105,19 @@ async def sync_subscriptions(
     status_result = stripe_client.sync_subscription_statuses(db)
     stop_result = await stop_lapsed_subscriptions(db)
     return {**status_result, "copy_trading_stopped": stop_result["stopped"]}
+
+
+@router.post("/purge-cache")
+def purge_cache(_auth: None = Depends(_require_sync_auth)):
+    """Wipes the public_cache read-cache — called by any external process
+    that writes directly to a table a /public/* endpoint reads without going
+    through this app's own routers (which otherwise call purge_public_cache()
+    themselves on every mutation). Today that's signals-service
+    (GOLD_SIGNALS_ARCHITECTURE.md), which inserts/updates `plays` rows
+    straight into the shared database after every generate/monitor run —
+    those changes would otherwise sit behind /public/homepage's cache TTL
+    (PUBLIC_CACHE_TTL_SECONDS) instead of showing up immediately. Reuses the
+    same X-Sync-Key/X-Sync-Secret credentials as the other /internal/*
+    endpoints rather than requiring a separate secret."""
+    purge_public_cache()
+    return {"status": "purged"}

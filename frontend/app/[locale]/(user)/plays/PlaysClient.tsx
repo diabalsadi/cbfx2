@@ -1,12 +1,22 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import styles from "./plays.module.scss";
 import { playsApi, type Play } from "@/helpers/api";
 import ProGate from "@/components/ProGate";
 
 export default function PlaysPage() {
   const t = useTranslations("plays");
+  const locale = useLocale();
+  const formatTimestamp = (iso: string) =>
+    new Date(iso).toLocaleString(locale, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  // Open plays show when they were created; closed/cancelled ones show when
+  // they last changed (i.e. when they closed) — updated_at bumps on every
+  // status change, so it doubles as "closed at" without a dedicated column.
+  const playTimestamp = (play: Play) =>
+    play.status === "open"
+      ? { label: t("createdAt"), value: play.created_at }
+      : { label: t("updatedAt"), value: play.updated_at };
   const [plays, setPlays] = useState<Play[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -17,9 +27,13 @@ export default function PlaysPage() {
   const [typeFilter, setTypeFilter] = useState<string>("all");
 
   useEffect(() => {
-    const apiParam = typeFilter === "all" ? undefined : typeFilter;
+    setLoading(true);
+    const playType = typeFilter === "all" ? undefined : typeFilter;
+    // "all" here means every status (server-side "omit status" contract);
+    // "open"/"closed"/"cancelled" fetch just that status.
+    const apiStatus = statusFilter === "all" ? undefined : statusFilter;
     playsApi
-      .listOpen(apiParam)
+      .list({ playType, status: apiStatus })
       .then((data) => {
         setPlays(data);
         setLoading(false);
@@ -28,7 +42,7 @@ export default function PlaysPage() {
         console.error(err);
         setLoading(false);
       });
-  }, [typeFilter]);
+  }, [typeFilter, statusFilter]);
 
   const filteredPlays = plays.filter((play) => {
     const matchesSearch = play.pair
@@ -161,6 +175,7 @@ export default function PlaysPage() {
                       className={`${styles.dot} ${play.status === "open" ? styles.dotOpen : ""}`}
                     />
                     {play.status.toUpperCase()}
+                    <span className={styles.timestamp}>{formatTimestamp(playTimestamp(play).value)}</span>
                   </span>
                   <span className={styles.viewDetails}>{t("details")}</span>
                 </div>
@@ -243,6 +258,10 @@ export default function PlaysPage() {
                 <div className={styles.metaRow}>
                   <span>{t("publishedBy")}</span>
                   <span>{selectedPlay.author_email}</span>
+                </div>
+                <div className={styles.metaRow}>
+                  <span>{playTimestamp(selectedPlay).label}</span>
+                  <span>{formatTimestamp(playTimestamp(selectedPlay).value)}</span>
                 </div>
               </div>
             </div>

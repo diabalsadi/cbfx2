@@ -346,7 +346,9 @@
     "stopLossAbbrev": "Stop Loss (SL)",
     "analysisNotes": "Analysis Notes",
     "status": "Status:",
-    "publishedBy": "Published by:"
+    "publishedBy": "Published by:",
+    "createdAt": "Created:",
+    "updatedAt": "Closed:"
   },
   "articleReader": {
     "backTo": "← Back to {section}",

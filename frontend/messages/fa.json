@@ -348,7 +348,9 @@
     "stopLossAbbrev": "حد ضرر (SL)",
     "analysisNotes": "یادداشت‌های تحلیل",
     "status": "وضعیت:",
-    "publishedBy": "منتشر شده توسط:"
+    "publishedBy": "منتشر شده توسط:",
+    "createdAt": "ایجاد شد:",
+    "updatedAt": "بسته شد:"
   },
   "articleReader": {
     "backTo": "← بازگشت به {section}",

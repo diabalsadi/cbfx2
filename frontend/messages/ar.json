@@ -348,7 +348,9 @@
     "stopLossAbbrev": "وقف الخسارة (SL)",
     "analysisNotes": "ملاحظات التحليل",
     "status": "الحالة:",
-    "publishedBy": "نُشر بواسطة:"
+    "publishedBy": "نُشر بواسطة:",
+    "createdAt": "تم الإنشاء:",
+    "updatedAt": "أُغلق:"
   },
   "articleReader": {
     "backTo": "← العودة إلى {section}",

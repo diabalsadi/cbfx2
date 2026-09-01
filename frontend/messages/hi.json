@@ -348,7 +348,9 @@
     "stopLossAbbrev": "स्टॉप लॉस (SL)",
     "analysisNotes": "विश्लेषण नोट्स",
     "status": "स्थिति:",
-    "publishedBy": "प्रकाशित द्वारा:"
+    "publishedBy": "प्रकाशित द्वारा:",
+    "createdAt": "बनाया गया:",
+    "updatedAt": "बंद हुआ:"
   },
   "articleReader": {
     "backTo": "← {section} पर वापस जाएं",

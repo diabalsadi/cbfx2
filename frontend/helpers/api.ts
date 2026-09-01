@@ -345,6 +345,13 @@ export interface Play {
   timeframe?: string;
   play_type: string;
   status: 'open' | 'closed' | 'cancelled';
+  // Why a closed/cancelled play ended — set by the signals-service pipeline;
+  // undefined for manually-managed plays.
+  close_reason?: 'hit' | 'miss' | 'market_shift';
+  // A 0-100 confidence score as a string (e.g. "78") — AI-generated plays
+  // only, undefined for manually-created ones. Legacy rows from before
+  // 2026-09-02 may hold "High"/"Medium"/"Low" instead.
+  confidence?: string;
   notes?: string;
   author_email: string;
   opened_at: string;
@@ -566,9 +573,14 @@ export const copySubscriptionsApi = {
 };
 
 export const playsApi = {
-  listOpen: (playType?: string) => {
-    const query = playType ? `?play_type=${encodeURIComponent(playType)}` : '';
-    return api.get<Play[]>(`/plays${query}`);
+  // Omitting `status` returns every play regardless of status (the "All
+  // Plays" filter); pass status: 'open' for just the active ones.
+  list: (params?: { playType?: string; status?: 'open' | 'closed' | 'cancelled' }) => {
+    const query = new URLSearchParams();
+    if (params?.playType) query.set('play_type', params.playType);
+    if (params?.status) query.set('status', params.status);
+    const qs = query.toString();
+    return api.get<Play[]>(`/plays${qs ? `?${qs}` : ''}`);
   },
 };
 

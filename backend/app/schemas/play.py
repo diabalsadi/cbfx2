@@ -28,6 +28,7 @@ class PlayUpdate(BaseModel):
     timeframe: Optional[str] = None
     play_type: Optional[str] = None
     status: Optional[str] = None
+    close_reason: Optional[str] = None  # "hit" | "miss" | "market_shift"
     notes: Optional[str] = None
     closed_at: Optional[datetime] = None
 
@@ -35,6 +36,13 @@ class PlayUpdate(BaseModel):
 class Play(PlayBase):
     id: str
     author_email: str
+    # "hit" | "miss" | "market_shift" | null — set by the signals-service
+    # pipeline; null for manually-managed plays.
+    close_reason: Optional[str] = None
+    # A 0-100 confidence score as a string (e.g. "78") | null — AI-generated
+    # plays only. Legacy rows from before 2026-09-02 may hold "High"/"Medium"/
+    # "Low" instead.
+    confidence: Optional[str] = None
     opened_at: datetime
     closed_at: Optional[datetime] = None
     created_at: datetime

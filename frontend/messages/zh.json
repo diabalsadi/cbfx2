@@ -348,7 +348,9 @@
     "stopLossAbbrev": "止损 (SL)",
     "analysisNotes": "分析笔记",
     "status": "状态：",
-    "publishedBy": "发布者："
+    "publishedBy": "发布者：",
+    "createdAt": "创建于：",
+    "updatedAt": "已关闭："
   },
   "articleReader": {
     "backTo": "← 返回{section}",

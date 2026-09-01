@@ -1,0 +1,27 @@
+name = "cbfx-signals-service"
+main = "worker/index.ts"
+compatibility_date = "2024-11-01"
+
+# NOTE: verify this whole file against Cloudflare's current Containers docs
+# at deploy time — Containers is a newer product and this schema has
+# changed before. The generate/monitor business logic in app/ is
+# independent of this file and doesn't need to change if it has.
+[[containers]]
+max_instances = 1
+class_name = "SignalsContainer"
+image = "./Dockerfile"
+
+[[durable_objects.bindings]]
+name = "SIGNALS_CONTAINER"
+class_name = "SignalsContainer"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["SignalsContainer"]
+
+# Cloudflare invokes the Worker's scheduled() handler once per matching
+# expression — at minutes :00/:30 both fire (see worker/index.ts for how
+# that's handled). Set TASK_AUTH_TOKEN with:
+#   wrangler secret put TASK_AUTH_TOKEN
+[triggers]
+crons = ["*/30 * * * *", "*/10 * * * *"]

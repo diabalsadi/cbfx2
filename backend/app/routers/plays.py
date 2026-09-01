@@ -24,12 +24,17 @@ def require_roles(roles: set):
 
 
 @router.get("", response_model=List[Play])
-def list_open_plays(
+def list_plays(
     play_type: Optional[str] = Query(None, description="Filter by type: Scalp, Swing, Long-term"),
+    status: Optional[str] = Query(None, description="Filter by status: open, closed, cancelled. Omit for every status (used by the Plays page's \"All Plays\" filter)."),
     db: Session = Depends(get_db)
 ):
-    """Public — returns all open plays ordered newest first."""
-    q = db.query(PlayModel).filter(PlayModel.status == "open")
+    """Public — plays ordered newest first. Omitting `status` returns every
+    play regardless of status; pass status=open for just the active ones
+    (the Plays page's default "Active Plays" filter)."""
+    q = db.query(PlayModel)
+    if status:
+        q = q.filter(PlayModel.status == status)
     if play_type:
         q = q.filter(PlayModel.play_type == play_type)
     return q.order_by(PlayModel.opened_at.desc()).all()
