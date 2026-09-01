@@ -5,6 +5,8 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useLoginModal } from "@/contexts/LoginModalContext";
 import { useAuth } from "@/contexts/AuthContext";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import HeaderSponsor from "@/components/HeaderSponsor";
+import { useHeaderSponsorBanner } from "@/helpers/useHeaderSponsorBanner";
 import styles from "./UserNav.module.scss";
 import cx from "classnames";
 import { useState } from "react";
@@ -44,6 +46,7 @@ export default function UserNav() {
   const { openLoginModal } = useLoginModal();
   const { user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const sponsorBanner = useHeaderSponsorBanner();
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname?.startsWith(href);
@@ -66,6 +69,8 @@ export default function UserNav() {
             <LogoIcon />
             <span className={styles.logoText}>CBFX</span>
           </Link>
+
+          <HeaderSponsor banner={sponsorBanner} />
 
           <nav className={styles.nav}>
             {navItems.map((item) => (

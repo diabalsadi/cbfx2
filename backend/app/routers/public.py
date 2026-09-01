@@ -322,8 +322,21 @@ def get_seo_meta(route: str, request: Request, sub_key: Optional[str] = None, db
     return translate_fields(db, seo, ["title", "description", "keywords", "og_title", "og_description"], locale)
 
 
+def _normalize_link_url(url: Optional[str]) -> Optional[str]:
+    """An admin-entered link_url override without a scheme (e.g. "www.cfi.com")
+    renders as a same-site relative link in an <a href>, silently sending
+    visitors to e.g. https://oursite.com/www.cfi.com instead of the intended
+    external site. Applied at read time so it also fixes banners already
+    saved without a scheme, not just future saves."""
+    if not url or url.startswith(("http://", "https://")):
+        return url
+    return f"https://{url}"
+
+
 def _banner_content(b: AdBanner, broker: Optional[Broker]) -> dict:
-    link = b.link_url or (referral_url(broker.signup_url, broker.id, broker.referral_id) if broker else None)
+    link = _normalize_link_url(b.link_url) or (
+        referral_url(broker.signup_url, broker.id, broker.referral_id) if broker else None
+    )
     return {
         "broker_name": broker.name if broker else "",
         "images": b.images or {},
@@ -570,8 +583,21 @@ def _translate_homepage(db: Session, homepage: dict, locale: str) -> dict:
     window. market_prices, top_traders, open_plays, and broker_sections carry
     no translatable copy (broker name is a proper noun, same reasoning as
     /public/brokers) and pass through untouched."""
+    # ad_banners must be flattened to the visitor's locale (image_url/alt)
+    # regardless of language — homepage["ad_banners"] carries the raw,
+    # locale-agnostic shape (default_image_url, per-locale images dict) that
+    # the frontend can't render directly. Previously this was skipped
+    # entirely for English (the `locale == "en"` early return below only
+    # covers the *text-translation* fields, which genuinely need no work in
+    # English), which silently broke every homepage banner ad for English
+    # visitors — image_url was always undefined, so ImageAdBanner rendered
+    # nothing.
+    ad_banners = {
+        slot: _flatten_banner_for_locale(content, locale)
+        for slot, content in homepage["ad_banners"].items()
+    }
     if locale == "en":
-        return homepage
+        return {**homepage, "ad_banners": ad_banners}
     return {
         **homepage,
         "latest_news": [
@@ -583,10 +609,7 @@ def _translate_homepage(db: Session, homepage: dict, locale: str) -> dict:
         "recent_threads": [
             translate_fields(db, t, ["title"], locale) for t in homepage["recent_threads"]
         ],
-        "ad_banners": {
-            slot: _flatten_banner_for_locale(content, locale)
-            for slot, content in homepage["ad_banners"].items()
-        },
+        "ad_banners": ad_banners,
     }
 
 

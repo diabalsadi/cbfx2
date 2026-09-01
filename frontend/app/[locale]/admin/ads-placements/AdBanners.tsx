@@ -37,6 +37,7 @@ const SLOT_LABEL_KEY = {
     { key: "pre_markets_banner", labelKey: "slotPreMarketsBanner" },
   ],
   signin: [{ key: "featured_broker", labelKey: "slotFeaturedBrokerSignin" }],
+  header: [{ key: "sponsor_logo", labelKey: "slotSponsorLogoHeader" }],
 } as const satisfies Record<AdPlacementPage, { key: string; labelKey: string }[]>;
 
 type ScopeMode = "default" | "region" | "country";

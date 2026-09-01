@@ -15,7 +15,8 @@
     "signIn": "Sign in",
     "getStarted": "Get started",
     "menu": "Menu",
-    "toggleTheme": "Toggle theme"
+    "toggleTheme": "Toggle theme",
+    "sponsoredBy": "Sponsored by"
   },
   "admin": {
     "nav": {
@@ -1277,6 +1278,8 @@
     "pageHomepageDescription": "Featured Brokers, Sponsored Brokers, Featured Partners, More Partner Brokers, and the standalone sponsored banner ads.",
     "pageSigninLabel": "Sign In",
     "pageSigninDescription": "The featured broker card shown next to the sign-in form and login modal.",
+    "pageHeaderLabel": "Header",
+    "pageHeaderDescription": "The \"Sponsored by\" logo shown next to the site logo in the header, on every page.",
     "modeDefault": "Default",
     "modeByRegion": "By Region",
     "modeByCountry": "By Country",
@@ -1292,6 +1295,7 @@
     "slotPreSignalsBanner": "Ad Sponsor — before Signals",
     "slotPreMarketsBanner": "Ad Sponsor — before Markets",
     "slotFeaturedBrokerSignin": "Featured Broker (Sign In)",
+    "slotSponsorLogoHeader": "Sponsor Logo (Header)",
     "scopeDefault": "Default",
     "bannerAdsTitle": "Banner Ads",
     "bannerAdsSubtitle": "Standalone sponsored banners on this route — each is its own ad, configured separately from the broker section slots above. Optionally target different content per coverage region or country; visitors detected there see it instead of the default banner (a country override wins over a region override, which wins over the default).",

@@ -136,6 +136,15 @@ with engine.begin() as connection:
     connection.execute(text("ALTER TABLE ad_banners ADD COLUMN IF NOT EXISTS broker_id VARCHAR"))
     connection.execute(text("ALTER TABLE ad_banners ADD COLUMN IF NOT EXISTS images JSON DEFAULT '{}'::json"))
     connection.execute(text("ALTER TABLE ad_banners ADD COLUMN IF NOT EXISTS default_image_url VARCHAR"))
+    # Leftover from the pre-broker_id design (free-text sponsor fields, since
+    # replaced by broker_id + images/default_image_url above) — these three
+    # are NOT NULL with no default in older databases, which blocks every
+    # insert into a page/slot/region combo that didn't already have a row.
+    # logo_src/cta_label from that same old design are nullable and harmless,
+    # so left alone (same convention as brokers.regulation_badges).
+    connection.execute(text("ALTER TABLE ad_banners DROP COLUMN IF EXISTS sponsor_name"))
+    connection.execute(text("ALTER TABLE ad_banners DROP COLUMN IF EXISTS description"))
+    connection.execute(text("ALTER TABLE ad_banners DROP COLUMN IF EXISTS badge_text"))
     connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS signup_url VARCHAR"))
     connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS account_types JSON DEFAULT '[]'::json"))
     connection.execute(text("ALTER TABLE brokers ADD COLUMN IF NOT EXISTS terms_text TEXT"))

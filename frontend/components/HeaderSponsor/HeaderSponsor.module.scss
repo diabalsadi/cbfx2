@@ -1,0 +1,44 @@
+.sponsor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  padding-inline-start: 12px;
+  margin-inline-start: 4px;
+  border-inline-start: 1px solid var(--border);
+  flex-shrink: 0;
+
+  // Below this, the "Sponsored by" label is dropped to save space (the
+  // logo alone stays visible at every width, including mobile/tablet where
+  // the main nav collapses into the hamburger menu).
+  @media (max-width: 640px) {
+    gap: 0;
+    padding-inline-start: 8px;
+    margin-inline-start: 0;
+  }
+}
+
+.sponsorLabel {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+
+  @media (max-width: 640px) {
+    display: none;
+  }
+}
+
+.sponsorLogo {
+  height: 22px;
+  width: auto;
+  max-width: 96px;
+  object-fit: contain;
+
+  @media (max-width: 480px) {
+    height: 18px;
+    max-width: 64px;
+  }
+}

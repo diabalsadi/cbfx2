@@ -16,7 +16,8 @@
     "getStarted": "शुरू करें",
     "menu": "मेनू",
     "toggleTheme": "थीम बदलें",
-    "withdrawalRequests": "निकासी अनुरोध"
+    "withdrawalRequests": "निकासी अनुरोध",
+    "sponsoredBy": "प्रायोजित"
   },
   "admin": {
     "nav": {
@@ -1290,7 +1291,10 @@
     "removeSlotAriaLabel": "स्लॉट हटाएं",
     "addSlot": "+ स्लॉट जोड़ें",
     "saveSlotFailed": "स्लॉट सहेजने में विफल",
-    "removeSlotFailed": "स्लॉट हटाने में विफल"
+    "removeSlotFailed": "स्लॉट हटाने में विफल",
+    "pageHeaderLabel": "हेडर",
+    "pageHeaderDescription": "हर पेज पर हेडर में साइट लोगो के बगल में दिखाया जाने वाला \"प्रायोजित\" लोगो।",
+    "slotSponsorLogoHeader": "प्रायोजक लोगो (हेडर)"
   },
   "adminSeo": {
     "routeHomepage": "होमपेज",

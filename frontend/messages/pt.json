@@ -16,7 +16,8 @@
     "getStarted": "Começar",
     "menu": "Menu",
     "toggleTheme": "Alternar tema",
-    "withdrawalRequests": "Solicitações de Saque"
+    "withdrawalRequests": "Solicitações de Saque",
+    "sponsoredBy": "Patrocinado por"
   },
   "admin": {
     "nav": {
@@ -1290,7 +1291,10 @@
     "removeSlotAriaLabel": "Remover posição",
     "addSlot": "+ Adicionar posição",
     "saveSlotFailed": "Falha ao salvar a posição",
-    "removeSlotFailed": "Falha ao remover a posição"
+    "removeSlotFailed": "Falha ao remover a posição",
+    "pageHeaderLabel": "Cabeçalho",
+    "pageHeaderDescription": "O logo \"Patrocinado por\" exibido ao lado do logo do site no cabeçalho, em todas as páginas.",
+    "slotSponsorLogoHeader": "Logo do Patrocinador (Cabeçalho)"
   },
   "adminSeo": {
     "routeHomepage": "Página inicial",

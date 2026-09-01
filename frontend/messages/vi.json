@@ -16,7 +16,8 @@
     "getStarted": "Bắt đầu",
     "menu": "Menu",
     "toggleTheme": "Chuyển giao diện",
-    "withdrawalRequests": "Yêu Cầu Rút Tiền"
+    "withdrawalRequests": "Yêu Cầu Rút Tiền",
+    "sponsoredBy": "Được tài trợ bởi"
   },
   "admin": {
     "nav": {
@@ -1290,7 +1291,10 @@
     "removeSlotAriaLabel": "Xóa vị trí",
     "addSlot": "+ Thêm vị trí",
     "saveSlotFailed": "Lưu vị trí không thành công",
-    "removeSlotFailed": "Xóa vị trí không thành công"
+    "removeSlotFailed": "Xóa vị trí không thành công",
+    "pageHeaderLabel": "Tiêu Đề Trang",
+    "pageHeaderDescription": "Logo \"Được tài trợ bởi\" hiển thị bên cạnh logo trang web ở phần đầu trang, trên mọi trang.",
+    "slotSponsorLogoHeader": "Logo Nhà Tài Trợ (Tiêu Đề Trang)"
   },
   "adminSeo": {
     "routeHomepage": "Trang chủ",

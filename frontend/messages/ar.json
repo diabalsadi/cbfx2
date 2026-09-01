@@ -16,7 +16,8 @@
     "getStarted": "ابدأ الآن",
     "menu": "القائمة",
     "toggleTheme": "تبديل المظهر",
-    "withdrawalRequests": "طلبات السحب"
+    "withdrawalRequests": "طلبات السحب",
+    "sponsoredBy": "برعاية"
   },
   "admin": {
     "nav": {
@@ -1290,7 +1291,10 @@
     "removeSlotAriaLabel": "إزالة الموضع",
     "addSlot": "+ إضافة موضع",
     "saveSlotFailed": "فشل حفظ الموضع",
-    "removeSlotFailed": "فشلت إزالة الموضع"
+    "removeSlotFailed": "فشلت إزالة الموضع",
+    "pageHeaderLabel": "الترويسة",
+    "pageHeaderDescription": "شعار \"برعاية\" الذي يظهر بجانب شعار الموقع في الترويسة، في كل صفحة.",
+    "slotSponsorLogoHeader": "شعار الراعي (الترويسة)"
   },
   "adminSeo": {
     "routeHomepage": "الصفحة الرئيسية",

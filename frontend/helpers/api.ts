@@ -456,7 +456,7 @@ export interface BrokerPlacement {
 // Routes with configurable ad placements. Add a key here (and on the backend's
 // PAGE_BANNER_SLOTS / broker-placement SECTIONS) when another page gets its own
 // ad blocks.
-export type AdPlacementPage = "homepage" | "signin";
+export type AdPlacementPage = "homepage" | "signin" | "header";
 
 // What a visitor actually sees — the banner's image (already picked for
 // their locale) and where clicking it goes.

@@ -16,7 +16,8 @@
     "getStarted": "开始使用",
     "menu": "菜单",
     "toggleTheme": "切换主题",
-    "withdrawalRequests": "提现申请"
+    "withdrawalRequests": "提现申请",
+    "sponsoredBy": "赞助商"
   },
   "admin": {
     "nav": {
@@ -1290,7 +1291,10 @@
     "removeSlotAriaLabel": "移除位置",
     "addSlot": "+ 添加位置",
     "saveSlotFailed": "保存位置失败",
-    "removeSlotFailed": "移除位置失败"
+    "removeSlotFailed": "移除位置失败",
+    "pageHeaderLabel": "页眉",
+    "pageHeaderDescription": "在每个页面的页眉中，显示在站点标志旁边的“赞助商”标志。",
+    "slotSponsorLogoHeader": "赞助商标志（页眉）"
   },
   "adminSeo": {
     "routeHomepage": "首页",

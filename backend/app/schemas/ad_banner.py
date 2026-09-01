@@ -18,6 +18,8 @@ PAGE_BANNER_SLOTS = {
         "pre_markets_banner",
     },
     "signin": {"featured_broker"},
+    # The "Sponsored by" logo shown next to the site logo in the public header.
+    "header": {"sponsor_logo"},
 }
 
 STATUSES = {"active", "inactive"}

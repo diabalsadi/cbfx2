@@ -16,7 +16,8 @@
     "getStarted": "شروع کنید",
     "menu": "منو",
     "toggleTheme": "تغییر پوسته",
-    "withdrawalRequests": "درخواست‌های برداشت"
+    "withdrawalRequests": "درخواست‌های برداشت",
+    "sponsoredBy": "با حمایت"
   },
   "admin": {
     "nav": {
@@ -1290,7 +1291,10 @@
     "removeSlotAriaLabel": "حذف جایگاه",
     "addSlot": "+ افزودن جایگاه",
     "saveSlotFailed": "ذخیره جایگاه ناموفق بود",
-    "removeSlotFailed": "حذف جایگاه ناموفق بود"
+    "removeSlotFailed": "حذف جایگاه ناموفق بود",
+    "pageHeaderLabel": "هدر",
+    "pageHeaderDescription": "لوگوی «با حمایت» که در هدر، در کنار لوگوی سایت و در تمام صفحات نمایش داده می‌شود.",
+    "slotSponsorLogoHeader": "لوگوی اسپانسر (هدر)"
   },
   "adminSeo": {
     "routeHomepage": "صفحه اصلی",

@@ -32,6 +32,12 @@ export default function AdsPlacementsAdminPage() {
       description: t("pageSigninDescription"),
       hasBrokerSections: false,
     },
+    {
+      value: "header",
+      label: t("pageHeaderLabel"),
+      description: t("pageHeaderDescription"),
+      hasBrokerSections: false,
+    },
   ];
 
   const [page, setPage] = useState<AdPlacementPage>(PAGES[0].value);
