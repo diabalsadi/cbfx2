@@ -50,6 +50,8 @@
   padding: 20px 16px;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* Logo */

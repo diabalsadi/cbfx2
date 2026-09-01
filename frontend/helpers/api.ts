@@ -166,6 +166,43 @@ export interface FundingMethod {
   fee: string | null;
 }
 
+// Cashback withdrawal methods a broker can offer — admin-configured per
+// broker (Broker.withdrawal_methods). "fund_mt5" means crediting the same
+// MT5 trading account directly, done manually by the admin at the broker.
+export type WithdrawalMethod = 'crypto' | 'bank_wire' | 'fund_mt5';
+
+export interface CryptoDestinationDetails {
+  currency: string;
+  network: string;
+  wallet_address: string;
+}
+
+export interface BankWireDestinationDetails {
+  holder_name: string;
+  bank_name: string;
+  account_number: string;
+  swift_bic: string;
+}
+
+export type WithdrawalDestinationDetails =
+  | CryptoDestinationDetails
+  | BankWireDestinationDetails
+  | Record<string, never>;
+
+export interface WithdrawalRequest {
+  id: string;
+  mt5_account_id: string;
+  broker_name: string;
+  mt5_number: string;
+  amount: number;
+  method: WithdrawalMethod;
+  destination_details: WithdrawalDestinationDetails;
+  status: 'pending' | 'approved' | 'rejected';
+  admin_note: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+}
+
 export interface SpreadInfo {
   category: string | null;
   symbol: string | null;
@@ -243,6 +280,9 @@ export interface MT5Account {
   pending_expected_amount: number;
   // "not_connected" | "pending" | "deployed" | "connected" | "error"
   metaapi_connection_status: string;
+  // Withdrawal methods this account's broker offers, admin-configured per
+  // broker — empty means withdrawals aren't available yet for this account.
+  withdrawal_methods: WithdrawalMethod[];
   created_at: string;
 }
 
@@ -808,6 +848,20 @@ export const rebatePayoutsApi = {
   listPending: () => api.get<PendingRebatePayout[]>('/rebate-payouts/pending'),
   issue: (payload: { mt5_account_id: string; actual_amount: number; note?: string }) =>
     api.post<RebatePayout>('/rebate-payouts', payload),
+};
+
+export const withdrawalRequestsApi = {
+  create: (payload: {
+    mt5_account_id: string;
+    amount: number;
+    method: WithdrawalMethod;
+    destination_details: WithdrawalDestinationDetails;
+  }) => api.post<WithdrawalRequest>('/withdrawal-requests', payload),
+  listMine: () => api.get<WithdrawalRequest[]>('/withdrawal-requests/me'),
+  listAll: (statusFilter?: 'pending' | 'approved' | 'rejected') =>
+    api.get<WithdrawalRequest[]>(`/withdrawal-requests${statusFilter ? `?status_filter=${statusFilter}` : ''}`),
+  review: (id: string, payload: { decision: 'approve' | 'reject'; admin_note?: string }) =>
+    api.post<WithdrawalRequest>(`/withdrawal-requests/${id}/review`, payload),
 };
 
 // Combined Signals + Copy Trading subscription paywall (Stripe embedded checkout).

@@ -15,6 +15,7 @@ REGIONS = {
 
 COVERAGE_TYPES = {"region", "country"}
 PAYOUT_DESTINATIONS = {"wallet", "trading_account"}
+WITHDRAWAL_METHODS = {"crypto", "bank_wire", "fund_mt5"}
 
 
 class InstrumentCashback(BaseModel):
@@ -134,6 +135,8 @@ class BrokerBase(BaseModel):
     spreads: List[SpreadInfo] = []
     platforms: List[PlatformInfo] = []
     funding_methods: List[FundingMethod] = []
+    # Which cashback withdrawal methods this broker offers — see Broker model.
+    withdrawal_methods: List[Literal["crypto", "bank_wire", "fund_mt5"]] = []
     support_channels: List[str] = []
     support_languages: List[str] = []
     support_hours: Optional[str] = None
@@ -190,6 +193,7 @@ class BrokerUpdate(BaseModel):
     spreads: Optional[List[SpreadInfo]] = None
     platforms: Optional[List[PlatformInfo]] = None
     funding_methods: Optional[List[FundingMethod]] = None
+    withdrawal_methods: Optional[List[Literal["crypto", "bank_wire", "fund_mt5"]]] = None
     support_channels: Optional[List[str]] = None
     support_languages: Optional[List[str]] = None
     support_hours: Optional[str] = None

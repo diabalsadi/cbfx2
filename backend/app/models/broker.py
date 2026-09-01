@@ -86,6 +86,11 @@ class Broker(Base):
     # ── Platforms, funding, support ──────────────────────────────────────
     platforms = Column(JSON, nullable=False, default=list)  # [{"name": str, "description": str}, ...]
     funding_methods = Column(JSON, nullable=False, default=list)  # [{"method","processing_time","fee"}, ...]
+    # Which cashback withdrawal methods this broker's customers may choose
+    # from, subset of "crypto" | "bank_wire" | "fund_mt5". Empty means
+    # withdrawals aren't offered yet for this broker — this list is the only
+    # switch controlling that, there's no separate enabled/disabled flag.
+    withdrawal_methods = Column(JSON, nullable=False, default=list)
     support_channels = Column(JSON, nullable=False, default=list)  # ["Live chat", "Phone", ...]
     support_languages = Column(JSON, nullable=False, default=list)  # ["English", "Arabic", ...]
     support_hours = Column(String, nullable=True)  # free text, e.g. "24/5, market hours"

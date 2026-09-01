@@ -37,17 +37,17 @@ const MOCK_ACCOUNTS: MT5Account[] = [
   {
     id: "mock-1", broker_id: "mock-ic", broker_name: "IC Markets", broker_img_src: null,
     mt5_number: "50219384", account_type: null, balance: 128.40, lifetime_earned: 512.90,
-    pending_expected_amount: 22.10, metaapi_connection_status: "connected", created_at: daysAgoISO(120),
+    pending_expected_amount: 22.10, metaapi_connection_status: "connected", withdrawal_methods: ["crypto", "bank_wire"], created_at: daysAgoISO(120),
   },
   {
     id: "mock-2", broker_id: "mock-xm", broker_name: "XM Global", broker_img_src: null,
     mt5_number: "88213765", account_type: null, balance: 54.10, lifetime_earned: 289.20,
-    pending_expected_amount: 9.60, metaapi_connection_status: "connected", created_at: daysAgoISO(90),
+    pending_expected_amount: 9.60, metaapi_connection_status: "connected", withdrawal_methods: ["crypto"], created_at: daysAgoISO(90),
   },
   {
     id: "mock-3", broker_id: "mock-pep", broker_name: "Pepperstone", broker_img_src: null,
     mt5_number: "91345612", account_type: null, balance: 76.90, lifetime_earned: 198.50,
-    pending_expected_amount: 14.30, metaapi_connection_status: "connected", created_at: daysAgoISO(60),
+    pending_expected_amount: 14.30, metaapi_connection_status: "connected", withdrawal_methods: ["fund_mt5"], created_at: daysAgoISO(60),
   },
 ];
 

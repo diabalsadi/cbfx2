@@ -21,6 +21,12 @@ function relativeTime(iso: string): string {
 function targetHref(item: NotificationItem): string | null {
   if (item.related_type === "campaign") return "/admin/ads-campaigns";
   if (item.related_type === "user") return "/admin/users";
+  if (item.related_type === "withdrawal_request") {
+    // The admin's own "pending review" notification links to the review
+    // queue; the customer's "reviewed" notification links to their own
+    // wallet history instead — same related_type, different recipient.
+    return item.type === "withdrawal_pending_review" ? "/admin/withdrawal-requests" : "/account";
+  }
   return null;
 }
 

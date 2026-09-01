@@ -15,7 +15,8 @@
     "signIn": "登录",
     "getStarted": "开始使用",
     "menu": "菜单",
-    "toggleTheme": "切换主题"
+    "toggleTheme": "切换主题",
+    "withdrawalRequests": "提现申请"
   },
   "admin": {
     "nav": {
@@ -484,6 +485,43 @@
     "brokersStrip": {
       "title": "提供返现的经纪商",
       "upToCashback": "最高返现 {rate}%"
+    },
+    "withdrawModal": {
+      "title": "提现返现",
+      "account": "MT5账户",
+      "accountOption": "{broker} — MT5 #{mt5Number}（可用 ${balance}）",
+      "selectAccountError": "请选择一个账户",
+      "noEligibleAccounts": "您目前没有任何MT5账户有可提现余额。",
+      "method": "提现方式",
+      "selectMethod": "选择一种方式…",
+      "selectMethodError": "请选择一种提现方式",
+      "noMethodsForBroker": "该经纪商尚未提供提现服务。",
+      "method_crypto": "加密货币",
+      "method_bank_wire": "银行电汇",
+      "method_fund_mt5": "存入同一MT5账户",
+      "amount": "金额",
+      "amountPlaceholder": "例如 50.00",
+      "availableForAccount": "此账户可用 ${amount}。",
+      "useMax": "使用最大值",
+      "amountRequiredError": "请输入大于零的金额",
+      "amountExceedsBalance": "金额超过该账户的可用余额",
+      "currency": "币种",
+      "currencyPlaceholder": "例如 USDT",
+      "network": "网络",
+      "networkPlaceholder": "例如 TRC20",
+      "walletAddress": "钱包地址",
+      "cryptoFieldsRequired": "币种、网络和钱包地址均为必填项",
+      "holderName": "账户持有人姓名",
+      "bankName": "银行名称",
+      "accountNumber": "账号 / IBAN",
+      "swiftBic": "SWIFT / BIC",
+      "bankFieldsRequired": "所有银行信息均为必填项",
+      "fundMt5Note": "您的返现将由我们团队直接存入该MT5交易账户。",
+      "submitBtn": "提交申请",
+      "submitting": "正在提交…",
+      "submitFailed": "提交提现申请失败",
+      "success": "提现申请已提交——等待审核。",
+      "closeBtn": "关闭"
     }
   },
   "account": {
@@ -517,34 +555,40 @@
     "passwordUpdated": "密码已更新。",
     "updatePassword": "更新密码",
     "tabs": {
-      "personal": "Personal Info",
-      "security": "Security",
-      "wallet": "Wallet",
-      "history": "History",
-      "manage": "Manage Accounts"
+      "personal": "个人信息",
+      "security": "安全",
+      "wallet": "钱包",
+      "history": "历史记录",
+      "manage": "管理账户"
     },
     "wallet": {
-      "subtitle": "Your cashback per MT5 account.",
-      "statActual": "Actual balance",
-      "statEstimate": "System estimate",
-      "statLifetime": "Lifetime earned",
-      "statAccounts": "MT5 accounts",
-      "actualLabel": "Actual",
-      "estimateLabel": "System Estimate",
-      "estimateHint": "System Estimate is calculated automatically from your trades — it's the system's own evaluation, not yet credited to your Actual balance."
+      "subtitle": "您每个MT5账户的返现。",
+      "statActual": "实际余额",
+      "statEstimate": "系统预估",
+      "statLifetime": "累计收益",
+      "statAccounts": "MT5账户数",
+      "actualLabel": "实际",
+      "estimateLabel": "系统预估",
+      "estimateHint": "系统预估根据您的交易自动计算——这是系统自身的评估，尚未计入您的实际余额。"
     },
     "history": {
-      "subtitle": "Every credit and debit across your linked accounts."
+      "subtitle": "您已关联账户中的每一笔收入和支出。",
+      "withdrawalStatus": {
+        "pending": "审核中",
+        "approved": "已批准",
+        "rejected": "已拒绝"
+      },
+      "rejectionReason": "原因：{reason}"
     },
     "manage": {
-      "subtitle": "Link additional MT5 accounts to start earning cashback on them too.",
-      "remove": "Remove",
-      "removing": "Removing…",
-      "removeConfirm": "Remove {broker} MT5 #{mt5Number}? This can't be undone.",
-      "removeFailed": "Failed to remove account",
-      "reconnect": "Reconnect",
-      "reconnecting": "Reconnecting…",
-      "reconnectFailed": "Failed to reconnect account"
+      "subtitle": "关联更多MT5账户，让它们也开始赚取返现。",
+      "remove": "移除",
+      "removing": "正在移除…",
+      "removeConfirm": "移除 {broker} MT5 #{mt5Number}？此操作无法撤销。",
+      "removeFailed": "移除账户失败",
+      "reconnect": "重新连接",
+      "reconnecting": "正在重新连接…",
+      "reconnectFailed": "重新连接账户失败"
     }
   },
   "referrals": {
@@ -1142,7 +1186,12 @@
     "addRegulation": "+ 添加许可",
     "licenseNumberPlaceholder": "许可证号",
     "activeSincePlaceholder": "生效日期，例如 2013",
-    "spreadsNoAccountTypesHint": "请先在上方添加账户类型，以便为每种账户类型输入点差。"
+    "spreadsNoAccountTypesHint": "请先在上方添加账户类型，以便为每种账户类型输入点差。",
+    "withdrawalMethods": "返现提现方式",
+    "withdrawalMethodsHint": "客户可用哪些方式从该经纪商的账户提取返现。若尚未提供提现服务，请全部不勾选。",
+    "withdrawalMethod_crypto": "加密货币",
+    "withdrawalMethod_bank_wire": "银行电汇",
+    "withdrawalMethod_fund_mt5": "存入同一MT5账户"
   },
   "adminAdsCampaigns": {
     "title": "广告活动",
@@ -1388,5 +1437,43 @@
     "platforms": "交易平台",
     "pros": "优势",
     "cons": "需注意事项"
+  },
+  "adminWithdrawalRequests": {
+    "title": "提现申请",
+    "subtitle": "等待审核的返现提现申请。批准会在客户的交易历史中记录一笔支出；拒绝会将金额退回其余额。实际转账（加密货币/电汇/经纪商入账）在此系统之外手动完成。",
+    "broker": "经纪商",
+    "mt5Number": "MT5账号",
+    "method": "方式",
+    "destination": "目的地",
+    "amount": "金额",
+    "status": "状态",
+    "actions": "操作",
+    "loading": "加载中…",
+    "none": "暂无提现申请。",
+    "noneForStatus": "没有此状态的提现申请。",
+    "filterAll": "所有状态",
+    "method_crypto": "加密货币",
+    "method_bank_wire": "银行电汇",
+    "method_fund_mt5": "存入同一MT5账户",
+    "labelCurrency": "币种",
+    "labelNetwork": "网络",
+    "labelWalletAddress": "钱包",
+    "labelHolderName": "持有人",
+    "labelBankName": "银行",
+    "labelAccountNumber": "账号",
+    "labelSwiftBic": "SWIFT/BIC",
+    "fundMt5Destination": "直接存入MT5账户 #{mt5Number}",
+    "status_pending": "待处理",
+    "status_approved": "已批准",
+    "status_rejected": "已拒绝",
+    "approve": "批准",
+    "reject": "拒绝",
+    "cancel": "取消",
+    "rejectNote": "原因（可选）",
+    "rejectNotePlaceholder": "拒绝此申请的原因…",
+    "rejecting": "正在拒绝…",
+    "confirmReject": "确认拒绝",
+    "reviewFailed": "审核此申请失败",
+    "loadFailed": "加载提现申请失败"
   }
 }

@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
 
 class MT5AccountCreate(BaseModel):
@@ -32,6 +32,9 @@ class MT5Account(BaseModel):
     # doesn't read as a queued/delayed payment.
     pending_expected_amount: float = 0.0
     metaapi_connection_status: str
+    # Withdrawal methods this account's broker offers — empty means
+    # withdrawals aren't available yet for this account. See Broker model.
+    withdrawal_methods: List[str] = []
     created_at: datetime
 
 

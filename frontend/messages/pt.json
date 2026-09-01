@@ -15,7 +15,8 @@
     "signIn": "Entrar",
     "getStarted": "Começar",
     "menu": "Menu",
-    "toggleTheme": "Alternar tema"
+    "toggleTheme": "Alternar tema",
+    "withdrawalRequests": "Solicitações de Saque"
   },
   "admin": {
     "nav": {
@@ -484,6 +485,43 @@
     "brokersStrip": {
       "title": "Corretoras que oferecem cashback",
       "upToCashback": "Até {rate}% de cashback"
+    },
+    "withdrawModal": {
+      "title": "Sacar Cashback",
+      "account": "Conta MT5",
+      "accountOption": "{broker} — MT5 #{mt5Number} (${balance} disponível)",
+      "selectAccountError": "Selecione uma conta",
+      "noEligibleAccounts": "Nenhuma das suas contas MT5 tem atualmente saldo disponível para saque.",
+      "method": "Método de Saque",
+      "selectMethod": "Selecione um método…",
+      "selectMethodError": "Selecione um método de saque",
+      "noMethodsForBroker": "Este corretor ainda não oferece saques.",
+      "method_crypto": "Cripto",
+      "method_bank_wire": "Transferência bancária",
+      "method_fund_mt5": "Depositar na mesma conta MT5",
+      "amount": "Valor",
+      "amountPlaceholder": "ex.: 50.00",
+      "availableForAccount": "${amount} disponível nesta conta.",
+      "useMax": "Usar máximo",
+      "amountRequiredError": "Insira um valor maior que zero",
+      "amountExceedsBalance": "O valor excede o saldo disponível desta conta",
+      "currency": "Moeda",
+      "currencyPlaceholder": "ex.: USDT",
+      "network": "Rede",
+      "networkPlaceholder": "ex.: TRC20",
+      "walletAddress": "Endereço da Carteira",
+      "cryptoFieldsRequired": "Moeda, rede e endereço da carteira são todos obrigatórios",
+      "holderName": "Nome do Titular",
+      "bankName": "Nome do Banco",
+      "accountNumber": "Número da Conta / IBAN",
+      "swiftBic": "SWIFT / BIC",
+      "bankFieldsRequired": "Todos os dados bancários são obrigatórios",
+      "fundMt5Note": "Seu cashback será creditado diretamente nesta conta de negociação MT5 pela nossa equipe.",
+      "submitBtn": "Enviar Solicitação",
+      "submitting": "Enviando…",
+      "submitFailed": "Falha ao enviar a solicitação de saque",
+      "success": "Solicitação de saque enviada — aguardando análise.",
+      "closeBtn": "Fechar"
     }
   },
   "account": {
@@ -517,34 +555,40 @@
     "passwordUpdated": "Senha atualizada.",
     "updatePassword": "Atualizar senha",
     "tabs": {
-      "personal": "Personal Info",
-      "security": "Security",
-      "wallet": "Wallet",
-      "history": "History",
-      "manage": "Manage Accounts"
+      "personal": "Informações Pessoais",
+      "security": "Segurança",
+      "wallet": "Carteira",
+      "history": "Histórico",
+      "manage": "Gerenciar Contas"
     },
     "wallet": {
-      "subtitle": "Your cashback per MT5 account.",
-      "statActual": "Actual balance",
-      "statEstimate": "System estimate",
-      "statLifetime": "Lifetime earned",
-      "statAccounts": "MT5 accounts",
-      "actualLabel": "Actual",
-      "estimateLabel": "System Estimate",
-      "estimateHint": "System Estimate is calculated automatically from your trades — it's the system's own evaluation, not yet credited to your Actual balance."
+      "subtitle": "Seu cashback por conta MT5.",
+      "statActual": "Saldo real",
+      "statEstimate": "Estimativa do sistema",
+      "statLifetime": "Total ganho",
+      "statAccounts": "Contas MT5",
+      "actualLabel": "Real",
+      "estimateLabel": "Estimativa do Sistema",
+      "estimateHint": "A Estimativa do Sistema é calculada automaticamente com base nas suas operações — é a própria avaliação do sistema, ainda não creditada ao seu saldo real."
     },
     "history": {
-      "subtitle": "Every credit and debit across your linked accounts."
+      "subtitle": "Todo crédito e débito nas suas contas vinculadas.",
+      "withdrawalStatus": {
+        "pending": "Em análise",
+        "approved": "Aprovado",
+        "rejected": "Rejeitado"
+      },
+      "rejectionReason": "Motivo: {reason}"
     },
     "manage": {
-      "subtitle": "Link additional MT5 accounts to start earning cashback on them too.",
-      "remove": "Remove",
-      "removing": "Removing…",
-      "removeConfirm": "Remove {broker} MT5 #{mt5Number}? This can't be undone.",
-      "removeFailed": "Failed to remove account",
-      "reconnect": "Reconnect",
-      "reconnecting": "Reconnecting…",
-      "reconnectFailed": "Failed to reconnect account"
+      "subtitle": "Vincule contas MT5 adicionais para começar a ganhar cashback nelas também.",
+      "remove": "Remover",
+      "removing": "Removendo…",
+      "removeConfirm": "Remover {broker} MT5 #{mt5Number}? Esta ação não pode ser desfeita.",
+      "removeFailed": "Falha ao remover a conta",
+      "reconnect": "Reconectar",
+      "reconnecting": "Reconectando…",
+      "reconnectFailed": "Falha ao reconectar a conta"
     }
   },
   "referrals": {
@@ -1142,7 +1186,12 @@
     "addRegulation": "+ Adicionar regulamentação",
     "licenseNumberPlaceholder": "Número da licença",
     "activeSincePlaceholder": "Ativa desde, ex. 2013",
-    "spreadsNoAccountTypesHint": "Adicione tipos de conta acima para inserir um spread por tipo de conta."
+    "spreadsNoAccountTypesHint": "Adicione tipos de conta acima para inserir um spread por tipo de conta.",
+    "withdrawalMethods": "Métodos de Saque de Cashback",
+    "withdrawalMethodsHint": "Quais métodos os clientes podem usar para sacar o cashback das contas deste corretor. Deixe tudo desmarcado para não oferecer saques ainda.",
+    "withdrawalMethod_crypto": "Cripto",
+    "withdrawalMethod_bank_wire": "Transferência bancária",
+    "withdrawalMethod_fund_mt5": "Depositar na mesma conta MT5"
   },
   "adminAdsCampaigns": {
     "title": "Campanhas de anúncios",
@@ -1388,5 +1437,43 @@
     "platforms": "Plataformas",
     "pros": "Pontos fortes",
     "cons": "Pontos de atenção"
+  },
+  "adminWithdrawalRequests": {
+    "title": "Solicitações de Saque",
+    "subtitle": "Solicitações de saque de cashback aguardando análise. Aprovar registra o débito no histórico de transações do cliente; rejeitar reembolsa o valor ao saldo dele. A transferência real (cripto/transferência/crédito do corretor) é feita manualmente fora deste sistema.",
+    "broker": "Corretor",
+    "mt5Number": "MT5 #",
+    "method": "Método",
+    "destination": "Destino",
+    "amount": "Valor",
+    "status": "Status",
+    "actions": "Ações",
+    "loading": "Carregando…",
+    "none": "Ainda não há solicitações de saque.",
+    "noneForStatus": "Não há solicitações de saque com esse status.",
+    "filterAll": "Todos os status",
+    "method_crypto": "Cripto",
+    "method_bank_wire": "Transferência bancária",
+    "method_fund_mt5": "Depositar na mesma conta MT5",
+    "labelCurrency": "Moeda",
+    "labelNetwork": "Rede",
+    "labelWalletAddress": "Carteira",
+    "labelHolderName": "Titular",
+    "labelBankName": "Banco",
+    "labelAccountNumber": "Conta",
+    "labelSwiftBic": "SWIFT/BIC",
+    "fundMt5Destination": "Creditar diretamente na conta MT5 #{mt5Number}",
+    "status_pending": "Pendente",
+    "status_approved": "Aprovado",
+    "status_rejected": "Rejeitado",
+    "approve": "Aprovar",
+    "reject": "Rejeitar",
+    "cancel": "Cancelar",
+    "rejectNote": "Motivo (opcional)",
+    "rejectNotePlaceholder": "Por que esta solicitação está sendo rejeitada…",
+    "rejecting": "Rejeitando…",
+    "confirmReject": "Confirmar Rejeição",
+    "reviewFailed": "Falha ao analisar esta solicitação",
+    "loadFailed": "Falha ao carregar as solicitações de saque"
   }
 }

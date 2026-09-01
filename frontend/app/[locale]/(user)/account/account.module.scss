@@ -166,6 +166,12 @@
   color: var(--text-muted);
 }
 
+.rejectionReason {
+  font-size: 12px;
+  color: #ef4444;
+  margin-top: 2px;
+}
+
 .rowRight {
   text-align: right;
   flex-shrink: 0;
@@ -402,6 +408,17 @@
   font-size: 12px;
   color: var(--text-secondary);
   margin: 0;
+}
+
+.maxBtn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
 }
 
 .errorMsg {

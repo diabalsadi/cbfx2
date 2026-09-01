@@ -15,7 +15,8 @@
     "signIn": "ورود",
     "getStarted": "شروع کنید",
     "menu": "منو",
-    "toggleTheme": "تغییر پوسته"
+    "toggleTheme": "تغییر پوسته",
+    "withdrawalRequests": "درخواست‌های برداشت"
   },
   "admin": {
     "nav": {
@@ -484,6 +485,43 @@
     "brokersStrip": {
       "title": "کارگزاران ارائه‌دهنده بازگشت وجه",
       "upToCashback": "تا {rate}% بازگشت وجه"
+    },
+    "withdrawModal": {
+      "title": "برداشت کش‌بک",
+      "account": "حساب MT5",
+      "accountOption": "{broker} — MT5 #{mt5Number} (${balance} موجود)",
+      "selectAccountError": "لطفاً یک حساب انتخاب کنید",
+      "noEligibleAccounts": "در حال حاضر هیچ‌یک از حساب‌های MT5 شما موجودی قابل برداشت ندارند.",
+      "method": "روش برداشت",
+      "selectMethod": "یک روش انتخاب کنید…",
+      "selectMethodError": "لطفاً یک روش برداشت انتخاب کنید",
+      "noMethodsForBroker": "این بروکر هنوز برداشت را ارائه نمی‌دهد.",
+      "method_crypto": "ارز دیجیتال",
+      "method_bank_wire": "حواله بانکی",
+      "method_fund_mt5": "واریز به همان حساب MT5",
+      "amount": "مبلغ",
+      "amountPlaceholder": "مثلاً ۵۰.۰۰",
+      "availableForAccount": "${amount} در این حساب موجود است.",
+      "useMax": "استفاده از حداکثر",
+      "amountRequiredError": "مبلغی بزرگ‌تر از صفر وارد کنید",
+      "amountExceedsBalance": "مبلغ از موجودی قابل برداشت این حساب بیشتر است",
+      "currency": "ارز",
+      "currencyPlaceholder": "مثلاً USDT",
+      "network": "شبکه",
+      "networkPlaceholder": "مثلاً TRC20",
+      "walletAddress": "آدرس کیف پول",
+      "cryptoFieldsRequired": "ارز، شبکه و آدرس کیف پول همگی الزامی هستند",
+      "holderName": "نام صاحب حساب",
+      "bankName": "نام بانک",
+      "accountNumber": "شماره حساب / IBAN",
+      "swiftBic": "SWIFT / BIC",
+      "bankFieldsRequired": "تمام اطلاعات بانکی الزامی است",
+      "fundMt5Note": "کش‌بک شما مستقیماً توسط تیم ما به این حساب معاملاتی MT5 واریز خواهد شد.",
+      "submitBtn": "ارسال درخواست",
+      "submitting": "در حال ارسال…",
+      "submitFailed": "ارسال درخواست برداشت ناموفق بود",
+      "success": "درخواست برداشت ارسال شد — در انتظار بررسی.",
+      "closeBtn": "بستن"
     }
   },
   "account": {
@@ -517,34 +555,40 @@
     "passwordUpdated": "رمز عبور به‌روزرسانی شد.",
     "updatePassword": "به‌روزرسانی رمز عبور",
     "tabs": {
-      "personal": "Personal Info",
-      "security": "Security",
-      "wallet": "Wallet",
-      "history": "History",
-      "manage": "Manage Accounts"
+      "personal": "اطلاعات شخصی",
+      "security": "امنیت",
+      "wallet": "کیف پول",
+      "history": "تاریخچه",
+      "manage": "مدیریت حساب‌ها"
     },
     "wallet": {
-      "subtitle": "Your cashback per MT5 account.",
-      "statActual": "Actual balance",
-      "statEstimate": "System estimate",
-      "statLifetime": "Lifetime earned",
-      "statAccounts": "MT5 accounts",
-      "actualLabel": "Actual",
-      "estimateLabel": "System Estimate",
-      "estimateHint": "System Estimate is calculated automatically from your trades — it's the system's own evaluation, not yet credited to your Actual balance."
+      "subtitle": "کش‌بک شما به ازای هر حساب MT5.",
+      "statActual": "موجودی واقعی",
+      "statEstimate": "برآورد سیستم",
+      "statLifetime": "کل درآمد",
+      "statAccounts": "حساب‌های MT5",
+      "actualLabel": "واقعی",
+      "estimateLabel": "برآورد سیستم",
+      "estimateHint": "برآورد سیستم به‌طور خودکار از معاملات شما محاسبه می‌شود — این ارزیابی خود سیستم است و هنوز به موجودی واقعی شما اضافه نشده است."
     },
     "history": {
-      "subtitle": "Every credit and debit across your linked accounts."
+      "subtitle": "هر واریز و برداشت در حساب‌های متصل شما.",
+      "withdrawalStatus": {
+        "pending": "در حال بررسی",
+        "approved": "تأیید شده",
+        "rejected": "رد شده"
+      },
+      "rejectionReason": "دلیل: {reason}"
     },
     "manage": {
-      "subtitle": "Link additional MT5 accounts to start earning cashback on them too.",
-      "remove": "Remove",
-      "removing": "Removing…",
-      "removeConfirm": "Remove {broker} MT5 #{mt5Number}? This can't be undone.",
-      "removeFailed": "Failed to remove account",
-      "reconnect": "Reconnect",
-      "reconnecting": "Reconnecting…",
-      "reconnectFailed": "Failed to reconnect account"
+      "subtitle": "حساب‌های MT5 بیشتری متصل کنید تا از آن‌ها نیز کش‌بک دریافت کنید.",
+      "remove": "حذف",
+      "removing": "در حال حذف…",
+      "removeConfirm": "{broker} MT5 #{mt5Number} حذف شود؟ این کار قابل بازگشت نیست.",
+      "removeFailed": "حذف حساب ناموفق بود",
+      "reconnect": "اتصال مجدد",
+      "reconnecting": "در حال اتصال مجدد…",
+      "reconnectFailed": "اتصال مجدد حساب ناموفق بود"
     }
   },
   "referrals": {
@@ -1142,7 +1186,12 @@
     "addRegulation": "+ افزودن مجوز",
     "licenseNumberPlaceholder": "شماره مجوز",
     "activeSincePlaceholder": "فعال از، مثال: 2013",
-    "spreadsNoAccountTypesHint": "برای وارد کردن اسپرد به ازای هر نوع حساب، ابتدا انواع حساب را در بالا اضافه کنید."
+    "spreadsNoAccountTypesHint": "برای وارد کردن اسپرد به ازای هر نوع حساب، ابتدا انواع حساب را در بالا اضافه کنید.",
+    "withdrawalMethods": "روش‌های برداشت کش‌بک",
+    "withdrawalMethodsHint": "مشتریان با کدام روش‌ها می‌توانند کش‌بک را از حساب‌های این بروکر برداشت کنند. اگر برداشت هنوز فعال نیست، همه را بدون علامت بگذارید.",
+    "withdrawalMethod_crypto": "ارز دیجیتال",
+    "withdrawalMethod_bank_wire": "حواله بانکی",
+    "withdrawalMethod_fund_mt5": "واریز به همان حساب MT5"
   },
   "adminAdsCampaigns": {
     "title": "کمپین‌های تبلیغاتی",
@@ -1388,5 +1437,43 @@
     "platforms": "پلتفرم‌ها",
     "pros": "نقاط قوت",
     "cons": "نکات قابل توجه"
+  },
+  "adminWithdrawalRequests": {
+    "title": "درخواست‌های برداشت",
+    "subtitle": "درخواست‌های برداشت کش‌بک در انتظار بررسی. تأیید، بدهی را در تاریخچه تراکنش‌های مشتری ثبت می‌کند؛ رد کردن مبلغ را به موجودی او بازمی‌گرداند. انتقال واقعی (ارز دیجیتال/حواله/واریز نزد بروکر) به‌صورت دستی و خارج از این سیستم انجام می‌شود.",
+    "broker": "بروکر",
+    "mt5Number": "شماره MT5",
+    "method": "روش",
+    "destination": "مقصد",
+    "amount": "مبلغ",
+    "status": "وضعیت",
+    "actions": "عملیات",
+    "loading": "در حال بارگذاری…",
+    "none": "هنوز درخواست برداشتی وجود ندارد.",
+    "noneForStatus": "درخواست برداشتی با این وضعیت وجود ندارد.",
+    "filterAll": "همه وضعیت‌ها",
+    "method_crypto": "ارز دیجیتال",
+    "method_bank_wire": "حواله بانکی",
+    "method_fund_mt5": "واریز به همان حساب MT5",
+    "labelCurrency": "ارز",
+    "labelNetwork": "شبکه",
+    "labelWalletAddress": "کیف پول",
+    "labelHolderName": "صاحب حساب",
+    "labelBankName": "بانک",
+    "labelAccountNumber": "حساب",
+    "labelSwiftBic": "SWIFT/BIC",
+    "fundMt5Destination": "واریز مستقیم به حساب MT5 #{mt5Number}",
+    "status_pending": "در انتظار",
+    "status_approved": "تأیید شده",
+    "status_rejected": "رد شده",
+    "approve": "تأیید",
+    "reject": "رد",
+    "cancel": "لغو",
+    "rejectNote": "دلیل (اختیاری)",
+    "rejectNotePlaceholder": "دلیل رد این درخواست…",
+    "rejecting": "در حال رد کردن…",
+    "confirmReject": "تأیید رد درخواست",
+    "reviewFailed": "بررسی این درخواست ناموفق بود",
+    "loadFailed": "بارگذاری درخواست‌های برداشت ناموفق بود"
   }
 }

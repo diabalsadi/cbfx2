@@ -15,7 +15,8 @@
     "signIn": "साइन इन",
     "getStarted": "शुरू करें",
     "menu": "मेनू",
-    "toggleTheme": "थीम बदलें"
+    "toggleTheme": "थीम बदलें",
+    "withdrawalRequests": "निकासी अनुरोध"
   },
   "admin": {
     "nav": {
@@ -484,6 +485,43 @@
     "brokersStrip": {
       "title": "कैशबैक देने वाले ब्रोकर",
       "upToCashback": "{rate}% तक कैशबैक"
+    },
+    "withdrawModal": {
+      "title": "कैशबैक निकालें",
+      "account": "MT5 खाता",
+      "accountOption": "{broker} — MT5 #{mt5Number} (${balance} उपलब्ध)",
+      "selectAccountError": "कृपया एक खाता चुनें",
+      "noEligibleAccounts": "आपके किसी भी MT5 खाते में फिलहाल निकासी योग्य बैलेंस नहीं है।",
+      "method": "निकासी विधि",
+      "selectMethod": "एक विधि चुनें…",
+      "selectMethodError": "कृपया एक निकासी विधि चुनें",
+      "noMethodsForBroker": "यह ब्रोकर अभी निकासी की सुविधा नहीं देता।",
+      "method_crypto": "क्रिप्टो",
+      "method_bank_wire": "बैंक वायर",
+      "method_fund_mt5": "उसी MT5 खाते में जमा करें",
+      "amount": "राशि",
+      "amountPlaceholder": "उदा. 50.00",
+      "availableForAccount": "इस खाते में ${amount} उपलब्ध है।",
+      "useMax": "अधिकतम उपयोग करें",
+      "amountRequiredError": "शून्य से बड़ी राशि दर्ज करें",
+      "amountExceedsBalance": "राशि इस खाते के उपलब्ध बैलेंस से अधिक है",
+      "currency": "मुद्रा",
+      "currencyPlaceholder": "उदा. USDT",
+      "network": "नेटवर्क",
+      "networkPlaceholder": "उदा. TRC20",
+      "walletAddress": "वॉलेट पता",
+      "cryptoFieldsRequired": "मुद्रा, नेटवर्क और वॉलेट पता सभी आवश्यक हैं",
+      "holderName": "खाताधारक का नाम",
+      "bankName": "बैंक का नाम",
+      "accountNumber": "खाता संख्या / IBAN",
+      "swiftBic": "SWIFT / BIC",
+      "bankFieldsRequired": "सभी बैंक विवरण आवश्यक हैं",
+      "fundMt5Note": "आपकी कैशबैक हमारी टीम द्वारा सीधे इस MT5 ट्रेडिंग खाते में जमा की जाएगी।",
+      "submitBtn": "अनुरोध भेजें",
+      "submitting": "भेजा जा रहा है…",
+      "submitFailed": "निकासी अनुरोध भेजने में विफल",
+      "success": "निकासी अनुरोध भेजा गया — समीक्षा लंबित है।",
+      "closeBtn": "बंद करें"
     }
   },
   "account": {
@@ -517,34 +555,40 @@
     "passwordUpdated": "पासवर्ड अपडेट हो गया।",
     "updatePassword": "पासवर्ड अपडेट करें",
     "tabs": {
-      "personal": "Personal Info",
-      "security": "Security",
-      "wallet": "Wallet",
-      "history": "History",
-      "manage": "Manage Accounts"
+      "personal": "व्यक्तिगत जानकारी",
+      "security": "सुरक्षा",
+      "wallet": "वॉलेट",
+      "history": "इतिहास",
+      "manage": "खाते प्रबंधित करें"
     },
     "wallet": {
-      "subtitle": "Your cashback per MT5 account.",
-      "statActual": "Actual balance",
-      "statEstimate": "System estimate",
-      "statLifetime": "Lifetime earned",
-      "statAccounts": "MT5 accounts",
-      "actualLabel": "Actual",
-      "estimateLabel": "System Estimate",
-      "estimateHint": "System Estimate is calculated automatically from your trades — it's the system's own evaluation, not yet credited to your Actual balance."
+      "subtitle": "प्रति MT5 खाता आपका कैशबैक।",
+      "statActual": "वास्तविक बैलेंस",
+      "statEstimate": "सिस्टम अनुमान",
+      "statLifetime": "कुल अर्जित",
+      "statAccounts": "MT5 खाते",
+      "actualLabel": "वास्तविक",
+      "estimateLabel": "सिस्टम अनुमान",
+      "estimateHint": "सिस्टम अनुमान आपके ट्रेडों से स्वतः गणना किया जाता है — यह सिस्टम का अपना आकलन है, अभी तक आपके वास्तविक बैलेंस में जमा नहीं हुआ है।"
     },
     "history": {
-      "subtitle": "Every credit and debit across your linked accounts."
+      "subtitle": "आपके जुड़े खातों में हर क्रेडिट और डेबिट।",
+      "withdrawalStatus": {
+        "pending": "समीक्षा लंबित",
+        "approved": "स्वीकृत",
+        "rejected": "अस्वीकृत"
+      },
+      "rejectionReason": "कारण: {reason}"
     },
     "manage": {
-      "subtitle": "Link additional MT5 accounts to start earning cashback on them too.",
-      "remove": "Remove",
-      "removing": "Removing…",
-      "removeConfirm": "Remove {broker} MT5 #{mt5Number}? This can't be undone.",
-      "removeFailed": "Failed to remove account",
-      "reconnect": "Reconnect",
-      "reconnecting": "Reconnecting…",
-      "reconnectFailed": "Failed to reconnect account"
+      "subtitle": "अतिरिक्त MT5 खाते जोड़ें ताकि उन पर भी कैशबैक कमाना शुरू करें।",
+      "remove": "हटाएं",
+      "removing": "हटाया जा रहा है…",
+      "removeConfirm": "{broker} MT5 #{mt5Number} हटाएं? इसे वापस नहीं किया जा सकता।",
+      "removeFailed": "खाता हटाने में विफल",
+      "reconnect": "फिर से कनेक्ट करें",
+      "reconnecting": "फिर से कनेक्ट हो रहा है…",
+      "reconnectFailed": "खाता फिर से कनेक्ट करने में विफल"
     }
   },
   "referrals": {
@@ -1142,7 +1186,12 @@
     "addRegulation": "+ विनियमन जोड़ें",
     "licenseNumberPlaceholder": "लाइसेंस नंबर",
     "activeSincePlaceholder": "सक्रिय, जैसे 2013 से",
-    "spreadsNoAccountTypesHint": "प्रति खाता प्रकार स्प्रेड दर्ज करने के लिए ऊपर खाता प्रकार जोड़ें।"
+    "spreadsNoAccountTypesHint": "प्रति खाता प्रकार स्प्रेड दर्ज करने के लिए ऊपर खाता प्रकार जोड़ें।",
+    "withdrawalMethods": "कैशबैक निकासी विधियां",
+    "withdrawalMethodsHint": "ग्राहक इस ब्रोकर के खातों से कैशबैक निकालने के लिए किन तरीकों का उपयोग कर सकते हैं। यदि अभी निकासी उपलब्ध नहीं करानी है तो सभी को अनचेक छोड़ दें।",
+    "withdrawalMethod_crypto": "क्रिप्टो",
+    "withdrawalMethod_bank_wire": "बैंक वायर",
+    "withdrawalMethod_fund_mt5": "उसी MT5 खाते में जमा करें"
   },
   "adminAdsCampaigns": {
     "title": "विज्ञापन अभियान",
@@ -1388,5 +1437,43 @@
     "platforms": "प्लेटफॉर्म",
     "pros": "ताकत",
     "cons": "ध्यान देने योग्य बातें"
+  },
+  "adminWithdrawalRequests": {
+    "title": "निकासी अनुरोध",
+    "subtitle": "समीक्षा की प्रतीक्षा में कैशबैक निकासी अनुरोध। स्वीकृत करने पर ग्राहक के लेनदेन इतिहास में डेबिट दर्ज होता है; अस्वीकार करने पर राशि उसके बैलेंस में वापस कर दी जाती है। वास्तविक स्थानांतरण (क्रिप्टो/वायर/ब्रोकर क्रेडिट) इस सिस्टम के बाहर मैन्युअल रूप से किया जाता है।",
+    "broker": "ब्रोकर",
+    "mt5Number": "MT5 #",
+    "method": "विधि",
+    "destination": "गंतव्य",
+    "amount": "राशि",
+    "status": "स्थिति",
+    "actions": "कार्रवाई",
+    "loading": "लोड हो रहा है…",
+    "none": "अभी तक कोई निकासी अनुरोध नहीं है।",
+    "noneForStatus": "इस स्थिति वाला कोई निकासी अनुरोध नहीं है।",
+    "filterAll": "सभी स्थितियां",
+    "method_crypto": "क्रिप्टो",
+    "method_bank_wire": "बैंक वायर",
+    "method_fund_mt5": "उसी MT5 खाते में जमा करें",
+    "labelCurrency": "मुद्रा",
+    "labelNetwork": "नेटवर्क",
+    "labelWalletAddress": "वॉलेट",
+    "labelHolderName": "खाताधारक",
+    "labelBankName": "बैंक",
+    "labelAccountNumber": "खाता",
+    "labelSwiftBic": "SWIFT/BIC",
+    "fundMt5Destination": "सीधे MT5 #{mt5Number} में जमा करें",
+    "status_pending": "लंबित",
+    "status_approved": "स्वीकृत",
+    "status_rejected": "अस्वीकृत",
+    "approve": "स्वीकृत करें",
+    "reject": "अस्वीकार करें",
+    "cancel": "रद्द करें",
+    "rejectNote": "कारण (वैकल्पिक)",
+    "rejectNotePlaceholder": "यह अनुरोध क्यों अस्वीकार किया जा रहा है…",
+    "rejecting": "अस्वीकार किया जा रहा है…",
+    "confirmReject": "अस्वीकृति की पुष्टि करें",
+    "reviewFailed": "इस अनुरोध की समीक्षा करने में विफल",
+    "loadFailed": "निकासी अनुरोध लोड करने में विफल"
   }
 }

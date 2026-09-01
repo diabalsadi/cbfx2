@@ -49,6 +49,7 @@ def _to_schema(account: MT5Account, broker: Broker, pending: float = 0.0) -> MT5
         lifetime_earned=account.lifetime_earned,
         pending_expected_amount=pending,
         metaapi_connection_status=account.metaapi_connection_status,
+        withdrawal_methods=broker.withdrawal_methods or [],
         created_at=account.created_at,
     )
 

@@ -15,7 +15,8 @@
     "signIn": "Iniciar sesión",
     "getStarted": "Comenzar",
     "menu": "Menú",
-    "toggleTheme": "Cambiar tema"
+    "toggleTheme": "Cambiar tema",
+    "withdrawalRequests": "Solicitudes de Retiro"
   },
   "admin": {
     "nav": {
@@ -484,6 +485,43 @@
     "brokersStrip": {
       "title": "Brókers que ofrecen cashback",
       "upToCashback": "Hasta {rate}% de reembolso"
+    },
+    "withdrawModal": {
+      "title": "Retirar Cashback",
+      "account": "Cuenta MT5",
+      "accountOption": "{broker} — MT5 #{mt5Number} (${balance} disponible)",
+      "selectAccountError": "Por favor selecciona una cuenta",
+      "noEligibleAccounts": "Ninguna de tus cuentas MT5 tiene actualmente saldo disponible para retirar.",
+      "method": "Método de Retiro",
+      "selectMethod": "Selecciona un método…",
+      "selectMethodError": "Por favor selecciona un método de retiro",
+      "noMethodsForBroker": "Este bróker aún no ofrece retiros.",
+      "method_crypto": "Cripto",
+      "method_bank_wire": "Transferencia bancaria",
+      "method_fund_mt5": "Depositar en la misma cuenta MT5",
+      "amount": "Monto",
+      "amountPlaceholder": "p. ej. 50.00",
+      "availableForAccount": "${amount} disponible en esta cuenta.",
+      "useMax": "Usar máximo",
+      "amountRequiredError": "Ingresa un monto mayor que cero",
+      "amountExceedsBalance": "El monto supera el saldo disponible de esta cuenta",
+      "currency": "Moneda",
+      "currencyPlaceholder": "p. ej. USDT",
+      "network": "Red",
+      "networkPlaceholder": "p. ej. TRC20",
+      "walletAddress": "Dirección de Billetera",
+      "cryptoFieldsRequired": "La moneda, la red y la dirección de billetera son obligatorias",
+      "holderName": "Nombre del Titular",
+      "bankName": "Nombre del Banco",
+      "accountNumber": "Número de Cuenta / IBAN",
+      "swiftBic": "SWIFT / BIC",
+      "bankFieldsRequired": "Todos los datos bancarios son obligatorios",
+      "fundMt5Note": "Tu cashback será acreditado directamente en esta cuenta de trading MT5 por nuestro equipo.",
+      "submitBtn": "Enviar Solicitud",
+      "submitting": "Enviando…",
+      "submitFailed": "Error al enviar la solicitud de retiro",
+      "success": "Solicitud de retiro enviada — pendiente de revisión.",
+      "closeBtn": "Cerrar"
     }
   },
   "account": {
@@ -517,34 +555,40 @@
     "passwordUpdated": "Contraseña actualizada.",
     "updatePassword": "Actualizar contraseña",
     "tabs": {
-      "personal": "Personal Info",
-      "security": "Security",
-      "wallet": "Wallet",
-      "history": "History",
-      "manage": "Manage Accounts"
+      "personal": "Información Personal",
+      "security": "Seguridad",
+      "wallet": "Billetera",
+      "history": "Historial",
+      "manage": "Administrar Cuentas"
     },
     "wallet": {
-      "subtitle": "Your cashback per MT5 account.",
-      "statActual": "Actual balance",
-      "statEstimate": "System estimate",
-      "statLifetime": "Lifetime earned",
-      "statAccounts": "MT5 accounts",
-      "actualLabel": "Actual",
-      "estimateLabel": "System Estimate",
-      "estimateHint": "System Estimate is calculated automatically from your trades — it's the system's own evaluation, not yet credited to your Actual balance."
+      "subtitle": "Tu cashback por cuenta MT5.",
+      "statActual": "Saldo real",
+      "statEstimate": "Estimación del sistema",
+      "statLifetime": "Ganado en total",
+      "statAccounts": "Cuentas MT5",
+      "actualLabel": "Real",
+      "estimateLabel": "Estimación del Sistema",
+      "estimateHint": "La Estimación del Sistema se calcula automáticamente a partir de tus operaciones — es la propia evaluación del sistema, aún no acreditada a tu saldo real."
     },
     "history": {
-      "subtitle": "Every credit and debit across your linked accounts."
+      "subtitle": "Cada crédito y débito en tus cuentas vinculadas.",
+      "withdrawalStatus": {
+        "pending": "En revisión",
+        "approved": "Aprobado",
+        "rejected": "Rechazado"
+      },
+      "rejectionReason": "Motivo: {reason}"
     },
     "manage": {
-      "subtitle": "Link additional MT5 accounts to start earning cashback on them too.",
-      "remove": "Remove",
-      "removing": "Removing…",
-      "removeConfirm": "Remove {broker} MT5 #{mt5Number}? This can't be undone.",
-      "removeFailed": "Failed to remove account",
-      "reconnect": "Reconnect",
-      "reconnecting": "Reconnecting…",
-      "reconnectFailed": "Failed to reconnect account"
+      "subtitle": "Vincula cuentas MT5 adicionales para empezar a ganar cashback también en ellas.",
+      "remove": "Eliminar",
+      "removing": "Eliminando…",
+      "removeConfirm": "¿Eliminar {broker} MT5 #{mt5Number}? Esta acción no se puede deshacer.",
+      "removeFailed": "No se pudo eliminar la cuenta",
+      "reconnect": "Reconectar",
+      "reconnecting": "Reconectando…",
+      "reconnectFailed": "No se pudo reconectar la cuenta"
     }
   },
   "referrals": {
@@ -1142,7 +1186,12 @@
     "addRegulation": "+ Agregar regulación",
     "licenseNumberPlaceholder": "Número de licencia",
     "activeSincePlaceholder": "Activo desde, ej. 2013",
-    "spreadsNoAccountTypesHint": "Agrega tipos de cuenta arriba para ingresar un spread por tipo de cuenta."
+    "spreadsNoAccountTypesHint": "Agrega tipos de cuenta arriba para ingresar un spread por tipo de cuenta.",
+    "withdrawalMethods": "Métodos de Retiro de Cashback",
+    "withdrawalMethodsHint": "Qué métodos pueden usar los clientes para retirar el cashback de las cuentas de este bróker. Deja todo sin marcar si aún no se ofrecen retiros.",
+    "withdrawalMethod_crypto": "Cripto",
+    "withdrawalMethod_bank_wire": "Transferencia bancaria",
+    "withdrawalMethod_fund_mt5": "Depositar en la misma cuenta MT5"
   },
   "adminAdsCampaigns": {
     "title": "Campañas publicitarias",
@@ -1388,5 +1437,43 @@
     "platforms": "Plataformas",
     "pros": "Fortalezas",
     "cons": "A tener en cuenta"
+  },
+  "adminWithdrawalRequests": {
+    "title": "Solicitudes de Retiro",
+    "subtitle": "Solicitudes de retiro de cashback pendientes de revisión. Aprobar registra el débito en el historial de transacciones del cliente; rechazar reembolsa el monto a su saldo. La transferencia real (cripto/transferencia/crédito del bróker) se realiza manualmente fuera de este sistema.",
+    "broker": "Bróker",
+    "mt5Number": "MT5 #",
+    "method": "Método",
+    "destination": "Destino",
+    "amount": "Monto",
+    "status": "Estado",
+    "actions": "Acciones",
+    "loading": "Cargando…",
+    "none": "Aún no hay solicitudes de retiro.",
+    "noneForStatus": "No hay solicitudes de retiro con este estado.",
+    "filterAll": "Todos los estados",
+    "method_crypto": "Cripto",
+    "method_bank_wire": "Transferencia bancaria",
+    "method_fund_mt5": "Depositar en la misma cuenta MT5",
+    "labelCurrency": "Moneda",
+    "labelNetwork": "Red",
+    "labelWalletAddress": "Billetera",
+    "labelHolderName": "Titular",
+    "labelBankName": "Banco",
+    "labelAccountNumber": "Cuenta",
+    "labelSwiftBic": "SWIFT/BIC",
+    "fundMt5Destination": "Acreditar directamente a la cuenta MT5 #{mt5Number}",
+    "status_pending": "Pendiente",
+    "status_approved": "Aprobado",
+    "status_rejected": "Rechazado",
+    "approve": "Aprobar",
+    "reject": "Rechazar",
+    "cancel": "Cancelar",
+    "rejectNote": "Motivo (opcional)",
+    "rejectNotePlaceholder": "Por qué se rechaza esta solicitud…",
+    "rejecting": "Rechazando…",
+    "confirmReject": "Confirmar Rechazo",
+    "reviewFailed": "Error al revisar esta solicitud",
+    "loadFailed": "Error al cargar las solicitudes de retiro"
   }
 }

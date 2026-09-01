@@ -15,7 +15,8 @@
     "signIn": "تسجيل الدخول",
     "getStarted": "ابدأ الآن",
     "menu": "القائمة",
-    "toggleTheme": "تبديل المظهر"
+    "toggleTheme": "تبديل المظهر",
+    "withdrawalRequests": "طلبات السحب"
   },
   "admin": {
     "nav": {
@@ -484,6 +485,43 @@
     "brokersStrip": {
       "title": "الوسطاء الذين يقدمون استرداد نقدي",
       "upToCashback": "استرداد نقدي حتى {rate}%"
+    },
+    "withdrawModal": {
+      "title": "سحب الكاش باك",
+      "account": "حساب MT5",
+      "accountOption": "{broker} — MT5 #{mt5Number} (المتاح ${balance})",
+      "selectAccountError": "الرجاء اختيار حساب",
+      "noEligibleAccounts": "لا يوجد لدى أي من حسابات MT5 الخاصة بك رصيد قابل للسحب حاليًا.",
+      "method": "طريقة السحب",
+      "selectMethod": "اختر طريقة…",
+      "selectMethodError": "الرجاء اختيار طريقة سحب",
+      "noMethodsForBroker": "هذا الوسيط لا يوفر السحوبات بعد.",
+      "method_crypto": "عملات رقمية",
+      "method_bank_wire": "تحويل بنكي",
+      "method_fund_mt5": "تمويل نفس حساب MT5",
+      "amount": "المبلغ",
+      "amountPlaceholder": "مثال: 50.00",
+      "availableForAccount": "${amount} متاح في هذا الحساب.",
+      "useMax": "استخدام الحد الأقصى",
+      "amountRequiredError": "أدخل مبلغًا أكبر من صفر",
+      "amountExceedsBalance": "المبلغ يتجاوز الرصيد المتاح لهذا الحساب",
+      "currency": "العملة",
+      "currencyPlaceholder": "مثال: USDT",
+      "network": "الشبكة",
+      "networkPlaceholder": "مثال: TRC20",
+      "walletAddress": "عنوان المحفظة",
+      "cryptoFieldsRequired": "العملة والشبكة وعنوان المحفظة كلها مطلوبة",
+      "holderName": "اسم صاحب الحساب",
+      "bankName": "اسم البنك",
+      "accountNumber": "رقم الحساب / IBAN",
+      "swiftBic": "SWIFT / BIC",
+      "bankFieldsRequired": "جميع بيانات البنك مطلوبة",
+      "fundMt5Note": "سيتم إيداع الكاش باك مباشرة في حساب التداول MT5 هذا من قِبل فريقنا.",
+      "submitBtn": "إرسال الطلب",
+      "submitting": "جارٍ الإرسال…",
+      "submitFailed": "فشل إرسال طلب السحب",
+      "success": "تم إرسال طلب السحب — بانتظار المراجعة.",
+      "closeBtn": "إغلاق"
     }
   },
   "account": {
@@ -517,34 +555,40 @@
     "passwordUpdated": "تم تحديث كلمة المرور.",
     "updatePassword": "تحديث كلمة المرور",
     "tabs": {
-      "personal": "Personal Info",
-      "security": "Security",
-      "wallet": "Wallet",
-      "history": "History",
-      "manage": "Manage Accounts"
+      "personal": "المعلومات الشخصية",
+      "security": "الأمان",
+      "wallet": "المحفظة",
+      "history": "السجل",
+      "manage": "إدارة الحسابات"
     },
     "wallet": {
-      "subtitle": "Your cashback per MT5 account.",
-      "statActual": "Actual balance",
-      "statEstimate": "System estimate",
-      "statLifetime": "Lifetime earned",
-      "statAccounts": "MT5 accounts",
-      "actualLabel": "Actual",
-      "estimateLabel": "System Estimate",
-      "estimateHint": "System Estimate is calculated automatically from your trades — it's the system's own evaluation, not yet credited to your Actual balance."
+      "subtitle": "الكاش باك الخاص بك لكل حساب MT5.",
+      "statActual": "الرصيد الفعلي",
+      "statEstimate": "التقدير النظامي",
+      "statLifetime": "إجمالي الأرباح",
+      "statAccounts": "حسابات MT5",
+      "actualLabel": "الفعلي",
+      "estimateLabel": "التقدير النظامي",
+      "estimateHint": "يُحسب التقدير النظامي تلقائيًا من صفقاتك — وهو تقييم النظام الخاص، ولم يُضَف بعد إلى رصيدك الفعلي."
     },
     "history": {
-      "subtitle": "Every credit and debit across your linked accounts."
+      "subtitle": "كل عملية إيداع وسحب عبر حساباتك المرتبطة.",
+      "withdrawalStatus": {
+        "pending": "قيد المراجعة",
+        "approved": "تمت الموافقة",
+        "rejected": "مرفوض"
+      },
+      "rejectionReason": "السبب: {reason}"
     },
     "manage": {
-      "subtitle": "Link additional MT5 accounts to start earning cashback on them too.",
-      "remove": "Remove",
-      "removing": "Removing…",
-      "removeConfirm": "Remove {broker} MT5 #{mt5Number}? This can't be undone.",
-      "removeFailed": "Failed to remove account",
-      "reconnect": "Reconnect",
-      "reconnecting": "Reconnecting…",
-      "reconnectFailed": "Failed to reconnect account"
+      "subtitle": "اربط حسابات MT5 إضافية لتبدأ بكسب الكاش باك عليها أيضًا.",
+      "remove": "إزالة",
+      "removing": "جارٍ الإزالة…",
+      "removeConfirm": "إزالة {broker} MT5 #{mt5Number}؟ لا يمكن التراجع عن هذا.",
+      "removeFailed": "فشلت إزالة الحساب",
+      "reconnect": "إعادة الاتصال",
+      "reconnecting": "جارٍ إعادة الاتصال…",
+      "reconnectFailed": "فشلت إعادة اتصال الحساب"
     }
   },
   "referrals": {
@@ -1142,7 +1186,12 @@
     "addRegulation": "+ إضافة ترخيص",
     "licenseNumberPlaceholder": "رقم الترخيص",
     "activeSincePlaceholder": "فعّال منذ، مثال: 2013",
-    "spreadsNoAccountTypesHint": "أضف أنواع الحسابات أعلاه لإدخال سبريد لكل نوع حساب."
+    "spreadsNoAccountTypesHint": "أضف أنواع الحسابات أعلاه لإدخال سبريد لكل نوع حساب.",
+    "withdrawalMethods": "طرق سحب الكاش باك",
+    "withdrawalMethodsHint": "الطرق التي يمكن للعملاء استخدامها لسحب الكاش باك من حسابات هذا الوسيط. اترك الكل غير محدد إذا لم تكن السحوبات متاحة بعد.",
+    "withdrawalMethod_crypto": "عملات رقمية",
+    "withdrawalMethod_bank_wire": "تحويل بنكي",
+    "withdrawalMethod_fund_mt5": "تمويل نفس حساب MT5"
   },
   "adminAdsCampaigns": {
     "title": "الحملات الإعلانية",
@@ -1388,5 +1437,43 @@
     "platforms": "المنصات",
     "pros": "نقاط القوة",
     "cons": "تنبيهات"
+  },
+  "adminWithdrawalRequests": {
+    "title": "طلبات السحب",
+    "subtitle": "طلبات سحب الكاش باك بانتظار المراجعة. الموافقة تُسجّل الخصم في سجل معاملات العميل؛ الرفض يُعيد المبلغ إلى رصيده. التحويل الفعلي (عملات رقمية/تحويل بنكي/إيداع لدى الوسيط) يتم يدويًا خارج هذا النظام.",
+    "broker": "الوسيط",
+    "mt5Number": "رقم MT5",
+    "method": "الطريقة",
+    "destination": "الوجهة",
+    "amount": "المبلغ",
+    "status": "الحالة",
+    "actions": "الإجراءات",
+    "loading": "جارٍ التحميل…",
+    "none": "لا توجد طلبات سحب بعد.",
+    "noneForStatus": "لا توجد طلبات سحب بهذه الحالة.",
+    "filterAll": "كل الحالات",
+    "method_crypto": "عملات رقمية",
+    "method_bank_wire": "تحويل بنكي",
+    "method_fund_mt5": "تمويل نفس حساب MT5",
+    "labelCurrency": "العملة",
+    "labelNetwork": "الشبكة",
+    "labelWalletAddress": "المحفظة",
+    "labelHolderName": "صاحب الحساب",
+    "labelBankName": "البنك",
+    "labelAccountNumber": "الحساب",
+    "labelSwiftBic": "SWIFT/BIC",
+    "fundMt5Destination": "إيداع مباشر في حساب MT5 #{mt5Number}",
+    "status_pending": "قيد الانتظار",
+    "status_approved": "تمت الموافقة",
+    "status_rejected": "مرفوض",
+    "approve": "موافقة",
+    "reject": "رفض",
+    "cancel": "إلغاء",
+    "rejectNote": "السبب (اختياري)",
+    "rejectNotePlaceholder": "سبب رفض هذا الطلب…",
+    "rejecting": "جارٍ الرفض…",
+    "confirmReject": "تأكيد الرفض",
+    "reviewFailed": "فشلت مراجعة هذا الطلب",
+    "loadFailed": "فشل تحميل طلبات السحب"
   }
 }

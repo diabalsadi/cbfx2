@@ -9,6 +9,7 @@ import {
   type FundingMethod,
   type SpreadInfo,
   type RegulationEntry,
+  type WithdrawalMethod,
 } from "@/helpers/api";
 import { useAuth } from "@/contexts/AuthContext";
 import ScoreBadge from "@/components/ScoreBadge";
@@ -49,6 +50,9 @@ export interface Broker {
   spreads: SpreadInfo[];
   platforms: PlatformInfo[];
   funding_methods: FundingMethod[];
+  // Which cashback withdrawal methods this broker offers — empty means
+  // withdrawals aren't available yet for this broker's customers.
+  withdrawal_methods: WithdrawalMethod[];
   support_channels: string[];
   support_languages: string[];
   support_hours: string | null;
@@ -90,6 +94,7 @@ const EMPTY_FORM = {
   spreads: [] as SpreadInfo[],
   platforms: [] as PlatformInfo[],
   funding_methods: [] as FundingMethod[],
+  withdrawal_methods: [] as WithdrawalMethod[],
   support_channels: "",
   support_languages: "",
   support_hours: "",
@@ -204,6 +209,7 @@ export default function BrokersAdminPage() {
       spreads: broker.spreads || [],
       platforms: broker.platforms || [],
       funding_methods: broker.funding_methods || [],
+      withdrawal_methods: broker.withdrawal_methods || [],
       support_channels: (broker.support_channels || []).join(", "),
       support_languages: (broker.support_languages || []).join(", "),
       support_hours: broker.support_hours || "",
@@ -496,6 +502,7 @@ export default function BrokersAdminPage() {
         spreads: formData.spreads.filter((s) => s.category || (s.symbol && s.symbol.trim())),
         platforms: formData.platforms.filter((p) => p.name.trim()),
         funding_methods: formData.funding_methods.filter((f) => f.method.trim()),
+        withdrawal_methods: formData.withdrawal_methods,
         support_channels: formData.support_channels
           .split(",")
           .map((s) => s.trim())
@@ -1205,6 +1212,28 @@ export default function BrokersAdminPage() {
                     {t("remove")}
                   </button>
                 </div>
+              ))}
+            </div>
+
+            <div className={styles.field}>
+              <label className={styles.label}>{t("withdrawalMethods")}</label>
+              <p className={styles.hint}>{t("withdrawalMethodsHint")}</p>
+              {(["crypto", "bank_wire", "fund_mt5"] as WithdrawalMethod[]).map((method) => (
+                <label key={method} className={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={formData.withdrawal_methods.includes(method)}
+                    onChange={(e) =>
+                      setFormData((v) => ({
+                        ...v,
+                        withdrawal_methods: e.target.checked
+                          ? [...v.withdrawal_methods, method]
+                          : v.withdrawal_methods.filter((m) => m !== method),
+                      }))
+                    }
+                  />
+                  {t(`withdrawalMethod_${method}`)}
+                </label>
               ))}
             </div>
 

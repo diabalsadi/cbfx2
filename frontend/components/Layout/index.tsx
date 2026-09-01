@@ -83,6 +83,12 @@ const navItems = [
     roles: ["super_admin"],
   },
   {
+    labelKey: "withdrawalRequests",
+    href: "/admin/withdrawal-requests",
+    icon: "↓",
+    roles: ["super_admin"],
+  },
+  {
     labelKey: "mt5Accounts",
     href: "/admin/mt5-accounts",
     icon: "⎋",

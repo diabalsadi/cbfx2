@@ -15,7 +15,8 @@
     "signIn": "Đăng nhập",
     "getStarted": "Bắt đầu",
     "menu": "Menu",
-    "toggleTheme": "Chuyển giao diện"
+    "toggleTheme": "Chuyển giao diện",
+    "withdrawalRequests": "Yêu Cầu Rút Tiền"
   },
   "admin": {
     "nav": {
@@ -484,6 +485,43 @@
     "brokersStrip": {
       "title": "Sàn giao dịch cung cấp hoàn tiền",
       "upToCashback": "Hoàn tiền lên đến {rate}%"
+    },
+    "withdrawModal": {
+      "title": "Rút Hoàn Tiền",
+      "account": "Tài Khoản MT5",
+      "accountOption": "{broker} — MT5 #{mt5Number} (còn ${balance})",
+      "selectAccountError": "Vui lòng chọn một tài khoản",
+      "noEligibleAccounts": "Hiện không có tài khoản MT5 nào của bạn có số dư khả dụng để rút.",
+      "method": "Phương Thức Rút Tiền",
+      "selectMethod": "Chọn một phương thức…",
+      "selectMethodError": "Vui lòng chọn phương thức rút tiền",
+      "noMethodsForBroker": "Sàn này chưa hỗ trợ rút tiền.",
+      "method_crypto": "Tiền điện tử",
+      "method_bank_wire": "Chuyển khoản ngân hàng",
+      "method_fund_mt5": "Nạp vào cùng tài khoản MT5",
+      "amount": "Số Tiền",
+      "amountPlaceholder": "vd: 50.00",
+      "availableForAccount": "${amount} khả dụng trên tài khoản này.",
+      "useMax": "Dùng tối đa",
+      "amountRequiredError": "Nhập số tiền lớn hơn 0",
+      "amountExceedsBalance": "Số tiền vượt quá số dư khả dụng của tài khoản này",
+      "currency": "Loại Tiền",
+      "currencyPlaceholder": "vd: USDT",
+      "network": "Mạng Lưới",
+      "networkPlaceholder": "vd: TRC20",
+      "walletAddress": "Địa Chỉ Ví",
+      "cryptoFieldsRequired": "Loại tiền, mạng lưới và địa chỉ ví đều bắt buộc",
+      "holderName": "Tên Chủ Tài Khoản",
+      "bankName": "Tên Ngân Hàng",
+      "accountNumber": "Số Tài Khoản / IBAN",
+      "swiftBic": "SWIFT / BIC",
+      "bankFieldsRequired": "Tất cả thông tin ngân hàng đều bắt buộc",
+      "fundMt5Note": "Hoàn tiền của bạn sẽ được đội ngũ của chúng tôi nạp trực tiếp vào tài khoản giao dịch MT5 này.",
+      "submitBtn": "Gửi Yêu Cầu",
+      "submitting": "Đang gửi…",
+      "submitFailed": "Gửi yêu cầu rút tiền thất bại",
+      "success": "Đã gửi yêu cầu rút tiền — đang chờ duyệt.",
+      "closeBtn": "Đóng"
     }
   },
   "account": {
@@ -517,34 +555,40 @@
     "passwordUpdated": "Đã cập nhật mật khẩu.",
     "updatePassword": "Cập nhật mật khẩu",
     "tabs": {
-      "personal": "Personal Info",
-      "security": "Security",
-      "wallet": "Wallet",
-      "history": "History",
-      "manage": "Manage Accounts"
+      "personal": "Thông Tin Cá Nhân",
+      "security": "Bảo Mật",
+      "wallet": "Ví",
+      "history": "Lịch Sử",
+      "manage": "Quản Lý Tài Khoản"
     },
     "wallet": {
-      "subtitle": "Your cashback per MT5 account.",
-      "statActual": "Actual balance",
-      "statEstimate": "System estimate",
-      "statLifetime": "Lifetime earned",
-      "statAccounts": "MT5 accounts",
-      "actualLabel": "Actual",
-      "estimateLabel": "System Estimate",
-      "estimateHint": "System Estimate is calculated automatically from your trades — it's the system's own evaluation, not yet credited to your Actual balance."
+      "subtitle": "Hoàn tiền của bạn theo từng tài khoản MT5.",
+      "statActual": "Số dư thực tế",
+      "statEstimate": "Ước tính hệ thống",
+      "statLifetime": "Tổng đã kiếm được",
+      "statAccounts": "Tài khoản MT5",
+      "actualLabel": "Thực tế",
+      "estimateLabel": "Ước Tính Hệ Thống",
+      "estimateHint": "Ước Tính Hệ Thống được tự động tính từ các giao dịch của bạn — đây là đánh giá riêng của hệ thống, chưa được cộng vào Số Dư Thực Tế của bạn."
     },
     "history": {
-      "subtitle": "Every credit and debit across your linked accounts."
+      "subtitle": "Mọi khoản ghi có và ghi nợ trên các tài khoản đã liên kết của bạn.",
+      "withdrawalStatus": {
+        "pending": "Đang chờ duyệt",
+        "approved": "Đã duyệt",
+        "rejected": "Đã từ chối"
+      },
+      "rejectionReason": "Lý do: {reason}"
     },
     "manage": {
-      "subtitle": "Link additional MT5 accounts to start earning cashback on them too.",
-      "remove": "Remove",
-      "removing": "Removing…",
-      "removeConfirm": "Remove {broker} MT5 #{mt5Number}? This can't be undone.",
-      "removeFailed": "Failed to remove account",
-      "reconnect": "Reconnect",
-      "reconnecting": "Reconnecting…",
-      "reconnectFailed": "Failed to reconnect account"
+      "subtitle": "Liên kết thêm tài khoản MT5 để bắt đầu kiếm hoàn tiền trên đó nữa.",
+      "remove": "Xóa",
+      "removing": "Đang xóa…",
+      "removeConfirm": "Xóa {broker} MT5 #{mt5Number}? Không thể hoàn tác thao tác này.",
+      "removeFailed": "Xóa tài khoản thất bại",
+      "reconnect": "Kết nối lại",
+      "reconnecting": "Đang kết nối lại…",
+      "reconnectFailed": "Kết nối lại tài khoản thất bại"
     }
   },
   "referrals": {
@@ -1142,7 +1186,12 @@
     "addRegulation": "+ Thêm giấy phép",
     "licenseNumberPlaceholder": "Số giấy phép",
     "activeSincePlaceholder": "Hoạt động từ, vd. 2013",
-    "spreadsNoAccountTypesHint": "Thêm loại tài khoản ở trên để nhập spread cho từng loại tài khoản."
+    "spreadsNoAccountTypesHint": "Thêm loại tài khoản ở trên để nhập spread cho từng loại tài khoản.",
+    "withdrawalMethods": "Phương Thức Rút Hoàn Tiền",
+    "withdrawalMethodsHint": "Khách hàng có thể dùng phương thức nào để rút hoàn tiền từ tài khoản của sàn này. Để trống tất cả nếu chưa hỗ trợ rút tiền.",
+    "withdrawalMethod_crypto": "Tiền điện tử",
+    "withdrawalMethod_bank_wire": "Chuyển khoản ngân hàng",
+    "withdrawalMethod_fund_mt5": "Nạp vào cùng tài khoản MT5"
   },
   "adminAdsCampaigns": {
     "title": "Chiến dịch quảng cáo",
@@ -1388,5 +1437,43 @@
     "platforms": "Nền tảng",
     "pros": "Điểm mạnh",
     "cons": "Cần lưu ý"
+  },
+  "adminWithdrawalRequests": {
+    "title": "Yêu Cầu Rút Tiền",
+    "subtitle": "Các yêu cầu rút hoàn tiền đang chờ duyệt. Duyệt sẽ ghi khoản ghi nợ vào lịch sử giao dịch của khách hàng; từ chối sẽ hoàn lại số tiền vào số dư của họ. Việc chuyển tiền thực tế (tiền điện tử/chuyển khoản/nạp tại sàn) được thực hiện thủ công bên ngoài hệ thống này.",
+    "broker": "Sàn",
+    "mt5Number": "MT5 #",
+    "method": "Phương Thức",
+    "destination": "Điểm Đến",
+    "amount": "Số Tiền",
+    "status": "Trạng Thái",
+    "actions": "Hành Động",
+    "loading": "Đang tải…",
+    "none": "Chưa có yêu cầu rút tiền nào.",
+    "noneForStatus": "Không có yêu cầu rút tiền nào với trạng thái này.",
+    "filterAll": "Tất cả trạng thái",
+    "method_crypto": "Tiền điện tử",
+    "method_bank_wire": "Chuyển khoản ngân hàng",
+    "method_fund_mt5": "Nạp vào cùng tài khoản MT5",
+    "labelCurrency": "Loại Tiền",
+    "labelNetwork": "Mạng Lưới",
+    "labelWalletAddress": "Ví",
+    "labelHolderName": "Chủ Tài Khoản",
+    "labelBankName": "Ngân Hàng",
+    "labelAccountNumber": "Tài Khoản",
+    "labelSwiftBic": "SWIFT/BIC",
+    "fundMt5Destination": "Nạp trực tiếp vào tài khoản MT5 #{mt5Number}",
+    "status_pending": "Đang chờ",
+    "status_approved": "Đã duyệt",
+    "status_rejected": "Đã từ chối",
+    "approve": "Duyệt",
+    "reject": "Từ chối",
+    "cancel": "Hủy",
+    "rejectNote": "Lý do (không bắt buộc)",
+    "rejectNotePlaceholder": "Lý do từ chối yêu cầu này…",
+    "rejecting": "Đang từ chối…",
+    "confirmReject": "Xác Nhận Từ Chối",
+    "reviewFailed": "Xem xét yêu cầu này thất bại",
+    "loadFailed": "Tải yêu cầu rút tiền thất bại"
   }
 }
