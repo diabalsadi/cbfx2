@@ -1,5 +1,4 @@
 from pathlib import Path
-import uuid
 
 from fastapi import (
     APIRouter,
@@ -19,6 +18,7 @@ from typing import List, Optional
 from app.database import get_db
 from app.models.forum_thread import ForumThread as ForumThreadModel
 from app.models.forum_reply import ForumReply as ForumReplyModel
+from app.services import r2_storage
 from app.utils.cache import purge_public_cache
 from app.schemas.forum import (
     ForumThread,
@@ -52,20 +52,22 @@ ALLOWED_IMAGE_TYPES = {
 
 
 def _save_uploaded_image(upload: Optional[UploadFile]) -> Optional[str]:
+    """Uploads to the shared R2 bucket under forum/ (see
+    app/services/r2_storage.py:upload_forum_image) and returns its public
+    URL directly, stored as-is on image_url — no local disk involved, so it
+    survives redeploys and works across multiple instances. GET
+    /forum/uploads/{filename} below still serves any images uploaded before
+    this switch, from whatever's left in the local uploads/ directory."""
     if upload is None or upload.filename is None:
         return None
 
-    suffix = ALLOWED_IMAGE_TYPES.get((upload.content_type or "").lower())
-    if suffix is None:
-        raise HTTPException(
-            status_code=400,
-            detail="Unsupported image type. Allowed: PNG, JPEG, WEBP, GIF.",
-        )
-    filename = f"{uuid.uuid4().hex}{suffix}"
-    destination = UPLOAD_ROOT / filename
     contents = upload.file.read()
-    destination.write_bytes(contents)
-    return f"/api/proxy/forum/uploads/{filename}"
+    try:
+        return r2_storage.upload_forum_image(upload.filename, upload.content_type or "", contents)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
 
 
 @router.get("/uploads/{filename}")

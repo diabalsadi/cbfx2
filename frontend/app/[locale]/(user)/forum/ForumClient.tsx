@@ -1,7 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
-import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { forumApi, type ForumThread } from "@/helpers/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -32,6 +32,7 @@ export default function ForumPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     forumApi
@@ -55,6 +56,12 @@ export default function ForumPage() {
     setImagePreview(file ? URL.createObjectURL(file) : null);
   }
 
+  function clearImage() {
+    setImageFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
   async function createThread(event: FormEvent) {
     event.preventDefault();
     if (!title.trim()) return;
@@ -73,6 +80,7 @@ export default function ForumPage() {
       setBody("");
       setImageFile(null);
       setImagePreview(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
       setShowComposer(false);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t("unableToCreate"));
@@ -122,7 +130,65 @@ export default function ForumPage() {
             placeholder={t("bodyPlaceholder")}
             rows={4}
           />
-          <input type="file" accept="image/*" onChange={handleImageSelection} />
+          <div className={styles.fileUpload}>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageSelection}
+              className={styles.hiddenFileInput}
+            />
+            <button
+              type="button"
+              className={styles.attachButton}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <svg
+                className={styles.attachIcon}
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M14 9.5V13.5C14 14.0523 13.5523 14.5 13 14.5H3C2.44772 14.5 2 14.0523 2 13.5V9.5"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M11.5 5.5L8 2L4.5 5.5"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M8 2V10.5"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              {t("attachImage")}
+            </button>
+            {imageFile && (
+              <div className={styles.fileChip}>
+                <span className={styles.fileName}>{imageFile.name}</span>
+                <button
+                  type="button"
+                  className={styles.removeFile}
+                  onClick={clearImage}
+                  aria-label={t("removeImage")}
+                >
+                  ×
+                </button>
+              </div>
+            )}
+          </div>
           {imagePreview && (
             <img
               src={imagePreview}

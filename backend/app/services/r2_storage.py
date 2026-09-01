@@ -15,6 +15,7 @@ from botocore.client import Config
 
 IMAGES_PREFIX = "images/"
 REPORTS_PREFIX = "broker-reports/"
+FORUM_PREFIX = "forum/"
 
 # Extension is derived from this allowlist (never from the client-supplied
 # filename), matching the pattern in routers/forum.py — keeps the store from
@@ -136,6 +137,28 @@ def delete_image(key: str) -> None:
     if not key.startswith(IMAGES_PREFIX) or ".." in key:
         raise ValueError("Invalid image key")
     _get_client().delete_object(Bucket=_bucket_name(), Key=key)
+
+
+def upload_forum_image(filename: str, content_type: str, data: bytes) -> str:
+    """Forum thread/reply attachment, stored under forum/ — kept separate
+    from images/ (the admin Media Manager's reusable library) since these
+    aren't meant to be browsable/reusable admin assets, just one-off post
+    attachments. Returns the public URL directly (callers only ever need
+    the URL to store on image_url, not the full MediaImage dict)."""
+    suffix = ALLOWED_IMAGE_TYPES.get((content_type or "").lower())
+    if suffix is None:
+        raise ValueError("Unsupported image type. Allowed: PNG, JPEG, WEBP, GIF.")
+    if len(data) > MAX_UPLOAD_BYTES:
+        raise ValueError("Image must be 10MB or smaller.")
+
+    key = f"{FORUM_PREFIX}{_safe_stem(filename)}-{uuid.uuid4().hex[:8]}{suffix}"
+    _get_client().put_object(
+        Bucket=_bucket_name(),
+        Key=key,
+        Body=data,
+        ContentType=content_type,
+    )
+    return _public_url(key)
 
 
 def upload_broker_report(broker_id: str, filename: str, data: bytes) -> BrokerReportFile:

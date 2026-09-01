@@ -1,6 +1,7 @@
 # Backend
 __pycache__
 .env
+backend/app/uploads/
 
 # Frontend
 node_modules
