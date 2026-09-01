@@ -13,6 +13,23 @@ Stripe is in test mode — no real charge occurs. Use:
 - **CVC**: any 3 digits
 - **ZIP**: any value
 
+## Ad Banner Image Guidelines
+
+Recommended image dimensions and aspect ratios for each ad placement slot (configured in `/admin/ads-placements`), based on how each slot actually renders on the site — not generic ad-network defaults.
+
+| Slot | Container behavior | Recommended size | Aspect ratio |
+|---|---|---|---|
+| `sticky_top_banner`, `pre_cashback_banner`, `pre_copytrading_banner`, `pre_signals_banner`, `pre_markets_banner` | Full-width, cropped to fill (`object-fit: cover`), capped at 140px tall on desktop / 90px on mobile | **1200×140px** (upload 2× — 2400×280 — for retina) | ~8.5:1 (wide leaderboard) |
+| `sidebar_left_banner`, `sidebar_right_banner` | Fixed 160px-wide box, height ≈ 90% of viewport, cropped to fill (`object-fit: cover`), desktop-only | **320×1200px** (2× of the 160px box) | ~1:3.75 (tall skyscraper) |
+| `featured_broker` (sign-in page) | Shown at native aspect ratio, not cropped (`width: 100%, height: auto`) | **760×760px** or similar | Square-ish (1:1 to 3:2) — whatever ratio you give it is what renders |
+| `sponsor_logo` (header, next to site logo) | Shrunk to fit, never cropped (`object-fit: contain`), max 22px tall (18px on mobile), max 96px wide | **192×88px** (2× retina), logo centered, transparent background | Landscape, up to ~2.2:1 |
+
+**Notes:**
+1. **`cover` slots** (top banner, sidebar, pre-section banners) **will crop edges** if the image's aspect ratio doesn't match the box exactly — keep logos/text centered, not near the edges.
+2. **`contain`/`auto` slots** (header logo, featured broker) **never crop**, but a badly-mismatched aspect ratio just looks awkward (excess empty space or an odd fit) — match the recommended ratio reasonably closely.
+3. Use a **transparent PNG or SVG** for the header sponsor logo specifically — it sits directly in the nav bar with no background card, so a white/colored box background shows as a visible rectangle.
+4. Upload at 2× the listed pixel size for retina screens — file size isn't a concern at these dimensions.
+
 ## Backend
 
 ### How to run

@@ -19,3 +19,4 @@ cbfx-backend-env
 *.pdf
 *.csv
 *.docx
+!README.md
