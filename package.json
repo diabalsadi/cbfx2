@@ -8,5 +8,10 @@
     "build:crm-frontend": "pnpm --filter crm-frontend build",
     "dev:user-frontend": "pnpm --filter user-frontend dev",
     "build:user-frontend": "pnpm --filter user-frontend build"
+  },
+  "pnpm": {
+    "overrides": {
+      "sharp": "npm:empty-npm-package@1.0.0"
+    }
   }
 }
