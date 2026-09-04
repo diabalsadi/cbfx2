@@ -1,5 +1,8 @@
 {
   "python.analysis.extraPaths": [
     "./backend-shared"
-  ]
+  ],
+  "files.associations": {
+    "wrangler.json": "jsonc"
+  }
 }

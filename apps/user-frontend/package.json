@@ -35,8 +35,9 @@
     "classnames": "^2.5.1",
     "dayjs": "^1.11.19",
     "dompurify": "^3.4.14",
+    "@opennextjs/cloudflare": "^1.20.6",
     "frontend-shared": "workspace:*",
-    "next": "16.0.10",
+    "next": "16.3.4",
     "next-intl": "^4.13.7",
     "papaparse": "^5.5.3",
     "react": "19.2.0",
@@ -60,6 +61,7 @@
     "style-loader": "^3",
     "tailwindcss": "^4",
     "ts-loader": "^9",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^4.129.0"
   }
 }
