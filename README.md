@@ -1,5 +1,40 @@
 # CBFX
 
+## Cloudflare Deployment (crm-backend / user-backend / crm-frontend / user-frontend)
+
+The CRM/User split (backend and frontend) is being migrated to Cloudflare — see `plan.md` for the full phase-by-phase migration plan and status. This section is just the practical "how to deploy" reference.
+
+### Live
+
+- **user-frontend**: https://user-frontend.tradeversesocial.workers.dev
+
+### Deploying a backend service (`crm-backend/` or `user-backend/`)
+
+```bash
+cd user-backend   # or crm-backend
+
+wrangler deploy --dry-run   # validates config + builds locally, no deploy
+wrangler secret bulk .env   # pushes every secret in .env at once (accepts .env format directly)
+wrangler deploy              # the real deploy
+```
+
+Per-service secret lists (which vars each service actually needs, verified against real code, not assumed) are in `crm-backend/.env.example` and `user-backend/.env.example`.
+
+### Deploying a frontend app (`crm-frontend/`, `user-frontend/`, `apps/frontend`)
+
+Uses [`@opennextjs/cloudflare`](https://opennext.js.org/cloudflare) — as of now, only `user-frontend` has this wired up; `crm-frontend` and `apps/frontend` still need the identical setup.
+
+```bash
+cd user-frontend
+pnpm run cf:deploy   # builds with opennextjs-cloudflare, then deploys
+```
+
+Two non-obvious things that had to be worked around to get this building/running at all (see `plan.md` Phase 6 for the full story if replicating this for `crm-frontend`/`apps/frontend`):
+- `sharp` (Next's optional image-optimizer dependency, unused since this codebase has no `next/image` usage anywhere) fails to bundle for Workers — worked around via a `pnpm.overrides` entry in the root `package.json` replacing it with a no-op stub package.
+- Next.js's own middleware manifest lookup does a dynamic `require()` that Workers can't execute, crashing every route in production — worked around via `NEXT_PRIVATE_MINIMAL_MODE: "1"` in `wrangler.jsonc`'s `vars`. This is a known open upstream bug, not an app bug.
+
+`BACKEND_URL` needs to be set as a Cloudflare var pointing at the matching deployed backend for a frontend deploy to actually reach it — this hasn't been wired up yet for `user-frontend` (currently falls back to the old Render-hosted backend, which a Cloudflare Worker's outbound fetch can't reach).
+
 ## Test Credentials
 For local development, you can use the following test accounts:
 - **Super Admin**: `admin@cbfx.com` / `password123`
