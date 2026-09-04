@@ -28,11 +28,11 @@ Goal of this plan: strangler-fig migration — working software at every step, o
 - Build a parity fixture: script every one of the ~132 backend endpoints against seeded data and snapshot responses (`backend/tests/` currently only covers 3 files, so this fixture — not the existing suite — is the real regression oracle for the rest of the plan). Store outside any deploy path — **done: `tools/parity/backend_snapshot.py`.**
 - Smoke-script the 44 frontend pages (25 admin + 16 user + 3 auth) — one render + one write action each. — **done: `tools/parity/frontend_smoke_checklist.md`** (checklist form, not yet run).
 
-## Phase 1 — Monorepo scaffolding, zero behavior change — IN PROGRESS
+## Phase 1 — Monorepo scaffolding, zero behavior change — ✅ DONE
 
-- `git mv frontend apps/frontend`; add root `pnpm-workspace.yaml` (`packages: ["apps/*", "packages/*"]`) and root `package.json`. — **staged/created, not yet committed.**
-- Convert `apps/frontend` from npm to pnpm (`package-lock.json` → `pnpm-lock.yaml`); verify `pnpm --filter frontend dev` behaves identically on port 5000. — **remaining.**
-- Create empty skeletons only: `crm-backend/app/`, `user-backend/app/`, `backend-shared/backend_shared/` — not wired into anything yet. — **remaining.**
+- `git mv frontend apps/frontend`; add root `pnpm-workspace.yaml` (`packages: ["apps/*", "packages/*"]`) and root `package.json`. — **done, committed in `6359f2a`.**
+- Convert `apps/frontend` from npm to pnpm (`package-lock.json` → `pnpm-lock.yaml`); verify `pnpm --filter frontend dev` behaves identically on port 5000. — **done.** (Note: the repo briefly had *no* lockfile at all between the npm removal and this step — closed by running `pnpm install` at the workspace root, which generates a single root-level `pnpm-lock.yaml` for the whole workspace, not a per-package one. Verified `pnpm --filter frontend dev` still serves on port 5000.)
+- Create empty skeletons only: `crm-backend/app/`, `user-backend/app/`, `backend-shared/backend_shared/` — not wired into anything yet. — **done** (each is just a directory + empty `__init__.py`, no logic).
 
 ## Phase 2 — Extract `backend-shared/`, backend still single-deployed
 Prove the shared-code boundary by making the *existing* monolith consume it first.
