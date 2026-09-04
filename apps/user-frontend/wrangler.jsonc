@@ -13,5 +13,15 @@
       "binding": "WORKER_SELF_REFERENCE",
       "service": "user-frontend"
     }
-  ]
+  ],
+  // NEXT_PRIVATE_MINIMAL_MODE=1: without it, Next.js's own
+  // getMiddlewareManifest() does a dynamic require() of
+  // middleware-manifest.json at request time, which the real deployed
+  // Worker crashed on (every route 500'd) — this middleware.ts app has
+  // real middleware, so this path is genuinely hit. Minimal mode skips
+  // that require() entirely. Confirmed via opennextjs-cloudflare#922/#1232,
+  // a known open bug, not something fixable in application code.
+  "vars": {
+    "NEXT_PRIVATE_MINIMAL_MODE": "1"
+  }
 }
