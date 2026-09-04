@@ -5,21 +5,21 @@ from datetime import datetime, timedelta, timezone
 # Ensure we can import app modules
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from app.database import SessionLocal, engine, Base
-from app.models.user import User
-from app.models.article import Article
-from app.models.market_price import MarketPrice
-from app.models.copy_trader import CopyTrader
-from app.models.play import Play
-from app.models.analysis import Analysis
-from app.models.forum_thread import ForumThread
-from app.models.forum_reply import ForumReply
-from app.models.client import Client
-from app.models.campaign import Campaign
-from app.models.broker import Broker
-from app.models.mt5_account import MT5Account
-from app.models.wallet_transaction import WalletTransaction
-from app.models.seo_meta import SeoMeta
+from backend_shared.database import SessionLocal, engine, Base
+from backend_shared.models.user import User
+from backend_shared.models.article import Article
+from backend_shared.models.market_price import MarketPrice
+from backend_shared.models.copy_trader import CopyTrader
+from backend_shared.models.play import Play
+from backend_shared.models.analysis import Analysis
+from backend_shared.models.forum_thread import ForumThread
+from backend_shared.models.forum_reply import ForumReply
+from backend_shared.models.client import Client
+from backend_shared.models.campaign import Campaign
+from backend_shared.models.broker import Broker
+from backend_shared.models.mt5_account import MT5Account
+from backend_shared.models.wallet_transaction import WalletTransaction
+from backend_shared.models.seo_meta import SeoMeta
 import bcrypt
 
 
@@ -821,18 +821,18 @@ def seed_seo_meta(db):
 
 if __name__ == "__main__":
     # Import all models so create_all picks them up
-    import app.models.market_price   # noqa
-    import app.models.copy_trader    # noqa
-    import app.models.play           # noqa
-    import app.models.analysis       # noqa
-    import app.models.forum_thread   # noqa
-    import app.models.forum_reply    # noqa
-    import app.models.client         # noqa
-    import app.models.campaign       # noqa
-    import app.models.broker         # noqa
-    import app.models.mt5_account    # noqa
-    import app.models.wallet_transaction  # noqa
-    import app.models.seo_meta       # noqa
+    import backend_shared.models.market_price   # noqa
+    import backend_shared.models.copy_trader    # noqa
+    import backend_shared.models.play           # noqa
+    import backend_shared.models.analysis       # noqa
+    import backend_shared.models.forum_thread   # noqa
+    import backend_shared.models.forum_reply    # noqa
+    import backend_shared.models.client         # noqa
+    import backend_shared.models.campaign       # noqa
+    import backend_shared.models.broker         # noqa
+    import backend_shared.models.mt5_account    # noqa
+    import backend_shared.models.wallet_transaction  # noqa
+    import backend_shared.models.seo_meta       # noqa
 
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()

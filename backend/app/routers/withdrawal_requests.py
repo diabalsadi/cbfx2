@@ -3,26 +3,18 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.database import get_db
-from app.models.user import User
-from app.schemas.withdrawal_request import (
+from backend_shared.database import get_db
+from backend_shared.models.user import User
+from backend_shared.schemas.withdrawal_request import (
     WithdrawalRequestCreate,
     WithdrawalReviewDecision,
     WithdrawalRequest as WithdrawalRequestSchema,
 )
-from app.services import withdrawal
-from app.utils.auth import get_current_user
+from backend_shared.services import withdrawal
+from backend_shared.utils.auth import get_current_user
+from backend_shared.auth.rbac import require_roles
 
 router = APIRouter(prefix="/withdrawal-requests", tags=["withdrawal-requests"])
-
-
-def require_roles(roles: set):
-    def checker(current_user: User = Depends(get_current_user)):
-        if current_user.role not in roles:
-            raise HTTPException(status_code=403, detail="Insufficient permissions")
-        return current_user
-    return checker
-
 
 @router.post("", response_model=WithdrawalRequestSchema, status_code=status.HTTP_201_CREATED)
 def create_withdrawal_request(

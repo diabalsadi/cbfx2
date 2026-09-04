@@ -4,30 +4,22 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.database import get_db
-from app.models.user import User
-from app.schemas.referral import (
+from backend_shared.database import get_db
+from backend_shared.models.user import User
+from backend_shared.schemas.referral import (
     AdminReferralStats,
     ClientReferralSummary,
     ReferralInfo,
     ReferralStats,
 )
-from app.utils.active_users import active_account_counts, active_user_emails
-from app.utils.auth import get_current_user
-from app.utils.time_buckets import bucket_counts
+from backend_shared.utils.active_users import active_account_counts, active_user_emails
+from backend_shared.utils.auth import get_current_user
+from backend_shared.utils.time_buckets import bucket_counts
+from backend_shared.auth.rbac import require_roles
 
 router = APIRouter(prefix="/referrals", tags=["referrals"])
 
 ADMIN_STATS_ROLES = {"super_admin", "broker"}
-
-
-def require_roles(roles: set):
-    def checker(current_user: User = Depends(get_current_user)):
-        if current_user.role not in roles:
-            raise HTTPException(status_code=403, detail="Insufficient permissions")
-        return current_user
-    return checker
-
 
 def _build_stats(users: List[User], active_emails: set) -> dict:
     by_country: Counter = Counter()
