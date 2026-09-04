@@ -1,0 +1,266 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.headerRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.back {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-decoration: none;
+  display: block;
+  margin-bottom: 4px;
+  transition: color var(--transition);
+
+  &:hover {
+    color: var(--accent);
+  }
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.draftBtn {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--transition);
+
+  &:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.publishBtn {
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  transition: background var(--transition);
+
+  &:hover:not(:disabled) {
+    background: var(--accent-hover);
+  }
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.error {
+  color: #ef4444;
+  font-size: 13px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin: 0;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 20px;
+  align-items: flex-start;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.mainArea {
+  min-width: 0;
+}
+
+.editorCard {
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.titleInput {
+  width: 100%;
+  border: none;
+  outline: none;
+  padding: 20px 20px 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  background: transparent;
+  font-family: inherit;
+
+  &::placeholder {
+    color: var(--text-muted);
+  }
+}
+
+.excerptInput {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid var(--border-subtle);
+  outline: none;
+  padding: 10px 20px 14px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  background: transparent;
+  font-family: inherit;
+
+  &::placeholder {
+    color: var(--text-muted);
+  }
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sideCard {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px !important;
+}
+
+.sideTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sideField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sideHint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: -6px 0 4px;
+  line-height: 1.4;
+}
+
+.sideLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.sideInput {
+  padding: 9px 11px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+  transition: border-color var(--transition);
+
+  &:focus {
+    border-color: var(--accent);
+  }
+  &::placeholder {
+    color: var(--text-muted);
+  }
+}
+
+.radioGroup {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  text-transform: capitalize;
+
+  input {
+    accent-color: var(--accent);
+  }
+}
+
+.coverPreview {
+  width: 100%;
+  border-radius: var(--radius-sm);
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  margin-top: 6px;
+}
+
+.toggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.toggle {
+  width: 40px;
+  height: 22px;
+  background: var(--border);
+  border: none;
+  border-radius: 11px;
+  cursor: pointer;
+  position: relative;
+  transition: background var(--transition);
+  padding: 0;
+
+  &.toggleOn {
+    background: var(--accent);
+  }
+}
+
+.toggleThumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform var(--transition);
+  display: block;
+
+  .toggleOn & {
+    transform: translateX(18px);
+  }
+}

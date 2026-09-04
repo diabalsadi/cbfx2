@@ -1,0 +1,100 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { IS_DEV, BACKEND_URL } from '@/helpers/backendUrl';
+
+
+async function handler(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+  const { path } = await params;
+  const targetPath = '/' + path.join('/');
+
+  const searchParams = new URLSearchParams(req.nextUrl.search);
+  if (!IS_DEV) {
+    // debug_ip lets local dev spoof a client IP for geolocation testing (see
+    // backend/app/utils/geo.py ALLOW_DEV_IP_OVERRIDE). Strip it outside dev so a
+    // production deployment never forwards it, even if the backend flag were
+    // ever misconfigured.
+    searchParams.delete('debug_ip');
+  }
+  const search = searchParams.toString();
+  const url = `${BACKEND_URL}${targetPath}${search ? `?${search}` : ''}`;
+
+  const headers: Record<string, string> = {};
+  const contentType = req.headers.get('content-type');
+  if (contentType) {
+    headers['Content-Type'] = contentType;
+  }
+
+  const auth = req.headers.get('authorization');
+  if (auth) headers['Authorization'] = auth;
+
+  const visitorId = req.headers.get('x-visitor-id');
+  if (visitorId) headers['X-Visitor-Id'] = visitorId;
+
+  const locale = req.headers.get('x-locale');
+  if (locale) headers['X-Locale'] = locale;
+
+  const forwardedFor = req.headers.get('x-forwarded-for');
+  if (forwardedFor) headers['X-Forwarded-For'] = forwardedFor;
+  const realIp = req.headers.get('x-real-ip');
+  if (realIp) headers['X-Real-IP'] = realIp;
+  if (IS_DEV) {
+    const debugIp = req.headers.get('x-debug-ip');
+    if (debugIp) headers['X-Debug-IP'] = debugIp;
+  }
+
+  let body: Blob | undefined;
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    body = await req.blob();
+  }
+
+  try {
+    const res = await fetch(url, {
+      method: req.method,
+      headers,
+      body,
+    });
+
+    console.log(`Proxying ${req.method} request to: ${url} - Status: ${res.status}`);
+
+    if (res.status === 204) {
+      return new NextResponse(null, { status: res.status });
+    }
+
+    const responseHeaders = new Headers();
+    const hopByHopAndEncodingHeaders = new Set([
+      'content-encoding',
+      'content-length',
+      'transfer-encoding',
+      'connection',
+      'keep-alive',
+      'proxy-authenticate',
+      'proxy-authorization',
+      'te',
+      'trailer',
+      'upgrade',
+    ]);
+
+    res.headers.forEach((value, key) => {
+      if (!hopByHopAndEncodingHeaders.has(key.toLowerCase())) {
+        responseHeaders.set(key, value);
+      }
+    });
+
+    const data = await res.arrayBuffer();
+    return new NextResponse(data, {
+      status: res.status,
+      headers: responseHeaders,
+    });
+  } catch (error) {
+    console.error(`Proxy error for ${url}:`, error);
+    return NextResponse.json(
+      { detail: 'Failed to communicate with backend server' },
+      { status: 502 }
+    );
+  }
+}
+
+export const GET = handler;
+export const POST = handler;
+export const PUT = handler;
+export const PATCH = handler;
+export const DELETE = handler;

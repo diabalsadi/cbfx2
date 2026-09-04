@@ -3,6 +3,10 @@
   "private": true,
   "scripts": {
     "dev:frontend": "pnpm --filter frontend dev",
-    "build:frontend": "pnpm --filter frontend build"
+    "build:frontend": "pnpm --filter frontend build",
+    "dev:crm-frontend": "pnpm --filter crm-frontend dev",
+    "build:crm-frontend": "pnpm --filter crm-frontend build",
+    "dev:user-frontend": "pnpm --filter user-frontend dev",
+    "build:user-frontend": "pnpm --filter user-frontend build"
   }
 }

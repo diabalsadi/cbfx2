@@ -1,0 +1,1168 @@
+/* ═══════════════════════════════
+   Hero card wrapper
+   ═══════════════════════════════ */
+.heroCard {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  margin: 20px 0 24px;
+  padding: 56px 56px 52px;
+
+  @media (max-width: 900px) {
+    padding: 40px 32px 40px;
+    margin: 16px 0 20px;
+  }
+
+  @media (max-width: 600px) {
+    padding: 28px 20px 28px;
+    border-radius: 14px;
+  }
+}
+
+/* Orange gradient blob — decorative top-right accent */
+.heroBlob {
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(249, 115, 22, 0.18) 0%,
+    rgba(249, 115, 22, 0.06) 50%,
+    transparent 70%
+  );
+  pointer-events: none;
+
+  @media (max-width: 600px) {
+    width: 200px;
+    height: 200px;
+    top: -40px;
+    right: -40px;
+  }
+}
+
+/* ═══════════════════════════════
+   Hero layout
+   ═══════════════════════════════ */
+.hero {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: center;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+}
+
+.heroLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* Hero carousel transition — crossfade only, no unmounting. The text block
+   is one persistent DOM node whose content is swapped by JS *while it's
+   momentarily invisible* (.heroSlideTextFading), so there's never an
+   instant content pop or a blank flash. The right side keeps both the price
+   grid and the signals list permanently mounted, stacked via CSS grid, and
+   only their opacity crossfades — critical so the price grid's TradingView
+   widgets are never torn down and reinitialized by a slide change. */
+.heroSlideText {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  opacity: 1;
+  transition: opacity 0.26s ease, filter 0.26s ease;
+}
+
+.heroSlideTextFading {
+  opacity: 0;
+  filter: blur(2px);
+}
+
+.heroSlideRight {
+  position: relative;
+  display: grid;
+}
+
+/* Both children occupy the same grid cell, stacked — this is what makes the
+   crossfade possible without either one leaving the DOM. */
+.heroLayer {
+  grid-area: 1 / 1;
+  transition: opacity 0.4s ease;
+}
+
+.heroLayerVisible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.heroLayerHidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .heroSlideText,
+  .heroSlideTextFading,
+  .heroLayer {
+    transition: none;
+  }
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--accent);
+
+  .dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--text-muted);
+  }
+
+  .sub {
+    color: var(--text-muted);
+  }
+}
+
+.headline {
+  font-size: clamp(34px, 4.5vw, 52px);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -1.5px;
+  color: var(--text-primary);
+  margin: 0;
+
+  .accent {
+    color: var(--accent);
+  }
+}
+
+.subline {
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--text-secondary);
+  max-width: 420px;
+  margin: 0;
+}
+
+.ctas {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btnPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 22px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    background 0.15s,
+    box-shadow 0.15s;
+
+  &:hover {
+    background: var(--accent-hover);
+    box-shadow: var(--shadow-orange);
+  }
+}
+
+.btnSecondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 22px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid var(--border);
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    color 0.15s;
+
+  &:hover {
+    border-color: var(--accent);
+    background: var(--accent-light);
+    color: var(--accent);
+  }
+}
+
+/* Hero carousel dot indicators */
+.heroDots {
+  display: flex;
+  gap: 8px;
+}
+
+.heroDot,
+.heroDotActive {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    width 0.15s;
+}
+
+.heroDot {
+  background: var(--border);
+
+  &:hover {
+    background: var(--text-muted);
+  }
+}
+
+.heroDotActive {
+  width: 20px;
+  border-radius: 4px;
+  background: var(--accent);
+}
+
+/* Hero signals slide — replaces the price grid when that slide is active */
+.heroSignalsList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.heroSignalsEmpty {
+  color: var(--text-muted);
+  font-size: 14px;
+  margin: 0;
+  padding: 20px;
+  text-align: center;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.heroSignalCard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  text-decoration: none;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+
+  &:hover {
+    border-color: var(--accent);
+    box-shadow: 0 4px 16px rgba(249, 115, 22, 0.1);
+  }
+}
+
+.heroSignalTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.heroSignalPair {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.heroSignalDirLong,
+.heroSignalDirShort {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.heroSignalDirLong {
+  color: #16a34a;
+  background: rgba(22, 163, 74, 0.12);
+}
+
+.heroSignalDirShort {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.heroSignalMeta {
+  display: flex;
+  gap: 14px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+
+/* Stats row */
+.stats {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  flex: 1;
+  min-width: 110px;
+}
+
+.statSvg {
+  width: 20px;
+  height: 20px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.statValue {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: block;
+  line-height: 1.2;
+}
+
+.statLabel {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: block;
+}
+
+/* Hero price-card grid (2×3) — each card is a Link wrapping a live
+   TradingView single-ticker widget (see .tickerWrap). */
+.priceGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.priceCard {
+  display: block;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  text-decoration: none;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+
+  &:hover {
+    border-color: var(--accent);
+    box-shadow: 0 4px 16px rgba(249, 115, 22, 0.1);
+  }
+}
+
+/* Neutralizes the embedded widget's own iframe clicks so they fall through
+   to the wrapping Link (.priceCard / .stripCard) instead of TradingView. */
+.tickerWrap {
+  height: 112px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════
+   Shared section chrome
+   ═══════════════════════════════ */
+.section {
+  padding: 0 0 32px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.sectionLink {
+  font-size: 13px;
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ═══════════════════════════════
+   Markets Strip
+   ═══════════════════════════════ */
+.marketsSection {
+  padding: 0 0 40px;
+}
+
+.copySection {
+  padding: 0 0 40px;
+}
+
+.stripHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.sectionTitleGroup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sectionIcon {
+  width: 36px;
+  height: 36px;
+  background: var(--accent-light);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.sectionTitleText {
+  h2 {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin: 0 0 2px;
+    letter-spacing: -0.3px;
+  }
+  p {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 0;
+  }
+}
+
+/* 6-column horizontal grid — each card is a Link wrapping a live
+   TradingView single-ticker widget (see .tickerWrap). */
+.marketsStrip {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  @media (max-width: 600px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.stripCard {
+  display: block;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  text-decoration: none;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+
+  &:hover {
+    border-color: var(--accent);
+    box-shadow: 0 4px 16px rgba(249, 115, 22, 0.1);
+  }
+}
+
+/* ═══════════════════════════════
+   Copy Trading
+   ═══════════════════════════════ */
+.copyGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.traderCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+
+  &:hover {
+    border-color: var(--accent);
+    box-shadow: 0 4px 20px rgba(249, 115, 22, 0.1);
+  }
+}
+
+.traderTop {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.traderAvatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.traderName {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.traderFollowers {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.traderBottom {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.traderRoi {
+  font-size: 28px;
+  font-weight: 800;
+  color: #16a34a;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+.traderRoiLabel {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+  padding-bottom: 3px;
+}
+
+/* ═══════════════════════════════
+   Demo broker banner
+   ═══════════════════════════════ */
+.demoBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #18130d;
+  border: 1px solid #2e2010;
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-bottom: 32px;
+  gap: 12px;
+}
+
+/* ═══════════════════════════════
+   Sticky top sponsor banner — pinned below the navbar so it stays
+   visible while the visitor scrolls through Hero and beyond.
+   ═══════════════════════════════ */
+.stickyTopBanner {
+  position: sticky;
+  top: 58px; // navbar height
+  z-index: 30;
+  border-radius: 14px;
+  overflow: hidden;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+
+/* ═══════════════════════════════
+   Broker-supplied image banners (sticky top, and before Cashback /
+   Copy Trading / Signals / Markets) — the image itself is the whole ad,
+   already resolved to the visitor's language.
+   ═══════════════════════════════ */
+.adBanner {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+
+.adBannerImageLink {
+  display: block;
+  width: 100%;
+}
+
+.adBannerImg {
+  width: 100%;
+  height: auto;
+  max-height: 140px;
+  object-fit: cover;
+  display: block;
+
+  @media (max-width: 600px) {
+    max-height: 90px;
+  }
+}
+
+.adBannerDismiss {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.55);
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.8);
+  }
+}
+
+/* ═══════════════════════════════
+   Sticky sidebar ads (desktop only) — pinned to the viewport edges
+   outside the centered 1200px content column. Hidden below the
+   min-width breakpoint (where there isn't enough side gutter to fit
+   them without overlapping the main content) — a resize across that
+   breakpoint shows/removes them automatically, no JS needed.
+
+   Geometry is centralized in these variables so the sidebar-ad box,
+   its edge offset, and the content gutter that clears it (below) can
+   never drift out of sync with one another.
+   ═══════════════════════════════ */
+$sidebar-ad-width: 160px;
+$sidebar-ad-edge-gap: 24px; // distance from the viewport edge to the ad box
+$sidebar-ad-content-gap: 16px; // breathing room between the ad box and content
+$required-clearance: $sidebar-ad-edge-gap + $sidebar-ad-width + $sidebar-ad-content-gap; // 200px from viewport edge to where content should start
+// .main (user.module.scss) already keeps content this far from the viewport
+// edge on its own: its own horizontal padding, plus — once the viewport is
+// wider than its 1200px max-width — the auto-margin that centers it.
+$main-padding: 24px;
+$main-max-width: 1200px;
+
+.stickySidebarAd {
+  display: none;
+  flex-direction: column;
+  position: fixed;
+  // top+bottom anchors with auto vertical margin center the box in the
+  // space below the navbar, so the leftover space (10%) splits evenly
+  // above and below instead of all collecting at the bottom.
+  top: 58px; // navbar height
+  bottom: 0;
+  margin-top: auto;
+  margin-bottom: auto;
+  height: calc((100vh - 58px) * 0.9); // 90% of the space below the navbar
+  width: $sidebar-ad-width;
+  padding: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  z-index: 40;
+  text-align: center;
+}
+
+.stickySidebarLeft {
+  left: $sidebar-ad-edge-gap;
+}
+
+.stickySidebarRight {
+  right: $sidebar-ad-edge-gap;
+}
+
+@media (min-width: 786px) {
+  .stickySidebarAd {
+    display: flex;
+  }
+}
+
+/* Narrows the main content column whenever a sticky sidebar ad is showing,
+   so it never sits under the fixed-position ad box. Applied conditionally
+   in HomeClient.tsx — only when a sidebar banner is active.
+
+   Only adds as much extra padding as .main isn't already providing on its
+   own: on screens wider than $main-max-width, .main's own centering margin
+   grows and gradually covers the required clearance by itself, so this
+   tapers to 0 instead of stacking on top and over-narrowing the page. */
+.sideAdGutter {
+  @media (min-width: 786px) {
+    padding: 0
+      max(
+        0px,
+        calc(
+          #{$required-clearance} - #{$main-padding} -
+            max(0px, calc((100vw - #{$main-max-width}) / 2))
+        )
+      );
+  }
+}
+
+.stickySidebarDismiss {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  line-height: 1;
+  transition:
+    color 0.15s,
+    background 0.15s;
+
+  &:hover {
+    color: var(--text-primary);
+    background: var(--bg-secondary);
+  }
+}
+
+.stickySidebarImageLink {
+  display: block;
+  flex: 1;
+  min-height: 0;
+}
+
+.stickySidebarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+  display: block;
+}
+
+/* ═══════════════════════════════
+   Our Plays  +  Forex News  (2-col)
+   ═══════════════════════════════ */
+.playsNewsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 32px;
+
+  @media (max-width: 720px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.playsCard,
+.newsCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px 20px;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.cardTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.allLink {
+  font-size: 12px;
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+/* Plays list */
+.playsList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.playRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  transition: background 0.12s;
+
+  &:hover {
+    background: var(--bg-secondary);
+  }
+}
+
+.playLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.playPair {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.playDir {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 2px 7px;
+  border-radius: 4px;
+
+  &.long {
+    background: rgba(22, 163, 74, 0.15);
+    color: #16a34a;
+  }
+  &.short {
+    background: rgba(220, 38, 38, 0.15);
+    color: #dc2626;
+  }
+}
+
+.playRight {
+  font-size: 12px;
+  color: var(--text-muted);
+  flex: 1;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.playStar {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 15px;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.15s;
+
+  &:hover {
+    color: var(--accent);
+  }
+}
+
+/* News widget */
+.newsWidgetBody {
+  height: 340px;
+}
+
+/* ═══════════════════════════════
+   Tech Analysis + Forum + Calendar  (3-col)
+   ═══════════════════════════════ */
+.triGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 32px;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr 1fr;
+  }
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.triCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px 20px;
+}
+
+/* Analysis */
+.analysisList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.analysisRow {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  text-decoration: none;
+  transition: background 0.12s;
+
+  &:hover {
+    background: var(--bg-secondary);
+  }
+}
+
+.analysisPair {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  color: var(--accent);
+}
+
+.analysisTitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+/* Forum */
+.forumList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.forumRow {
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.12s;
+
+  &:hover {
+    background: var(--bg-secondary);
+  }
+}
+
+.forumTitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 3px;
+  line-height: 1.4;
+}
+
+.forumReplies {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Calendar */
+.calWidgetBody {
+  height: 320px;
+}
+
+/* ═══════════════════════════════
+   Cashback CTA banner
+   ═══════════════════════════════ */
+.cashbackBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--accent);
+  border-radius: 16px;
+  padding: 24px 28px;
+  margin-bottom: 32px;
+  gap: 16px;
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.cashbackLeft {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.cashbackIcon {
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cashbackTitle {
+  font-size: 18px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 4px;
+  letter-spacing: -0.3px;
+}
+
+.cashbackSub {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.cashbackBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 22px;
+  background: #fff;
+  color: var(--accent);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition:
+    opacity 0.15s,
+    box-shadow 0.15s;
+
+  &:hover {
+    opacity: 0.92;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  }
+}
+
+/* ═══════════════════════════════
+   Featured Brokers
+   ═══════════════════════════════ */
+.featuredGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.featuredCard {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  text-decoration: none;
+  color: inherit;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+
+  &:hover {
+    border-color: var(--accent);
+    box-shadow: 0 4px 20px rgba(249, 115, 22, 0.1);
+  }
+}
+
+.featuredCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.featuredTag {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+}
+
+.adBadge {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  letter-spacing: 0.5px;
+}
+
+.featuredCardBody {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brokerLogoCircle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.brokerName {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 3px;
+}
+
+.brokerDesc {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
