@@ -2,6 +2,7 @@
 __pycache__
 .env
 backend/app/uploads/
+*.egg-info/
 
 # Frontend
 node_modules

@@ -1,10 +1,17 @@
 import os
-from dotenv import load_dotenv
+from dotenv import find_dotenv, load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-load_dotenv()
+# find_dotenv(usecwd=True): without it, dotenv searches upward from *this
+# file's* location (backend-shared/backend_shared/), not the running
+# service's working directory. Since backend-shared is a sibling of
+# backend/, crm-backend/, and user-backend/ — not their ancestor — the
+# default search never reaches any of their .env files. Each service is
+# run with its own directory as cwd, so usecwd=True is what actually finds
+# them. (usecwd is a find_dotenv() param, not load_dotenv()'s.)
+load_dotenv(find_dotenv(usecwd=True))
 
 # Get database URL from environment variable
 DATABASE_URL = os.getenv("DATABASE_URL")
