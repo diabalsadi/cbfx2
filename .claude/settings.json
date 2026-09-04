@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "bash",
+            "command": "node .gitnexus/run.cjs status 2>&1 | grep -qi \"stale\" && echo '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"GitNexus index for repo cbfx2 is stale (behind HEAD). Before using GitNexus tools (impact/context/query/detect_changes) in this session, run: node .gitnexus/run.cjs analyze  (from the project root) to refresh it.\"}}' || true",
+            "timeout": 15,
+            "statusMessage": "Checking GitNexus index freshness..."
+          }
+        ]
+      }
+    ]
+  }
+}
