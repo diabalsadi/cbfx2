@@ -1,26 +1,25 @@
 # CBFX
 
-## Cloudflare Deployment (crm-backend / user-backend / crm-frontend / user-frontend)
+## Cloudflare Deployment (5 services)
 
-The CRM/User split (backend and frontend) has been migrated to Cloudflare and cut over to production — see `plan.md` for the full phase-by-phase migration history. The original monolith (`apps/frontend`, `backend/`) has been decommissioned and removed from this repo (Phase 8); its history is preserved in git prior to that removal. This section is just the practical "how to deploy" reference.
+The CRM/User split (backend and frontend) has been migrated to Cloudflare and cut over to production — see `plan.md` for the full phase-by-phase migration history. The original monolith (`apps/frontend`, `backend/`) has been decommissioned and removed from this repo (Phase 8); its history is preserved in git prior to that removal. This section is the practical "how to deploy" reference for all five live services.
 
 ### Live
 
-- **www.trade-verse.com** → `user-frontend`: https://user-frontend.tradeversesocial.workers.dev
-- **admin.trade-verse.com** → `crm-frontend`: https://crm-frontend.tradeversesocial.workers.dev
-- **user-backend**: https://cbfx-user-backend.tradeversesocial.workers.dev
-- **crm-backend**: https://cbfx-crm-backend.tradeversesocial.workers.dev
+| Service | Type | Live URL | Custom domain | Worker name |
+|---|---|---|---|---|
+| `apps/user-frontend` | Next.js (OpenNext) | https://user-frontend.tradeversesocial.workers.dev | **www.trade-verse.com** | `user-frontend` |
+| `apps/crm-frontend` | Next.js (OpenNext) | https://crm-frontend.tradeversesocial.workers.dev | **admin.trade-verse.com** | `crm-frontend` |
+| `user-backend` | FastAPI (Cloudflare Container) | https://cbfx-user-backend.tradeversesocial.workers.dev | — (reached Worker-to-Worker via `user-frontend`'s `BACKEND_URL`) | `cbfx-user-backend` |
+| `crm-backend` | FastAPI (Cloudflare Container) | https://cbfx-crm-backend.tradeversesocial.workers.dev | — (reached Worker-to-Worker via `crm-frontend`'s `BACKEND_URL`) | `cbfx-crm-backend` |
+| `signals-service` | FastAPI (Cloudflare Container, cron-only) | https://cbfx-signals-service.tradeversesocial.workers.dev | — (no public routes into the container at all, not even token-gated) | `cbfx-signals-service` |
 
-Both pairs are fully wired end-to-end (`BACKEND_URL` on each frontend points at its matching backend) — real frontend, real backend, both on Cloudflare, talking to the real production database, serving real production traffic on the custom domains above.
+All five talk to the same real production Postgres. The two frontend/backend pairs are fully wired end-to-end (`BACKEND_URL` on each frontend points at its matching backend) and serve real production traffic on the custom domains above. `signals-service` has no frontend/UI — it's driven entirely by Workers Cron Triggers (`*/30` generate, `*/5` monitor, daily at 6pm America/New_York for analysis — see `signals-service/README.md`).
 
-### Other Cloudflare services
-
-- **signals-service**: https://cbfx-signals-service.tradeversesocial.workers.dev — cron-driven only, no public routes into the container. Generates/monitors AI gold trading signals and publishes a daily market analysis; see `signals-service/README.md` for the schedule and how to deploy.
-
-### Deploying a backend service (`crm-backend/` or `user-backend/`)
+### Deploying a backend service (`crm-backend/`, `user-backend/`, or `signals-service/`)
 
 ```bash
-cd user-backend   # or crm-backend
+cd user-backend   # or crm-backend, or signals-service
 
 npm install                 # installs @cloudflare/containers + wrangler — standalone project, not part of the pnpm workspace
 wrangler deploy --dry-run   # validates config + builds locally, no deploy
@@ -28,9 +27,9 @@ wrangler secret bulk .env   # pushes every secret in .env at once (accepts .env 
 wrangler deploy              # the real deploy
 ```
 
-Per-service secret lists (which vars each service actually needs, verified against real code, not assumed) are in `crm-backend/.env.example` and `user-backend/.env.example`.
+Per-service secret lists (which vars each service actually needs, verified against real code, not assumed) are in each service's `.env.example` (`crm-backend/.env.example`, `user-backend/.env.example`, `signals-service/.env.example`).
 
-**`wrangler secret put`/`secret bulk` only sets secrets on the Worker — it does NOT automatically become the container's own process environment** (a separate Docker sandbox). Without explicitly wiring them through, the FastAPI app inside crashes on startup (`DATABASE_URL environment variable is required`) and it surfaces as an opaque `Failed to start container` error, not an env-var error. `worker/index.ts`'s `Container` subclass needs an explicit constructor that sets `this.envVars` from the Worker's own `env` argument, for every secret the app needs — see `user-backend/worker/index.ts` or `crm-backend/worker/index.ts` for the working pattern (both are deployed and live with this fix already applied).
+**`wrangler secret put`/`secret bulk` only sets secrets on the Worker — it does NOT automatically become the container's own process environment** (a separate Docker sandbox). Without explicitly wiring them through, the app inside crashes on startup (e.g. `DATABASE_URL environment variable is required`) and it surfaces as an opaque `Failed to start container` error, not an env-var error. Each service's `worker/index.ts`'s `Container` subclass needs an explicit constructor that sets `this.envVars` from the Worker's own `env` argument, for every secret the app needs — all three (`crm-backend/worker/index.ts`, `user-backend/worker/index.ts`, `signals-service/worker/index.ts`) are deployed and live with this fix already applied.
 
 ### Deploying a frontend app (`apps/crm-frontend/`, `apps/user-frontend/`)
 
@@ -46,6 +45,10 @@ Two non-obvious things that had to be worked around to get this building/running
 - Next.js's own middleware manifest lookup does a dynamic `require()` that Workers can't execute, crashing every route in production — worked around via `NEXT_PRIVATE_MINIMAL_MODE: "1"` in `wrangler.jsonc`'s `vars`. This is a known open upstream bug, not an app bug.
 
 `BACKEND_URL` needs to be set as a Cloudflare var (in `wrangler.jsonc`'s `vars`) pointing at the matching deployed backend for a frontend deploy to actually reach it — done for both `user-frontend` (points at `user-backend`) and `crm-frontend` (points at `crm-backend`), Worker-to-Worker in both cases.
+
+### reCAPTCHA
+
+Both frontends serve a shared reCAPTCHA v2 checkbox site key (`RECAPTCHA_SITE_KEY_PUBLIC` in each frontend's `wrangler.jsonc`), verified server-side by `crm-backend`/`user-backend` (`RECAPTCHA_SECRET_KEY`). The reCAPTCHA site's allowed-domains list (Google's admin console) must include every real domain the widget is served from — `localhost`, `www.trade-verse.com`, `admin.trade-verse.com` — or verification fails even though the site/secret key pair itself is correct. If either key is ever rotated, update it in **all** of: both frontends' `.env.local` + `wrangler.jsonc` (site key, then rebuild+redeploy), and both backends' `.env` (secret key, pushed via `wrangler secret put` + redeploy) — a mismatched pair between what the widget serves and what the backend verifies against fails silently as a generic "Captcha verification failed."
 
 ## Test Credentials
 For local development, you can use the following test accounts:
