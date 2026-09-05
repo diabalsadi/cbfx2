@@ -1,10 +1,27 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
+
+initOpenNextCloudflareForDev();
 
 const withNextIntl = createNextIntlPlugin("../../packages/frontend-shared/src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  // next/image isn't used anywhere in this app (verified by grep) — Next's
+  // default image-optimization pipeline pulls in `sharp` regardless, which
+  // has a compiled native .node binary Cloudflare Workers can't run anyway
+  // (no native binary support in that runtime). unoptimized alone didn't
+  // stop OpenNext's esbuild step from still trying to bundle sharp's .node
+  // file (esbuild statically resolves the require() even though it's never
+  // actually invoked at runtime) — serverExternalPackages is what actually
+  // keeps Next's own build from bundling it in the first place, so esbuild
+  // never sees it downstream. Next's own docs list sharp as the canonical
+  // example for this option.
+  images: {
+    unoptimized: true,
+  },
+  serverExternalPackages: ["sharp"],
   // packages/frontend-shared's .tsx/.ts source lives outside this app's own
   // root (apps/frontend) — without this, Next.js treats it like an
   // ordinary external node_modules package and skips transpiling its

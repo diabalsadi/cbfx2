@@ -34,6 +34,9 @@ importers:
       '@mui/x-date-pickers':
         specifier: ^8.26.0
         version: 8.29.3(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.0))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.0))(@types/react@19.2.18)(react@19.2.0))(@mui/material@7.3.11(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.0))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.0))(@types/react@19.2.18)(react@19.2.0))(@types/react@19.2.18)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(@mui/system@7.3.11(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.0))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.0))(@types/react@19.2.18)(react@19.2.0))(@types/react@19.2.18)(react@19.2.0))(@types/react@19.2.18)(dayjs@1.11.23)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@opennextjs/cloudflare':
+        specifier: ^1.20.6
+        version: 1.20.6(next@16.3.4(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(sass@1.104.0))(wrangler@4.129.0)
       '@stripe/react-stripe-js':
         specifier: ^6.8.2
         version: 6.9.0(@stripe/stripe-js@9.15.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -96,7 +99,7 @@ importers:
         version: 16.3.4(@babel/core@7.29.7)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(sass@1.104.0)
       next-intl:
         specifier: ^4.13.7
-        version: 4.14.2(@swc/helpers@0.5.23)(next@16.3.4(@babel/core@7.29.7)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(sass@1.104.0))(react@19.2.0)
+        version: 4.14.2(@swc/helpers@0.5.23)(next@16.3.4(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(sass@1.104.0))(react@19.2.0)
       papaparse:
         specifier: ^5.5.3
         version: 5.7.0
@@ -161,6 +164,9 @@ importers:
       typescript:
         specifier: ^5
         version: 5.9.3
+      wrangler:
+        specifier: ^4.129.0
+        version: 4.129.0
 
   apps/frontend:
     dependencies:
@@ -247,7 +253,7 @@ importers:
         version: 16.3.4(@babel/core@7.29.7)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(sass@1.104.0)
       next-intl:
         specifier: ^4.13.7
-        version: 4.14.2(@swc/helpers@0.5.23)(next@16.3.4(@babel/core@7.29.7)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(sass@1.104.0))(react@19.2.0)
+        version: 4.14.2(@swc/helpers@0.5.23)(next@16.3.4(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(sass@1.104.0))(react@19.2.0)
       papaparse:
         specifier: ^5.5.3
         version: 5.7.0
@@ -401,7 +407,7 @@ importers:
         version: 16.3.4(@babel/core@7.29.7)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(sass@1.104.0)
       next-intl:
         specifier: ^4.13.7
-        version: 4.14.2(@swc/helpers@0.5.23)(next@16.3.4(@babel/core@7.29.7)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(sass@1.104.0))(react@19.2.0)
+        version: 4.14.2(@swc/helpers@0.5.23)(next@16.3.4(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(sass@1.104.0))(react@19.2.0)
       papaparse:
         specifier: ^5.5.3
         version: 5.7.0
@@ -10639,7 +10645,7 @@ snapshots:
     transitivePeerDependencies:
       - '@swc/helpers'
 
-  next-intl@4.14.2(@swc/helpers@0.5.23)(next@16.3.4(@babel/core@7.29.7)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(sass@1.104.0))(react@19.2.0):
+  next-intl@4.14.2(@swc/helpers@0.5.23)(next@16.3.4(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(sass@1.104.0))(react@19.2.0):
     dependencies:
       '@eloqnt/config': 0.1.0
       '@eloqnt/format-json': 0.1.0

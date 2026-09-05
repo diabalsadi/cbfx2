@@ -8,8 +8,10 @@ The CRM/User split (backend and frontend) is being migrated to Cloudflare — se
 
 - **user-frontend**: https://user-frontend.tradeversesocial.workers.dev
 - **user-backend**: https://cbfx-user-backend.tradeversesocial.workers.dev
+- **crm-frontend**: https://crm-frontend.tradeversesocial.workers.dev
+- **crm-backend**: https://cbfx-crm-backend.tradeversesocial.workers.dev
 
-`user-frontend` is fully wired to `user-backend` (its `BACKEND_URL` points there) — this is the first fully working end-to-end slice of the migration: real frontend, real backend, both on Cloudflare, talking to the real production database.
+Both pairs are fully wired end-to-end (`BACKEND_URL` on each frontend points at its matching backend) — real frontend, real backend, both on Cloudflare, talking to the real production database. `apps/frontend` and `backend/` (the original monolith) remain live in parallel; no production traffic has been cut over yet.
 
 ### Deploying a backend service (`crm-backend/` or `user-backend/`)
 
@@ -24,22 +26,22 @@ wrangler deploy              # the real deploy
 
 Per-service secret lists (which vars each service actually needs, verified against real code, not assumed) are in `crm-backend/.env.example` and `user-backend/.env.example`.
 
-**`wrangler secret put`/`secret bulk` only sets secrets on the Worker — it does NOT automatically become the container's own process environment** (a separate Docker sandbox). Without explicitly wiring them through, the FastAPI app inside crashes on startup (`DATABASE_URL environment variable is required`) and it surfaces as an opaque `Failed to start container` error, not an env-var error. `worker/index.ts`'s `Container` subclass needs an explicit constructor that sets `this.envVars` from the Worker's own `env` argument, for every secret the app needs — see `user-backend/worker/index.ts` for the working pattern. `crm-backend/worker/index.ts` still needs the identical fix before its first deploy.
+**`wrangler secret put`/`secret bulk` only sets secrets on the Worker — it does NOT automatically become the container's own process environment** (a separate Docker sandbox). Without explicitly wiring them through, the FastAPI app inside crashes on startup (`DATABASE_URL environment variable is required`) and it surfaces as an opaque `Failed to start container` error, not an env-var error. `worker/index.ts`'s `Container` subclass needs an explicit constructor that sets `this.envVars` from the Worker's own `env` argument, for every secret the app needs — see `user-backend/worker/index.ts` or `crm-backend/worker/index.ts` for the working pattern (both are deployed and live with this fix already applied).
 
 ### Deploying a frontend app (`crm-frontend/`, `user-frontend/`, `apps/frontend`)
 
-Uses [`@opennextjs/cloudflare`](https://opennext.js.org/cloudflare) — as of now, only `user-frontend` has this wired up; `crm-frontend` and `apps/frontend` still need the identical setup.
+Uses [`@opennextjs/cloudflare`](https://opennext.js.org/cloudflare) — both `user-frontend` and `crm-frontend` have this wired up and deployed; `apps/frontend` (the original monolith) still needs the identical setup if it's ever moved to Cloudflare.
 
 ```bash
-cd user-frontend
+cd user-frontend   # or crm-frontend
 pnpm run cf:deploy   # builds with opennextjs-cloudflare, then deploys
 ```
 
-Two non-obvious things that had to be worked around to get this building/running at all (see `plan.md` Phase 6 for the full story if replicating this for `crm-frontend`/`apps/frontend`):
-- `sharp` (Next's optional image-optimizer dependency, unused since this codebase has no `next/image` usage anywhere) fails to bundle for Workers — worked around via a `pnpm.overrides` entry in the root `package.json` replacing it with a no-op stub package.
+Two non-obvious things that had to be worked around to get this building/running at all (see `plan.md` Phase 6 for the full story if replicating this for `apps/frontend`):
+- `sharp` (Next's optional image-optimizer dependency, unused since this codebase has no `next/image` usage anywhere) fails to bundle for Workers — worked around via a `pnpm.overrides` entry in the root `package.json` replacing it with a no-op stub package. This applies workspace-wide, so it needed no rework when setting up `crm-frontend`.
 - Next.js's own middleware manifest lookup does a dynamic `require()` that Workers can't execute, crashing every route in production — worked around via `NEXT_PRIVATE_MINIMAL_MODE: "1"` in `wrangler.jsonc`'s `vars`. This is a known open upstream bug, not an app bug.
 
-`BACKEND_URL` needs to be set as a Cloudflare var (in `wrangler.jsonc`'s `vars`) pointing at the matching deployed backend for a frontend deploy to actually reach it — done for `user-frontend` (points at `user-backend`, Worker-to-Worker). Falling back to the old Render-hosted backend doesn't work from a Cloudflare Worker's outbound fetch (edge error 1003, "Direct IP Access Not Allowed") — always set this explicitly once the matching backend is deployed.
+`BACKEND_URL` needs to be set as a Cloudflare var (in `wrangler.jsonc`'s `vars`) pointing at the matching deployed backend for a frontend deploy to actually reach it — done for both `user-frontend` (points at `user-backend`) and `crm-frontend` (points at `crm-backend`), Worker-to-Worker in both cases. Falling back to the old Render-hosted backend doesn't work from a Cloudflare Worker's outbound fetch (edge error 1003, "Direct IP Access Not Allowed") — always set this explicitly once the matching backend is deployed.
 
 ## Test Credentials
 For local development, you can use the following test accounts:
