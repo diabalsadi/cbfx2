@@ -1,0 +1,30 @@
+name = "cbfx-crm-backend"
+main = "worker/index.ts"
+compatibility_date = "2024-11-01"
+
+# NOTE: verify this whole file against Cloudflare's current Containers docs
+# at deploy time — Containers is a newer product and this schema has
+# changed before (see signals-service/wrangler.toml, the precedent this
+# file is modeled on).
+[[containers]]
+max_instances = 1
+class_name = "CrmBackendContainer"
+image = "./Dockerfile"
+# Repo root, not this directory — lets the Dockerfile COPY backend-shared/,
+# a sibling package outside crm-backend/. Resolves the "backend-shared
+# sibling-folder build-context question" this plan flags for Phase 4.
+# `image_build_context` behavior with parent-directory paths isn't shown
+# with a worked example in Cloudflare's docs as of this writing — verify
+# with `wrangler deploy --dry-run` before trusting it in a real deploy.
+image_build_context = "../"
+
+[[durable_objects.bindings]]
+name = "CRM_BACKEND_CONTAINER"
+class_name = "CrmBackendContainer"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["CrmBackendContainer"]
+
+# No [triggers] cron block, unlike signals-service — this service is
+# request-driven (proxies the crm-frontend's API calls), not scheduled.

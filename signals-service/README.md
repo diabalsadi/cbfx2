@@ -5,7 +5,8 @@ Standalone service that generates AI trading signals for gold (XAU/USD) and inse
 ## What it does
 
 - **Every 30 minutes** (`POST /tasks/generate`): for each of Scalp/Swing/Long-term, if that strategy hasn't hit its daily signal count yet (3/1/1), fetches recent XAU/USD candles from Twelve Data and asks Gemini for a trade setup. Only inserts it as a new `open` play if Gemini rates it **"High"** confidence and it isn't too similar (same direction, entry price within 0.5%) to an already-open signal of the same strategy.
-- **Every 10 minutes** (`POST /tasks/monitor`): scans every open, AI-generated XAU/USD play. Closes it as `close_reason="hit"` or `"miss"` the moment real price mechanically reaches its take_profit/stop_loss. If neither has been reached yet, asks Gemini whether the original thesis still holds given fresh candles — cancels it early as `close_reason="market_shift"` if the model says the setup has clearly broken down.
+- **Every 5 minutes** (`POST /tasks/monitor`): scans every open, AI-generated XAU/USD play. Closes it as `close_reason="hit"` or `"miss"` the moment real price mechanically reaches its take_profit/stop_loss. If neither has been reached yet, asks Gemini whether the original thesis still holds given fresh candles — cancels it early as `close_reason="market_shift"` if the model says the setup has clearly broken down.
+- **Once daily at 6pm America/New_York** (`POST /tasks/analysis`): publishes one daily market-analysis `Article` + `Analysis` row for XAU/USD. Used to run opportunistically inside the generate job (gated by a 24h dedupe window); now has its own predictable schedule — see `app/pipeline/analysis.py`. Cloudflare Cron Triggers are UTC-only with no DST awareness, so `wrangler.toml` schedules both UTC times 6pm ET can fall on (22:00 during EDT, 23:00 during EST) and `worker/index.ts` checks the real America/New_York wall-clock hour at runtime to fire only the one that currently matches.
 
 This service **never creates or migrates tables** — `app/models.py` is a minimal mirror of two tables the main backend already owns and maintains (`plays`, `users`); schema changes to those tables happen in `backend/app/main.py`/`backend/app/models/`, not here.
 
@@ -24,22 +25,23 @@ Trigger a job manually:
 ```bash
 curl -X POST http://localhost:8080/tasks/generate -H "Authorization: Bearer $TASK_AUTH_TOKEN"
 curl -X POST http://localhost:8080/tasks/monitor -H "Authorization: Bearer $TASK_AUTH_TOKEN"
+curl -X POST http://localhost:8080/tasks/analysis -H "Authorization: Bearer $TASK_AUTH_TOKEN"
 ```
 
 ## Deploying to Cloudflare Containers
 
-**Verify the exact config/SDK surface against Cloudflare's current Containers docs before deploying** — this is a newer product and both `wrangler.toml`'s `[[containers]]`/`durable_objects`/`migrations` sections and the `@cloudflare/containers` package's `getContainer` helper used in `worker/index.ts` could not be fully verified while this was built; the fallback manual Durable Object pattern is commented in `worker/index.ts` if `getContainer` doesn't exist in the version you install.
+**Live**: https://cbfx-signals-service.tradeversesocial.workers.dev — deployed 2026-09-05. The Worker's `fetch()` is deliberately a static placeholder response with no route into the container (see `worker/index.ts`) — these task endpoints move money-adjacent data and call paid APIs, so unlike `crm-backend`/`user-backend` there is no public path to them at all, cron-only.
 
 ```bash
 npm install
-wrangler secret put DATABASE_URL
-wrangler secret put TWELVE_DATA_API_KEY
-wrangler secret put GEMINI_API_KEY
-wrangler secret put TASK_AUTH_TOKEN
-wrangler deploy
+wrangler secret bulk .env   # pushes DATABASE_URL/TWELVE_DATA_API_KEY/GEMINI_API_KEY/GEMINI_MODEL/TASK_AUTH_TOKEN in one go
+wrangler deploy --dry-run   # validates config + builds locally, no deploy
+wrangler deploy              # the real deploy
 ```
 
-The container image is built from `Dockerfile` per `wrangler.toml`'s `image = "./Dockerfile"`. Secrets set via `wrangler secret put` are passed through to the container as environment variables — confirm this against current docs too, since how a Worker's secrets reach its bound container is part of the same evolving surface.
+**`wrangler secret put`/`secret bulk` only sets secrets on the Worker — it does NOT automatically become the container's own process environment** (a separate Docker sandbox, same gotcha `crm-backend`/`user-backend` hit first). `worker/index.ts`'s `SignalsContainer` class has an explicit constructor wiring every secret from the Worker's own `env` into `this.envVars` — verified working on this service's first deploy (no repeat of the debugging cycle needed for `user-backend`).
+
+`TASK_AUTH_TOKEN` must be a real random secret, not the `.env.example` placeholder — these endpoints call paid APIs and touch the shared production DB, so a guessable shared secret is a real risk once this is a public Worker.
 
 ## Extending to more symbols
 

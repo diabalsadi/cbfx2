@@ -1,10 +1,61 @@
 # CBFX
 
+## Cloudflare Deployment (5 services)
+
+The CRM/User split (backend and frontend) has been migrated to Cloudflare and cut over to production — see `plan.md` for the full phase-by-phase migration history. The original monolith (`apps/frontend`, `backend/`) has been decommissioned and removed from this repo (Phase 8); its history is preserved in git prior to that removal. This section is the practical "how to deploy" reference for all five live services.
+
+### Live
+
+| Service | Type | Live URL | Custom domain | Worker name |
+|---|---|---|---|---|
+| `apps/user-frontend` | Next.js (OpenNext) | https://user-frontend.tradeversesocial.workers.dev | **www.trade-verse.com** | `user-frontend` |
+| `apps/crm-frontend` | Next.js (OpenNext) | https://crm-frontend.tradeversesocial.workers.dev | **admin.trade-verse.com** | `crm-frontend` |
+| `user-backend` | FastAPI (Cloudflare Container) | https://cbfx-user-backend.tradeversesocial.workers.dev | — (reached Worker-to-Worker via `user-frontend`'s `BACKEND_URL`) | `cbfx-user-backend` |
+| `crm-backend` | FastAPI (Cloudflare Container) | https://cbfx-crm-backend.tradeversesocial.workers.dev | — (reached Worker-to-Worker via `crm-frontend`'s `BACKEND_URL`) | `cbfx-crm-backend` |
+| `signals-service` | FastAPI (Cloudflare Container, cron-only) | https://cbfx-signals-service.tradeversesocial.workers.dev | — (no public routes into the container at all, not even token-gated) | `cbfx-signals-service` |
+
+All five talk to the same real production Postgres. The two frontend/backend pairs are fully wired end-to-end (`BACKEND_URL` on each frontend points at its matching backend) and serve real production traffic on the custom domains above. `signals-service` has no frontend/UI — it's driven entirely by Workers Cron Triggers (`*/30` generate, `*/5` monitor, daily at 6pm America/New_York for analysis — see `signals-service/README.md`).
+
+### Deploying a backend service (`crm-backend/`, `user-backend/`, or `signals-service/`)
+
+```bash
+cd user-backend   # or crm-backend, or signals-service
+
+npm install                 # installs @cloudflare/containers + wrangler — standalone project, not part of the pnpm workspace
+wrangler deploy --dry-run   # validates config + builds locally, no deploy
+wrangler secret bulk .env   # pushes every secret in .env at once (accepts .env format directly)
+wrangler deploy              # the real deploy
+```
+
+Per-service secret lists (which vars each service actually needs, verified against real code, not assumed) are in each service's `.env.example` (`crm-backend/.env.example`, `user-backend/.env.example`, `signals-service/.env.example`).
+
+**`wrangler secret put`/`secret bulk` only sets secrets on the Worker — it does NOT automatically become the container's own process environment** (a separate Docker sandbox). Without explicitly wiring them through, the app inside crashes on startup (e.g. `DATABASE_URL environment variable is required`) and it surfaces as an opaque `Failed to start container` error, not an env-var error. Each service's `worker/index.ts`'s `Container` subclass needs an explicit constructor that sets `this.envVars` from the Worker's own `env` argument, for every secret the app needs — all three (`crm-backend/worker/index.ts`, `user-backend/worker/index.ts`, `signals-service/worker/index.ts`) are deployed and live with this fix already applied.
+
+### Deploying a frontend app (`apps/crm-frontend/`, `apps/user-frontend/`)
+
+Uses [`@opennextjs/cloudflare`](https://opennext.js.org/cloudflare) — both apps have this wired up and deployed.
+
+```bash
+cd apps/user-frontend   # or apps/crm-frontend
+pnpm run cf:deploy   # builds with opennextjs-cloudflare, then deploys
+```
+
+Two non-obvious things that had to be worked around to get this building/running at all (see `plan.md` Phase 6 for the full story):
+- `sharp` (Next's optional image-optimizer dependency, unused since this codebase has no `next/image` usage anywhere) fails to bundle for Workers — worked around via a `pnpm.overrides` entry in the root `package.json` replacing it with a no-op stub package. This applies workspace-wide.
+- Next.js's own middleware manifest lookup does a dynamic `require()` that Workers can't execute, crashing every route in production — worked around via `NEXT_PRIVATE_MINIMAL_MODE: "1"` in `wrangler.jsonc`'s `vars`. This is a known open upstream bug, not an app bug.
+
+`BACKEND_URL` needs to be set as a Cloudflare var (in `wrangler.jsonc`'s `vars`) pointing at the matching deployed backend for a frontend deploy to actually reach it — done for both `user-frontend` (points at `user-backend`) and `crm-frontend` (points at `crm-backend`), Worker-to-Worker in both cases.
+
+### reCAPTCHA
+
+Both frontends serve a shared reCAPTCHA v2 checkbox site key (`RECAPTCHA_SITE_KEY_PUBLIC` in each frontend's `wrangler.jsonc`), verified server-side by `crm-backend`/`user-backend` (`RECAPTCHA_SECRET_KEY`). The reCAPTCHA site's allowed-domains list (Google's admin console) must include every real domain the widget is served from — `localhost`, `www.trade-verse.com`, `admin.trade-verse.com` — or verification fails even though the site/secret key pair itself is correct. If either key is ever rotated, update it in **all** of: both frontends' `.env.local` + `wrangler.jsonc` (site key, then rebuild+redeploy), and both backends' `.env` (secret key, pushed via `wrangler secret put` + redeploy) — a mismatched pair between what the widget serves and what the backend verifies against fails silently as a generic "Captcha verification failed."
+
 ## Test Credentials
 For local development, you can use the following test accounts:
 - **Super Admin**: `admin@cbfx.com` / `password123`
 - **Editor**: `editor@cbfx.com` / `password123`
 - **Broker**: `broker@cbfx.com` / `password123`
+- **Client** (dual-portal: can log into both admin and user portals): `test-client@cbfx.com` / `password123`
 
 ### Stripe test card (Signals / Copy Trading subscription checkout)
 Stripe is in test mode — no real charge occurs. Use:
@@ -30,116 +81,12 @@ Recommended image dimensions and aspect ratios for each ad placement slot (confi
 3. Use a **transparent PNG or SVG** for the header sponsor logo specifically — it sits directly in the nav bar with no background card, so a white/colored box background shows as a visible rectangle.
 4. Upload at 2× the listed pixel size for retina screens — file size isn't a concern at these dimensions.
 
-## Backend
+## Running the current services locally
 
-### How to run
+The original monolith (`backend/`, `apps/frontend`) no longer exists — it was decommissioned in Phase 8 after the CRM/User split cut over to production. Each current service runs independently:
 
-#### With Docker (Recommended)
-```bash
-cd backend
+- **`crm-backend/`, `user-backend/`**: FastAPI apps — `pip install -r requirements.txt` then `uvicorn app.main:app --reload` (each needs `backend-shared` installed editable: `pip install -e ../backend-shared`).
+- **`crm-frontend/`, `user-frontend/`** (under `apps/`): Next.js apps in the pnpm workspace — `pnpm --filter crm-frontend dev` / `pnpm --filter user-frontend dev` from the repo root.
+- **`signals-service/`**: see `signals-service/README.md`.
 
-# Start both services (database + backend)
-docker-compose up --build
-
-# Run in detached mode
-docker-compose up -d --build
-
-# Stop services
-docker-compose down
-
-# Stop and remove volumes (deletes database data)
-docker-compose down -v
-
-# Database Management (Adminer)
-# Start Adminer service
-docker-compose up -d adminer
-
-# Run in detached mode
-docker run -d -p 3000:3000 cbfx-frontend
-
-# Access at http://localhost:8080
-# Login credentials:
-# - System: PostgreSQL
-# - Server: db
-# - Username: cbfx_user
-# - Password: cbfx_password
-# - Database: cbfx_db
-```
-
-#### Without Docker
-```bash
-cd backend
-
-# Create virtual environment
-python -m venv cbfx-backend-env
-
-# Activate virtual environment
-source cbfx-backend-env/bin/activate  # On Linux/Mac
-.\cbfx-backend-env\Scripts\activate  # On Windows
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run server
-python -m uvicorn app.main:app --reload
-```
-
-## Frontend
-
-### Prerequisites
-Ensure you're using the correct Node.js version:
-```bash
-cd frontend
-
-# If you have nvm installed
-nvm use
-
-# This will use Node.js version 20 (specified in .nvmrc)
-```
-
-### How to run
-
-#### Local Development (Without Docker)
-```bash
-cd frontend
-
-# Install dependencies (first time only)
-npm install
-
-# Run development server
-npm run dev
-```
-
-#### With Docker - Development
-```bash
-cd frontend
-
-# Build development image
-docker build -f Dockerfile.dev -t cbfx-frontend-dev .
-
-# Run with hot-reload
-docker run -p 3000:3000 -v ${PWD}:/app -v /app/node_modules cbfx-frontend-dev
-```
-
-#### With Docker - Production
-```bash
-cd frontend
-
-# Build production image (optimized, ~150MB)
-docker build -t cbfx-frontend .
-
-# Run production container
-docker run -p 3000:3000 cbfx-frontend
-
-# Look at the logs of the container
-docker logs -f cbfx_backend
-
-```
-
-### Data seeding
-
-```bash
-docker compose exec -T backend python seed.py
-```
-
-The frontend will be available at **http://localhost:3000**
+See the "Cloudflare Deployment" section above for how each is deployed, and `plan.md` for the full migration history.

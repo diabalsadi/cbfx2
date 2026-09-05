@@ -1,0 +1,37 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "main": ".open-next/worker.js",
+  "name": "user-frontend",
+  "compatibility_date": "2024-12-30",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "user-frontend"
+    }
+  ],
+  // NEXT_PRIVATE_MINIMAL_MODE=1: without it, Next.js's own
+  // getMiddlewareManifest() does a dynamic require() of
+  // middleware-manifest.json at request time, which the real deployed
+  // Worker crashed on (every route 500'd) — this middleware.ts app has
+  // real middleware, so this path is genuinely hit. Minimal mode skips
+  // that require() entirely. Confirmed via opennextjs-cloudflare#922/#1232,
+  // a known open bug, not something fixable in application code.
+  "vars": {
+    "NEXT_PRIVATE_MINIMAL_MODE": "1",
+    // RECAPTCHA_SITE_KEY_PUBLIC / NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY are
+    // public-by-design (meant to reach the browser), safe committed here —
+    // same values as apps/frontend/.env.local.
+    "RECAPTCHA_SITE_KEY_PUBLIC": "6LcXMastAAAAAJkZ-N6IBDhbI0dCJ8QErs0OeDvk",
+    "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY": "pk_test_51T0j1AHKkZtApjEZUSOwHNPoXQGqZZ0ZVZ1yYag5x5QJzo0Fk7JPwWqppkITmSeQFrrbMCihTTplH9dGuK5P8WEl00fgW1maIT",
+    // Points at the real deployed user-backend Worker (Worker-to-Worker
+    // fetch, not crossing into Render) — replaces the earlier fallback to
+    // the old Render-hosted backend that Cloudflare's edge rejected
+    // (error 1003, "Direct IP Access Not Allowed").
+    "BACKEND_URL": "https://cbfx-user-backend.tradeversesocial.workers.dev"
+  }
+}

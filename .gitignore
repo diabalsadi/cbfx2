@@ -2,22 +2,20 @@
 __pycache__
 .env
 backend/app/uploads/
+*.egg-info/
 
 # Frontend
 node_modules
 
 # Docker
-postgres_data/
 .local
-.claude
-CLAUDE.md
-AGENT.md
-AGENTS.md
-plan.md
+postgres_data/
 cbfx-backend-env
-*.md
 *.xlsx
 *.pdf
 *.csv
 *.docx
-!README.md
+plan.md
+
+# Local Claude Code state (personal permissions/secrets, not shared config)
+.claude/settings.local.json
