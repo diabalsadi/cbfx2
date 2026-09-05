@@ -26,7 +26,7 @@
     // RECAPTCHA_SITE_KEY_PUBLIC / NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY are
     // public-by-design (meant to reach the browser), safe committed here —
     // same values as apps/crm-frontend/.env.local.
-    "RECAPTCHA_SITE_KEY_PUBLIC": "6Ldpv5YtAAAAAIO-97P3-NdJXt3y-M2DvvMcTtZz",
+    "RECAPTCHA_SITE_KEY_PUBLIC": "6LcXMastAAAAAJkZ-N6IBDhbI0dCJ8QErs0OeDvk",
     "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY": "pk_test_51T0j1AHKkZtApjEZUSOwHNPoXQGqZZ0ZVZ1yYag5x5QJzo0Fk7JPwWqppkITmSeQFrrbMCihTTplH9dGuK5P8WEl00fgW1maIT",
     // Points at the real deployed crm-backend Worker (Worker-to-Worker
     // fetch, not crossing into Render) — matches user-frontend's pattern of
