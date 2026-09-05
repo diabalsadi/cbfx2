@@ -48,6 +48,7 @@ For local development, you can use the following test accounts:
 - **Super Admin**: `admin@cbfx.com` / `password123`
 - **Editor**: `editor@cbfx.com` / `password123`
 - **Broker**: `broker@cbfx.com` / `password123`
+- **Client** (dual-portal: can log into both admin and user portals): `test-client@cbfx.com` / `password123`
 
 ### Stripe test card (Signals / Copy Trading subscription checkout)
 Stripe is in test mode — no real charge occurs. Use:
