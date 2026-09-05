@@ -15,6 +15,7 @@ cbfx-backend-env
 *.pdf
 *.csv
 *.docx
+plan.md
 
 # Local Claude Code state (personal permissions/secrets, not shared config)
 .claude/settings.local.json
