@@ -1,26 +1,22 @@
 import logging
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 from app.clients.backend_client import purge_public_cache
-from app.clients.gemini_client import GeminiError, generate_daily_analysis, generate_signal
+from app.clients.gemini_client import GeminiError, generate_signal
 from app.clients.twelve_data import TwelveDataError, fetch_candles
 from app.config import (
     AI_AUTHOR_EMAIL,
-    ARTICLE_DEDUPE_WINDOW_HOURS,
     CANDLE_COUNT,
     CONFIDENCE_THRESHOLD,
     DUPLICATE_PRICE_TOLERANCE,
-    MARKET_CATEGORY,
     PAIR,
     PLAY_TYPE_CONFIG,
     TWELVE_DATA_SYMBOL,
 )
 from app.database import SessionLocal
-from app.models import Analysis, Article, Play
+from app.models import Play
 from app.pipeline.common import ensure_ai_author
-
-DAILY_ANALYSIS_INTERVAL = "1day"
 
 logger = logging.getLogger("signals.generate")
 
@@ -71,28 +67,14 @@ def _is_duplicate(db, play_type: str, direction: str, entry_price: float) -> boo
     return False
 
 
-def _has_recent_article(db) -> bool:
-    """At most one published daily-analysis Article per
-    ARTICLE_DEDUPE_WINDOW_HOURS window, regardless of how often the generate
-    job itself runs."""
-    cutoff = datetime.now(timezone.utc) - timedelta(hours=ARTICLE_DEDUPE_WINDOW_HOURS)
-    return (
-        db.query(Article)
-        .filter(Article.article_type == "analysis", Article.symbol == PAIR, Article.created_at >= cutoff)
-        .first()
-        is not None
-    )
-
-
 def run_generate_job() -> dict:
     """Runs once per invocation (triggered every 30 minutes by the Cloudflare
     Worker cron): for each play_type still under its daily target, requests
     a signal from Gemini and saves it as an open Play if it's a "High"
-    confidence, non-duplicate, actionable setup. Also publishes one daily
-    market-analysis Article (+ an Analysis row) per ARTICLE_DEDUPE_WINDOW_HOURS
-    window, independent of whether any signal fired this cycle. Never raises
-    for a single play_type's (or the daily analysis') failure — one bad
-    model/API call doesn't block the others."""
+    confidence, non-duplicate, actionable setup. Never raises for a single
+    play_type's failure — one bad model/API call doesn't block the others.
+    Daily market-analysis publishing used to be bundled into this job; it
+    now runs on its own daily cron — see pipeline/analysis.py:run_analysis_job."""
     logger.info("Generate job starting for %s", PAIR)
     db = SessionLocal()
     result = {"created": [], "skipped": {}}
@@ -156,43 +138,11 @@ def run_generate_job() -> dict:
             )
             result["created"].append({"play_type": play_type, "id": play.id})
 
-        if _has_recent_article(db):
-            logger.info("Skipping daily analysis - one was already published in the last %dh", ARTICLE_DEDUPE_WINDOW_HOURS)
-            result["daily_analysis"] = "already_published"
-        else:
-            try:
-                daily_candles = fetch_candles(TWELVE_DATA_SYMBOL, DAILY_ANALYSIS_INTERVAL, CANDLE_COUNT)
-                daily = generate_daily_analysis(daily_candles)
-                db.add(Analysis(
-                    id=str(uuid.uuid4()),
-                    pair=PAIR,
-                    timeframe=DAILY_ANALYSIS_INTERVAL,
-                    bias=daily.bias,
-                    summary=daily.summary,
-                    author_email=AI_AUTHOR_EMAIL,
-                ))
-                db.add(Article(
-                    id=str(uuid.uuid4()),
-                    title=daily.title,
-                    content=daily.summary,
-                    excerpt=daily.excerpt,
-                    article_type="analysis",
-                    market_category=MARKET_CATEGORY,
-                    symbol=PAIR,
-                    is_published=True,
-                    author_email=AI_AUTHOR_EMAIL,
-                ))
-                logger.info("Published daily analysis: %s (bias=%s)", daily.title, daily.bias)
-                result["daily_analysis"] = "published"
-            except (TwelveDataError, GeminiError) as e:
-                logger.error("Daily analysis generation failed: %s", e)
-                result["daily_analysis"] = f"error: {e}"
-
         db.commit()
     finally:
         db.close()
 
-    if result["created"] or result.get("daily_analysis") == "published":
+    if result["created"]:
         purge_public_cache()
 
     logger.info("Generate job finished: %s", result)

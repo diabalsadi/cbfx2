@@ -20,8 +20,14 @@ tag = "v1"
 new_sqlite_classes = ["SignalsContainer"]
 
 # Cloudflare invokes the Worker's scheduled() handler once per matching
-# expression — at minutes :00/:30 both fire (see worker/index.ts for how
-# that's handled). Set TASK_AUTH_TOKEN with:
+# expression, and cron schedules are UTC-only with no DST awareness. The
+# generate/monitor entries are plain interval crons. The analysis job needs
+# to run once daily at 6pm America/New_York, which is 22:00 UTC during EDT
+# (Mar-Nov) and 23:00 UTC during EST (Nov-Mar) — rather than editing this
+# file twice a year, both UTC times are scheduled and worker/index.ts checks
+# the real America/New_York wall-clock hour at runtime before actually
+# calling /tasks/analysis, so only the one that currently corresponds to
+# 6pm local fires. Set TASK_AUTH_TOKEN with:
 #   wrangler secret put TASK_AUTH_TOKEN
 [triggers]
-crons = ["*/30 * * * *", "*/10 * * * *"]
+crons = ["*/30 * * * *", "*/5 * * * *", "0 22 * * *", "0 23 * * *"]

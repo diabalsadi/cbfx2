@@ -1,4 +1,4 @@
-// Cloudflare Worker: drives the container's two task endpoints on a
+// Cloudflare Worker: drives the container's three task endpoints on a
 // schedule via Workers Cron Triggers (see wrangler.toml [triggers]).
 //
 // NOTE: `getContainer` is the current @cloudflare/containers helper for
@@ -14,7 +14,7 @@ import { Container, getContainer } from "@cloudflare/containers";
 
 export class SignalsContainer extends Container {
   defaultPort = 8080;
-  // Cron hits this at least every 10 minutes, well inside this window, so
+  // Cron hits this at least every 5 minutes, well inside this window, so
   // the container should almost never need a cold start mid-schedule.
   sleepAfter = "15m";
 
@@ -43,15 +43,34 @@ async function callTask(env: Env, path: string): Promise<void> {
   console.log(`${path} -> ${res.status}: ${await res.text()}`);
 }
 
+// Cloudflare cron is UTC-only with no DST awareness — 6pm America/New_York
+// is 22:00 UTC (EDT, Mar-Nov) or 23:00 UTC (EST, Nov-Mar). Both candidate
+// UTC times are scheduled in wrangler.toml; this checks the real
+// America/New_York wall-clock hour so only the one that currently matches
+// 6pm local actually fires the job, and the other is a no-op.
+function isSixPmEastern(): boolean {
+  const hour = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    hour: "numeric",
+    hour12: false,
+  }).format(new Date());
+  return hour === "18";
+}
+
 export default {
   async scheduled(controller: ScheduledController, env: Env): Promise<void> {
-    // Both cron expressions fire at :00/:30 (they overlap) — the monitor
-    // job runs on every tick regardless of which expression fired; it's
-    // idempotent (re-checking an already-closed signal is a no-op), so the
-    // occasional double-run at :00/:30 is harmless. The generate job only
-    // runs on the 30-minute expression.
+    // The 30-minute and 5-minute expressions overlap at every :00/:30 —
+    // scheduled() fires once per matching expression, so both can invoke in
+    // the same minute. The monitor job is idempotent (re-checking an
+    // already-closed signal is a no-op), so an occasional double-run is
+    // harmless; it's dispatched on every tick this handler receives.
     if (controller.cron === "*/30 * * * *") {
       await callTask(env, "/tasks/generate");
+    } else if (controller.cron === "0 22 * * *" || controller.cron === "0 23 * * *") {
+      if (isSixPmEastern()) {
+        await callTask(env, "/tasks/analysis");
+      }
+      return;
     }
     await callTask(env, "/tasks/monitor");
   },

@@ -2,6 +2,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException
 
 from app.config import TASK_AUTH_TOKEN
 from app.logging_config import configure_logging
+from app.pipeline.analysis import run_analysis_job
 from app.pipeline.generate import run_generate_job
 from app.pipeline.monitor import run_monitor_job
 
@@ -33,6 +34,13 @@ def tasks_generate(_: None = Depends(require_task_token)):
 
 @app.post("/tasks/monitor")
 def tasks_monitor(_: None = Depends(require_task_token)):
-    """Triggered every 10 minutes by the Cloudflare Worker cron — see
+    """Triggered every 5 minutes by the Cloudflare Worker cron — see
     app/pipeline/monitor.py:run_monitor_job."""
     return run_monitor_job()
+
+
+@app.post("/tasks/analysis")
+def tasks_analysis(_: None = Depends(require_task_token)):
+    """Triggered once daily at 6pm America/New_York by the Cloudflare Worker
+    cron — see app/pipeline/analysis.py:run_analysis_job."""
+    return run_analysis_job()
