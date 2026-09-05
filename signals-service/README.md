@@ -30,18 +30,18 @@ curl -X POST http://localhost:8080/tasks/analysis -H "Authorization: Bearer $TAS
 
 ## Deploying to Cloudflare Containers
 
-**Verify the exact config/SDK surface against Cloudflare's current Containers docs before deploying** — this is a newer product and both `wrangler.toml`'s `[[containers]]`/`durable_objects`/`migrations` sections and the `@cloudflare/containers` package's `getContainer` helper used in `worker/index.ts` could not be fully verified while this was built; the fallback manual Durable Object pattern is commented in `worker/index.ts` if `getContainer` doesn't exist in the version you install.
+**Live**: https://cbfx-signals-service.tradeversesocial.workers.dev — deployed 2026-09-05. The Worker's `fetch()` is deliberately a static placeholder response with no route into the container (see `worker/index.ts`) — these task endpoints move money-adjacent data and call paid APIs, so unlike `crm-backend`/`user-backend` there is no public path to them at all, cron-only.
 
 ```bash
 npm install
-wrangler secret put DATABASE_URL
-wrangler secret put TWELVE_DATA_API_KEY
-wrangler secret put GEMINI_API_KEY
-wrangler secret put TASK_AUTH_TOKEN
-wrangler deploy
+wrangler secret bulk .env   # pushes DATABASE_URL/TWELVE_DATA_API_KEY/GEMINI_API_KEY/GEMINI_MODEL/TASK_AUTH_TOKEN in one go
+wrangler deploy --dry-run   # validates config + builds locally, no deploy
+wrangler deploy              # the real deploy
 ```
 
-The container image is built from `Dockerfile` per `wrangler.toml`'s `image = "./Dockerfile"`. Secrets set via `wrangler secret put` are passed through to the container as environment variables — confirm this against current docs too, since how a Worker's secrets reach its bound container is part of the same evolving surface.
+**`wrangler secret put`/`secret bulk` only sets secrets on the Worker — it does NOT automatically become the container's own process environment** (a separate Docker sandbox, same gotcha `crm-backend`/`user-backend` hit first). `worker/index.ts`'s `SignalsContainer` class has an explicit constructor wiring every secret from the Worker's own `env` into `this.envVars` — verified working on this service's first deploy (no repeat of the debugging cycle needed for `user-backend`).
+
+`TASK_AUTH_TOKEN` must be a real random secret, not the `.env.example` placeholder — these endpoints call paid APIs and touch the shared production DB, so a guessable shared secret is a real risk once this is a public Worker.
 
 ## Extending to more symbols
 

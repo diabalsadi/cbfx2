@@ -12,11 +12,48 @@
 //   await stub.fetch(...)
 import { Container, getContainer } from "@cloudflare/containers";
 
+interface Env {
+  SIGNALS_CONTAINER: DurableObjectNamespace;
+  DATABASE_URL: string;
+  TWELVE_DATA_API_KEY: string;
+  GEMINI_API_KEY: string;
+  GEMINI_MODEL: string;
+  TASK_AUTH_TOKEN: string;
+  // Optional — app/config.py defaults all three to "" when unset, which
+  // just skips the post-run cache-purge call (logged, not fatal).
+  BACKEND_BASE_URL?: string;
+  METAAPI_SYNC_KEY?: string;
+  METAAPI_SYNC_SECRET?: string;
+}
+
 export class SignalsContainer extends Container {
   defaultPort = 8080;
   // Cron hits this at least every 5 minutes, well inside this window, so
   // the container should almost never need a cold start mid-schedule.
   sleepAfter = "15m";
+
+  // `wrangler secret put`/`secret bulk` sets secrets on the Worker's own
+  // env — that does NOT automatically become the container's process
+  // environment (a separate Docker sandbox). Without this, app/config.py's
+  // `os.environ["DATABASE_URL"]` (and friends) crash the FastAPI app
+  // immediately on startup, surfacing as an opaque "Failed to start
+  // container" error with no indication env vars were the cause (confirmed
+  // the hard way on user-backend's/crm-backend's first deploys).
+  envVars: Record<string, string>;
+
+  constructor(ctx: DurableObjectState, env: Env) {
+    super(ctx, env);
+    this.envVars = {
+      DATABASE_URL: env.DATABASE_URL,
+      TWELVE_DATA_API_KEY: env.TWELVE_DATA_API_KEY,
+      GEMINI_API_KEY: env.GEMINI_API_KEY,
+      GEMINI_MODEL: env.GEMINI_MODEL,
+      TASK_AUTH_TOKEN: env.TASK_AUTH_TOKEN,
+      BACKEND_BASE_URL: env.BACKEND_BASE_URL ?? "",
+      METAAPI_SYNC_KEY: env.METAAPI_SYNC_KEY ?? "",
+      METAAPI_SYNC_SECRET: env.METAAPI_SYNC_SECRET ?? "",
+    };
+  }
 
   override onStart() {
     console.log("Signals container started");
@@ -27,11 +64,6 @@ export class SignalsContainer extends Container {
   override onError(error: unknown) {
     console.log("Signals container error:", error);
   }
-}
-
-interface Env {
-  SIGNALS_CONTAINER: DurableObjectNamespace;
-  TASK_AUTH_TOKEN: string;
 }
 
 async function callTask(env: Env, path: string): Promise<void> {

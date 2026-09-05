@@ -13,6 +13,10 @@ The CRM/User split (backend and frontend) is being migrated to Cloudflare — se
 
 Both pairs are fully wired end-to-end (`BACKEND_URL` on each frontend points at its matching backend) — real frontend, real backend, both on Cloudflare, talking to the real production database. `apps/frontend` and `backend/` (the original monolith) remain live in parallel; no production traffic has been cut over yet.
 
+### Other Cloudflare services
+
+- **signals-service**: https://cbfx-signals-service.tradeversesocial.workers.dev — cron-driven only, no public routes into the container. Generates/monitors AI gold trading signals and publishes a daily market analysis; see `signals-service/README.md` for the schedule and how to deploy.
+
 ### Deploying a backend service (`crm-backend/` or `user-backend/`)
 
 ```bash
